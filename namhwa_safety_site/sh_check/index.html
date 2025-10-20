@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>현장 안전보건 관리 점검표</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 기본 스타일 */
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .responsive-table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .responsive-table {
+            min-width: 1400px; /* 사진 컬럼 추가로 너비 확장 */
+        }
+        
+        .photo-thumbnail-container {
+            position: relative;
+            display: inline-block; /* 컨테이너 크기를 이미지에 맞춤 */
+        }
+
+        .photo-thumbnail {
+            max-width: 100px;
+            max-height: 100px;
+            border-radius: 0.375rem;
+            margin-top: 0.5rem;
+            border: 1px solid #e5e7eb;
+            cursor: pointer;
+        }
+
+        .delete-photo-btn {
+            position: absolute;
+            top: 0;
+            right: -5px;
+            background-color: rgba(239, 68, 68, 0.8);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            line-height: 20px;
+            text-align: center;
+            border: 1px solid white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Modal 스타일 */
+        .modal-overlay {
+            transition: opacity 0.3s ease;
+        }
+        .modal-container {
+            transition: transform 0.3s ease;
+        }
+
+        /* [오류 수정] 사진 대지 이미지 컨테이너 (안정적인 비율 고정 방식) */
+        .report-photo-container {
+            position: relative;
+            width: 100%;
+            padding-top: 75%; /* 4:3 비율 (3 / 4 * 100) */
+            overflow: hidden;
+            border-radius: 0.5rem;
+            background-color: #f3f4f6;
+        }
+        .report-photo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 이미지를 컨테이너에 맞춰 채움 */
+        }
+
+        /* 인쇄용 스타일 */
+        @media print {
+            @page {
+                size: landscape; /* 가로 인쇄 설정 */
+                margin: 1cm;
+            }
+
+            body.printing-report .no-print-report,
+            body:not(.printing-report) .print-only-report {
+                display: none;
+            }
+
+            body.printing-report #photo-report-modal-content {
+                display: block !important;
+                box-shadow: none;
+                border: none;
+                padding: 0;
+            }
+             body.printing-report, body.printing-report #photo-report-modal {
+                background: white;
+            }
+            
+            /* [오류 수정] 사진 대지 인쇄 레이아웃 */
+            body.printing-report #report-container {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1cm;
+            }
+
+            body.printing-report .photo-entry {
+                page-break-inside: avoid;
+                border: 1px solid #ccc;
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            body.printing-report .photo-entry:nth-child(4n) {
+                page-break-after: always;
+            }
+
+            body.printing-report .photo-entry-header { padding: 0.25cm; }
+            body.printing-report .photo-entry-body { padding: 0.25cm; }
+            body.printing-report .photo-entry h3 { font-size: 10pt; font-weight: bold; }
+            
+            body.printing-report .report-photo-container {
+                padding-top: 65%; /* 인쇄 시 높이를 살짝 줄여 안정적으로 4장 배치 */
+                margin-bottom: 0.25cm;
+            }
+            
+            body.printing-report .photo-entry textarea {
+                height: 3cm !important;
+                font-size: 8pt;
+                padding: 0.2cm;
+            }
+            
+            body:not(.printing-report) { font-size: 8px; }
+            .no-print { display: none; }
+            .responsive-table-container { overflow: visible; }
+            table { width: 100% !important; min-width: 0 !important; table-layout: fixed; }
+            td, th { padding: 3px !important; word-break: break-all; }
+            input[type="radio"] {
+                -webkit-appearance: none; appearance: none;
+                border: 1px solid #000; border-radius: 50%;
+                width: 8px; height: 8px; margin: 0 auto;
+            }
+            input[type="radio"]:checked {
+                background-color: #000; border: 1px solid white;
+                box-shadow: 0 0 0 1px #000;
+            }
+            textarea, input[type="text"], input[type="number"] {
+                border: none !important; background-color: transparent !important;
+                resize: none; width: 100%; height: auto; padding: 1px;
+            }
+            tfoot { display: table-footer-group; }
+            
+            .header-logo { max-height: 20px !important; }
+            .photo-thumbnail { max-width: 60px !important; max-height: 60px !important; border: 1px solid #ccc; }
+            .report-photo { max-height: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 no-print-report">
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+            <div class="flex justify-between items-end mb-8 border-b pb-1">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">현장 안전보건 관리 점검표</h1>
+                    <div class="flex items-center mt-2 text-gray-600">
+                        <p class="text-gray-500 mr-4">안전보건팀</p>
+                        <div class="flex items-center space-x-1 text-sm">
+                           <input type="text" id="year" class="w-16 p-1 border-b-2 text-center focus:outline-none focus:border-blue-500" placeholder="YYYY">
+                           <span>년</span>
+                           <input type="text" id="month" class="w-12 p-1 border-b-2 text-center focus:outline-none focus:border-blue-500" placeholder="MM">
+                           <span>월</span>
+                           <input type="text" id="day" class="w-12 p-1 border-b-2 text-center focus:outline-none focus:border-blue-500" placeholder="DD">
+                           <span>일</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <img src="https://github.com/s7560k-dot/my-image/blob/main/remove_background.webp?raw=true" 
+                         alt="회사 로고" 
+                         class="h-6 header-logo"
+                         onerror="this.style.display='none'">
+                </div>
+            </div>
+
+            <div class="responsive-table-container">
+                <table class="w-full table-fixed border-collapse border border-gray-300 text-sm sm:text-base responsive-table">
+                    <colgroup>
+                        <col class="w-[7%]">
+                        <col class="w-[10%]">
+                        <col class="w-[3%]">
+                        <col class="w-[4%]">
+                        <col class="w-auto">
+                        <col class="w-[4%]">
+                        <col class="w-[4%]">
+                        <col class="w-[4%]">
+                        <col class="w-[4%]">
+                        <col class="w-[4%]">
+                        <col class="w-[18%]">
+                        <col class="w-[10%]"> <!-- 사진 컬럼 -->
+                    </colgroup>
+                    <thead class="bg-gray-100 text-center font-semibold">
+                        <tr>
+                            <th class="border border-gray-300 p-2" rowspan="2">대분류</th>
+                            <th class="border border-gray-300 p-2" rowspan="2">중분류</th>
+                            <th class="border border-gray-300 p-2" rowspan="2">번호</th>
+                            <th class="border border-gray-300 p-2" rowspan="2">지적<br>건수</th>
+                            <th class="border border-gray-300 p-2" rowspan="2">평가기준</th>
+                            <th class="border border-gray-300 p-2" colspan="5">평점</th>
+                            <th class="border border-gray-300 p-2" rowspan="2">평가자 의견</th>
+                            <th class="border border-gray-300 p-2" rowspan="2">사진</th>
+                        </tr>
+                         <tr>
+                            <th class="border border-gray-300 p-1 text-xs font-medium">상 (0.5)</th>
+                            <th class="border border-gray-300 p-1 text-xs font-medium">상중 (0.3)</th>
+                            <th class="border border-gray-300 p-1 text-xs font-medium">중 (0.0)</th>
+                            <th class="border border-gray-300 p-1 text-xs font-medium">중하 (-0.1)</th>
+                            <th class="border border-gray-300 p-1 text-xs font-medium">하 (-0.3)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="checklist-body"></tbody>
+                    <tfoot id="table-foot"></tbody>
+                </table>
+            </div>
+
+            <div class="sticky bottom-0 bg-white/80 backdrop-blur-sm p-4 mt-8 border-t border-gray-200 no-print">
+                <div id="summary-container" class="mb-4">
+                    <button onclick="toggleSummary()" class="w-full text-left font-semibold text-lg mb-2 text-gray-800">재해 형태별 소계 요약 <span id="summary-toggle-icon">▼</span></button>
+                    <div id="summary-details" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row justify-between items-center">
+                    <div class="flex items-center gap-4 w-full sm:w-auto mb-4 sm:mb-0">
+                        <button onclick="calculateScore()" class="w-full sm:w-auto bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition">점수 계산</button>
+                        <div class="w-auto text-lg p-3 bg-blue-50 rounded-lg text-center">
+                            <strong>총점:</strong> <span id="total-score" class="font-bold text-blue-600 text-xl">0.00</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 w-full sm:w-auto">
+                        <button onclick="openPhotoReportModal()" class="w-1/3 sm:w-auto text-center bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition">사진 대지</button>
+                        <button onclick="resetAllPhotos()" class="w-1/3 sm:w-auto bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 transition">초기화</button>
+                        <button onclick="window.print()" class="w-1/3 sm:w-auto bg-gray-700 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-800 transition">인쇄</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 사진 첨부 Modal -->
+    <div id="photo-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden modal-overlay opacity-0 no-print-report" onclick="closePhotoModal()">
+        <div class="bg-white p-8 rounded-xl shadow-lg text-center w-full max-w-md mx-4 modal-container transform scale-95" onclick="event.stopPropagation()">
+            <h1 class="text-2xl font-bold text-gray-900 mb-4">사진 첨부</h1>
+            <p class="text-gray-600 mb-2">지적사항에 대한 사진을 촬영하거나 앨범에서 선택해 주세요.</p>
+            <p class="text-xs text-red-500 mb-6">(고용량 사진은 자동으로 리사이즈됩니다)</p>
+            
+            <label for="photo-input" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition shadow-md cursor-pointer inline-block">
+                사진 촬영 및 선택
+            </label>
+            <input type="file" id="photo-input" accept="image/*" capture="camera" class="hidden">
+
+            <div id="preview-container" class="mt-6 min-h-[200px] bg-gray-100 rounded-lg flex items-center justify-center">
+                <p id="preview-text" class="text-gray-500">사진을 선택해 주세요.</p>
+                <img id="preview-image" class="hidden max-w-full max-h-64 rounded-lg" alt="미리보기">
+            </div>
+            
+            <div class="mt-6 flex gap-4">
+                <button onclick="closePhotoModal()" class="w-1/2 bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 transition">
+                    취소
+                </button>
+                <button id="save-button" disabled onclick="savePhoto()" class="w-1/2 bg-gray-400 text-white font-bold py-3 px-6 rounded-lg transition cursor-not-allowed">
+                    저장
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 사진 대지 Modal -->
+    <div id="photo-report-modal" class="fixed inset-0 bg-white w-full h-full z-40 hidden overflow-y-auto print-only-report">
+        <div id="photo-report-modal-content" class="container mx-auto p-4 sm:p-8">
+            <header class="bg-white p-6 rounded-xl mb-8 no-print">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">사진 대지 보고서</h1>
+                        <p class="text-gray-500 mt-1">점검표에 첨부된 사진 목록입니다.</p>
+                    </div>
+                    <div class="flex gap-4">
+                        <button onclick="closePhotoReportModal()" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition">닫기</button>
+                        <button onclick="printPhotoReport()" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">인쇄하기</button>
+                    </div>
+                </div>
+            </header>
+
+            <main id="report-container" class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <!-- 사진 대지가 여기에 동적으로 생성됩니다. -->
+            </main>
+        </div>
+    </div>
+
+
+    <script>
+        const checklistData = [
+            // ... (checklistData 배열은 이전과 동일하게 유지) ...
+            { category: '추락', subcategory: '개구부', count: 2, items: [ '개구부 덮개 설치(재질, 고정, 경고표지 등) 및 유지 관리여부', '대형개구부(발코니, 자재반출구, 계단실, E/V입구, 흙막이 단부 등) 안전난간 설치여부' ]}, { category: '추락', subcategory: '강관 비계/시스템비계', count: 2, items: [ '비계 설치상태(침하, 좌굴(수직도), 작업발판, 승강로 등) 이상여부', '비계 안전시설(안전난간대, 낙하물방지망, 수직보호망 등) 설치상태 이상여부' ]}, { category: '추락', subcategory: '이동식 틀비계', count: 3, items: [ '이동식틀비계 설치상태(규격품, 작업발판, 브레싱 등) 이상여부', '이동식틀비계 안전시설(안전난간대, 아웃트리거, 바퀴구름방지장치 등) 이상여부', '틀비계 실명제 등 실시여부' ]}, { category: '추락', subcategory: '말비계', count: 2, items: [ '비규격품(목재) 사용여부 및 관리여부', '발판 폭 40㎝ 이상 확보 및 구조적 안전여부' ]}, { category: '추락', subcategory: '달대비계', count: 3, items: [ '로프 설치상태(주/보조로프 사용 및 로프손상, 2점지지, 풀림방지 등) 실시여부', '로프 안전조치(주로프 16mm, 보조로프 14mm, 벽체 접촉부 마모예방조치 등) 실시여부', '추락예방조치(작업자 수직구명로프(코브라), 바닥여장길이 1m이상) 실시 여부' ]}, { category: '추락', subcategory: '사다리', count: 2, items: [ '사다리 사용상태(상부고정/여장길이 확보/설치각도/목재사다리)이상여부', '사다리 전도예방조치(아웃트리거 설치, 미끄럼방지판 등) 사용여부' ]}, { category: '추락', subcategory: '작업발판', count: 2, items: [ '비규격(목재, 단관파이프, 각파이프, 유로폼 등) 작업발판 사용여부', '작업발판 설치기준(하부고정, 밀실여부, 폭) 준수 여부' ]}, { category: '추락', subcategory: '갱폼', count: 5, items: [ '추락 예방조치(안전난간/작업발판 누락, 작업발판 이격거리, 압송관 개구부 보호 등) 여부', '낙하 예방조치(앵커볼트 설치간격, 인양고리 상태 및 변형 유무, 정리정돈 등) 여부', '전도 예방조치(작업발판 정리정돈 등) 실시 여부', '승강시설(근로자 이동통로 확보 등) 및 적정여부', '기타 갱폼 설치기준 준수여부' ]}, { category: '추락', subcategory: '교량 및 철골', count: 3, items: [ '추락예방조치(개인보호구, 안전난간대 시설, 추락방지망 등 ) 실시여부', '승강시 안전시설(안전블럭, 코브라 등)설치 및 사용여부', '자재 정리정돈 상태(철골 적재, 철골상부 자재 적재 유무 등) 이상여부' ]}, { category: '추락', subcategory: '추락방지망', count: 3, items: [ '추락방지망 설치상태(망재질, 망연결, 밀실도 등) 이상여부', '추락방지망 설치장소(E/V개구부, 대형개구부, 손상등) 누락여부', '추락방지망 관리(폐기물, 폐자재 등) 적정여부' ]}, { category: '충돌 및 협착', subcategory: '유해위험 기계기구', count: 2, items: [ '방호장치(둥근톱, 고속절단기, 그라인더 등) 설치 및 사용여부', '철근가공기 풋스위치 덮개 사용여부' ]}, { category: '충돌 및 협착', subcategory: '건설기계', count: 5, items: [ '협착 예방조치(후진경보등, 경보음, 후방감시카메라, 신호수 등) 실시 및 작동여부', '건설기계 방호장치(권과방지장치, 과상승방지장치, 리미트스위치 등) 부착 및 작동여부', '장비전도 방지장치(아웃트리거, 고임목 등) 적정여부', '인양 중 낙하 예방조치(퀵커플러 안전핀, 후크해지장치, 유도로프 등) 실시여부', '장비실명제 카드 부착여부' ]}, { category: '충돌 및 협착', subcategory: '타워크레인', count: 2, items: [ '자체점검(1회/6개월) 실시 여부', '크레인 하부 방호울 및 시건장치 설치여부' ]}, { category: '붕괴 및 도괴', subcategory: '굴착/터파기', count: 2, items: [ '굴착 법면 토사붕괴(굴착구배, 굴착단부 토사적치 등) 예방여부', '굴착부 통행시설 확보여부' ]}, { category: '붕괴 및 도괴', subcategory: '흙막이 공사', count: 4, items: [ '가시설 시공시 설계도서 준수 여부', '가시설 설치시기 및 과굴착에 의한 붕괴 사고 위험여부', '흙막이 벽체(토류판, 쉬트파일 등) 변위 및 부재 변형 여부', '띠장 설치상태(스티프너, 브레싱, 볼트너트 연결, 띠장 연결부 보강 등) 이상여부' ]}, { category: '붕괴 및 도괴', subcategory: '터널작업', count: 5, items: [ '차징카 안전조치(협착, 낙반 등) 실시 여부', '작업대차 안전조치(작업발판, 승강로, 안전난간 등) 적정여부', '터널 내 통행로 확보여부', '비상사태(외부와의 통신체계, 비상조명, 소음방지대책 등) 예방조치 실시여부', '작업환경(조도75Lux, 환기시설 등) 적정여부' ]}, { category: '붕괴 및 도괴', subcategory: '거푸집동바리/시스템동바리', count: 6, items: [ '거푸집동바리 설치 계획 및 조립도 등 작성 및 비치여부', '거푸집동바리 설치기준 준수(설치간격, 2본연결 설치시 4개이상 볼트체결 등) 여부', '가설자재(재사용 검정품, 파이프서포트, 연결핀, 클램프 등) 적정 사용여부', '붕괴 예방조치(밑받침, 수평연결재, 동바리 고정, 수직도, 고정목, u헤드고정 등) 실시여부', '수평연결재 적정(전용철물 사용, 누락여부 등) 설치여부', '거푸집동바리 설치, 해체시 정리정돈 실시여부' ]}, { category: '감전', subcategory: '분전반/수전설비', count: 4, items: [ '접지시설(외함접지, 접지봉 매립, 접지극 손상, 적정 접지선 사용 등) 적정여부', '누전차단기(정격감도전류 30mmA이하, 동작시간 0.03초이내)설치/ 경유 및 작동 여부', '접근/접촉 방지조치(아크릴판, 시건장치, 안전표지 등) 실시여부', '고압가공선로 감전예방(방호관, 접근한계거리 준수, 절연보호구 등)을 위한 접근방지 조치' ]}, { category: '감전', subcategory: '이동식 발전기', count: 3, items: [ '접지시설(외함접지, 접지봉 매립, 접지극 손상, 적정 접지선 사용 등) 실시 여부', '누전차단기(정격감도전류 30mmA이하, 동작시간 0.03초이내)설치/ 경유 및 작동 여부', '회전체 접근방지조치 실시여부' ]}, { category: '감전', subcategory: '작업전선', count: 3, items: [ '접지상태(3P전선, 접지선 연결, 피복손상여부, 접지극 손상) 이상 여부', '반입전 점검실시 및 유해위험기계기구 스티커 부착여부', '누전차단기 내장형 릴선 사용 및 정상 작동 여부' ]}, { category: '감전', subcategory: '교류아크 용접기', count: 3, items: [ '자동전격방지기 설치 및 정상작동(회로 결선의 적절성) 여부', '감전예방(외함접지, 접지봉 매립, 피복손상, 충전부 절연조치 등) 조치 여부', '화재예방(불티비산방지포, 소화기, 주변 가연성 물질 차단 등) 조치 여부' ]}, { category: '감전', subcategory: '이동식 투광등', count: 2, items: [ '누전차단(외함접지, 손잡이 절연조치, 거치대 활용 등) 조치 여부', '감전예방(전등 보호갓, 투광등 보호덮개) 실시여부' ]}, { category: '감전', subcategory: '양수기', count: 2, items: [ '접지상태(3P전선, 접지선 연결, 피복손상여부, 접지극 손상) 이상여부', '회전체(엔진양수기) 접근방지조치 실시여부' ]}, { category: '감전', subcategory: '기타', count: 2, items: [ '유해위험기계기구 점검필증 부착여부', '기타 유해위험기계기구 감전(접지, 누전차단기 등) 예방조치 실시여부' ]}, { category: '낙하 및 전도', subcategory: '방호선반', count: 2, items: [ '방호선반(설치자재, 안전표지판 등)설치상태 이상여부', '방호선반 설치 위치선정(건물 주출입구, 통행 용이 장소 등) 적정여부' ]}, { category: '낙하 및 전도', subcategory: '낙하물 방지망', count: 2, items: [ '낙하물방지망 설치상태(매10m마다, 내민길이, 자재선정 등) 적정여부', '낙하물방지망 관리(폐기물, 폐자재, 손상 등) 적정여부' ]}, { category: '낙하 및 전도', subcategory: '가설통로', count: 4, items: [ '전도 예방조치(정리정돈, 미끄럼방지조치 등) 실시 여부', '통로 조도(75Lux 이상) 확보 여부', '통로 발판재의 적정 사용여부', '1m이상의 가설계단 안전난간 설치여부' ]}, { category: '낙하 및 전도', subcategory: '터널작업', count: 2, items: [ '암석의 부석정리 및 상부 천공시 하부 근로자 출입금지 조치의 적정 여부', '버럭 운반차량 적재기준 설정 및 운반시 덮개 설치 적정 여부' ]}, { category: '낙하 및 전도', subcategory: '기타', count: 3, items: [ '낙하위험장소 하부 출입통제(접근금지시설, 신호수, 위험표지, 위험테이프 등)조치 여부', '상하 동시작업 실시 여부', '줄걸이 용구(와이어로프, 슬링밸트, 샤클, 하카클램프, 해지장치 등) 적정여부' ]}, { category: '기타', subcategory: '화재폭발', count: 5, items: [ '아세틸렌 및 LPG 역화방지기 부착 및 압력게이지/ 호스 파손여부', '압력용기(LPG, 산소통 등)전용 운반구 사용여부', '위험물질/인화물질 보관시설(안전표지, 시건장치 등) 설치 및 관리여부', '화기 사용 주변 가연성물질 격리 여부 및 소화시설 비치여부', '기타 화재폭발 위험 안전 조치사항' ]}, { category: '기타', subcategory: '밀폐작업', count: 4, items: [ '밀폐공간 환기시설 설치 및 운용 여부', '밀폐공간 및 유해가스 발생구간 작업전 유해가스농도 및 산소농도 측정여부', '작업장내 호흡용 보호구, 안전대, 안전로프 등 보호장구 비치여부', '관리책임자 선임 및 지휘감독, 감시인 배치 여부' ]}, { category: '기타', subcategory: '교통안전 시설', count: 2, items: [ '교통안전시설물(안내표지판, PE드럼, 윙카, 갈매기표시, 휀스 등) 적정 설치 여부', '기타 교통안전시설물 설치상태' ]}, { category: '기타', subcategory: 'MSDS', count: 1, items: [ 'MSDS 표지 현장게시 및 부착여부' ]}, { category: '기타', subcategory: '보건관리', count: 1, items: [ '현장내 휴게시설, 화장실 및 세면장 비치 및 청결상태' ]}, { category: '기타', subcategory: '개인보호구', count: 1, items: [ '작업상황에 맞는 개인보호구 지급 및 착용여부' ]}, { category: '기타', subcategory: '안전의식', count: 1, items: [ '작업상황에 맞는 안전표지판 및 안전현수막 설치여부' ]}, { category: '기타', subcategory: '음주', count: 1, items: [ '현장내 근로자 음주 및  음주흔적(소주병, 막걸리병 등)' ]}
+        ];
+        
+        let currentItemIndex = null;
+        const photoModal = document.getElementById('photo-modal');
+        const photoInput = document.getElementById('photo-input');
+        const previewImage = document.getElementById('preview-image');
+        const previewText = document.getElementById('preview-text');
+        const saveButton = document.getElementById('save-button');
+        let imageDataUrl = null;
+
+        window.addEventListener('load', () => {
+            const today = new Date();
+            document.getElementById('year').value = today.getFullYear();
+            document.getElementById('month').value = String(today.getMonth() + 1).padStart(2, '0');
+            document.getElementById('day').value = String(today.getDate()).padStart(2, '0');
+            generateTable();
+            loadAllPhotos();
+        });
+
+        const scoreIdKeys = { '0.5': 's0_5', '0.3': 's0_3', '0.0': 's0_0', '-0.1': 'm0_1', '-0.3': 'm0_3' };
+        
+        function generateTable() {
+            const tbody = document.getElementById('checklist-body');
+            const tfoot = document.getElementById('table-foot');
+            let htmlBody = '';
+            let itemIndex = 0;
+            const groupedData = checklistData.reduce((acc, item) => {
+                if (!acc[item.category]) { acc[item.category] = []; }
+                acc[item.category].push(item);
+                return acc;
+            }, {});
+            for (const category in groupedData) {
+                const subcategories = groupedData[category];
+                const categoryRowCount = subcategories.reduce((sum, item) => sum + item.count, 0);
+                let isFirstSubcategory = true;
+                subcategories.forEach(subcategoryData => {
+                    for (let i = 0; i < subcategoryData.count; i++) {
+                        htmlBody += `<tr class="align-middle text-center item-row" data-category="${category}" data-item-index="${itemIndex}">`;
+                        if (isFirstSubcategory && i === 0) {
+                            htmlBody += `<td rowspan="${categoryRowCount}" class="border border-gray-300 p-2 font-bold">${category}</td>`;
+                        }
+                        if (i === 0) {
+                            htmlBody += `<td rowspan="${subcategoryData.count}" class="border border-gray-300 p-2">${subcategoryData.subcategory}</td>`;
+                        }
+                        htmlBody += `<td class="border border-gray-300 p-2">${i+1}</td>`;
+                        htmlBody += `<td class="border border-gray-300"><input type="number" min="0" class="w-full p-1 text-center border-0 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"></td>`;
+                        htmlBody += `<td class="!text-left border border-gray-300 p-2">${subcategoryData.items[i]}</td>`;
+                        const scores = [0.5, 0.3, 0.0, -0.1, -0.3];
+                        scores.forEach(score => {
+                            htmlBody += `<td class="border border-gray-300 p-1"><input type="radio" name="rating-${itemIndex}" data-score="${score}" class="form-radio h-4 w-4 text-blue-600 cursor-pointer mx-auto"></td>`;
+                        });
+                        htmlBody += `<td class="border border-gray-300"><textarea rows="2" class="w-full p-1 border-0 rounded-md focus:ring-2 focus:ring-blue-500 outline-none resize-y"></textarea></td>`;
+                        htmlBody += `<td class="border border-gray-300 p-2 align-top">
+                            <button onclick="openPhotoModal(${itemIndex})" class="bg-gray-200 text-gray-700 text-xs py-1 px-2 rounded hover:bg-gray-300 no-print">사진 추가</button>
+                            <div id="photo-container-${itemIndex}" class="mt-2"></div>
+                        </td>`;
+                        htmlBody += `</tr>`;
+                        itemIndex++;
+                    }
+                    isFirstSubcategory = false;
+                });
+                htmlBody += `<tr class="bg-gray-200 font-bold text-center subtotal-row" data-category-summary="${category}">
+                    <td colspan="3" class="border border-gray-300 p-2">소계</td>
+                    <td id="subtotal-count-${category}" class="border border-gray-300 p-2">0</td>
+                    <td class="border border-gray-300 p-2"></td>
+                    ${Object.keys(scoreIdKeys).map(key => `<td id="subtotal-rating-${scoreIdKeys[key]}-${category}" class="border border-gray-300 p-2">0</td>`).join('')}
+                    <td id="subtotal-score-${category}" class="border border-gray-300 p-2 text-blue-700">0.00</td>
+                    <td class="border border-gray-300 p-2"></td>
+                </tr>`;
+            }
+            tbody.innerHTML = htmlBody;
+            let htmlFoot = `<tr class="bg-gray-800 text-white font-bold text-center text-base">
+                <td colspan="3" class="border border-gray-400 p-3">총 합계</td>
+                <td id="grandtotal-count" class="border border-gray-400 p-3">0</td>
+                <td class="border border-gray-400 p-3"></td>
+                ${Object.keys(scoreIdKeys).map(key => `<td id="grandtotal-rating-${scoreIdKeys[key]}" class="border border-gray-400 p-3">0</td>`).join('')}
+                <td id="grandtotal-score" class="border border-gray-400 p-3 text-lg">0.00</td>
+                <td class="border border-gray-400 p-3"></td>
+            </tr>`;
+            tfoot.innerHTML = htmlFoot;
+        }
+        
+        function openPhotoModal(index) {
+            currentItemIndex = index;
+            const overlay = document.getElementById('photo-modal');
+            const container = overlay.querySelector('.modal-container');
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                overlay.classList.remove('opacity-0');
+                container.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closePhotoModal() {
+            const overlay = document.getElementById('photo-modal');
+            const container = overlay.querySelector('.modal-container');
+            overlay.classList.add('opacity-0');
+            container.classList.add('scale-95');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                resetModalState();
+            }, 300);
+        }
+
+        function resetModalState() {
+            imageDataUrl = null;
+            photoInput.value = '';
+            previewImage.src = '';
+            previewImage.classList.add('hidden');
+            previewText.classList.remove('hidden');
+            saveButton.disabled = true;
+            saveButton.classList.add('bg-gray-400', 'cursor-not-allowed');
+            saveButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+        }
+        
+        photoInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    const MAX_WIDTH = 800;
+                    const MAX_HEIGHT = 800;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    imageDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+                    previewImage.src = imageDataUrl;
+                    previewImage.classList.remove('hidden');
+                    previewText.classList.add('hidden');
+                    saveButton.disabled = false;
+                    saveButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                    saveButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function savePhoto() {
+            if (imageDataUrl && currentItemIndex !== null) {
+                try {
+                    // Save photo data
+                    localStorage.setItem('photo_' + currentItemIndex, imageDataUrl);
+
+                    // Find corresponding checklist item info
+                    const row = document.querySelector(`tr[data-item-index="${currentItemIndex}"]`);
+                    const category = row.dataset.category;
+                    const subcategory = row.querySelector('td:nth-of-type(2)').textContent;
+                    const itemNumber = row.querySelector('td:nth-of-type(3)').textContent;
+                    const itemText = row.querySelector('td:nth-of-type(5)').textContent;
+
+                    const photoInfo = {
+                        category,
+                        subcategory,
+                        itemNumber,
+                        itemText
+                    };
+                    localStorage.setItem('photo_info_' + currentItemIndex, JSON.stringify(photoInfo));
+
+                    loadSinglePhoto(currentItemIndex);
+                    closePhotoModal();
+                } catch (e) {
+                    alert('사진을 저장하는 데 실패했습니다. 용량이 너무 클 수 있습니다.');
+                }
+            } else {
+                alert('저장할 사진이 없습니다.');
+            }
+        }
+
+        function deleteSinglePhoto(index) {
+            localStorage.removeItem('photo_' + index);
+            localStorage.removeItem('photo_info_' + index);
+            localStorage.removeItem('photo_comment_' + index);
+            loadSinglePhoto(index); // Re-render the container (it will be empty)
+        }
+        
+        function loadSinglePhoto(index) {
+            const photoData = localStorage.getItem('photo_' + index);
+            const container = document.getElementById('photo-container-' + index);
+            if (container) {
+                container.innerHTML = ''; // 기존 내용 삭제
+                if (photoData) {
+                    const thumbContainer = document.createElement('div');
+                    thumbContainer.className = 'photo-thumbnail-container';
+
+                    const img = document.createElement('img');
+                    img.src = photoData;
+                    img.className = 'photo-thumbnail';
+                    img.onclick = () => {
+                        const image = new Image();
+                        image.src = photoData;
+                        const w = window.open("");
+                        w.document.write(image.outerHTML);
+                    };
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.innerHTML = '&times;';
+                    deleteBtn.className = 'delete-photo-btn no-print';
+                    deleteBtn.onclick = (e) => {
+                        e.stopPropagation(); // Prevent image click event
+                        deleteSinglePhoto(index);
+                    };
+
+                    thumbContainer.appendChild(img);
+                    thumbContainer.appendChild(deleteBtn);
+                    container.appendChild(thumbContainer);
+                }
+            }
+        }
+
+        function loadAllPhotos() {
+            const totalItems = checklistData.reduce((acc, val) => acc + val.count, 0);
+            for (let i = 0; i < totalItems; i++) {
+                loadSinglePhoto(i);
+            }
+        }
+
+        function resetAllPhotos() {
+            if (confirm('정말로 모든 사진을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                const totalItems = checklistData.reduce((acc, val) => acc + val.count, 0);
+                for (let i = 0; i < totalItems; i++) {
+                    localStorage.removeItem('photo_' + i);
+                    localStorage.removeItem('photo_info_' + i);
+                    localStorage.removeItem('photo_comment_' + i);
+                }
+                loadAllPhotos(); // Refresh UI
+            }
+        }
+
+        function calculateScore() {
+            const categories = [...new Set(checklistData.map(item => item.category))];
+            const scoreKeys = ['0.5', '0.3', '0.0', '-0.1', '-0.3'];
+            let grandTotalScore = 0;
+            let grandTotalIssueCount = 0;
+            const grandTotalRatingCounts = { '0.5': 0, '0.3': 0, '0.0': 0, '-0.1': 0, '-0.3': 0 };
+
+            categories.forEach(category => {
+                let subtotalScore = 0;
+                let subtotalIssueCount = 0;
+                const subtotalRatingCounts = { '0.5': 0, '0.3': 0, '0.0': 0, '-0.1': 0, '-0.3': 0 };
+                const itemRows = document.querySelectorAll(`#checklist-body tr.item-row[data-category="${category}"]`);
+                
+                itemRows.forEach(row => {
+                    const issueInput = row.querySelector('input[type="number"]');
+                    if (issueInput && issueInput.value) {
+                        subtotalIssueCount += parseInt(issueInput.value, 10) || 0;
+                    }
+                    const checkedRadio = row.querySelector('input[type="radio"]:checked');
+                    if (checkedRadio) {
+                        const scoreValue = parseFloat(checkedRadio.dataset.score);
+                        const scoreKey = checkedRadio.dataset.score;
+                        subtotalScore += scoreValue;
+                        if(subtotalRatingCounts.hasOwnProperty(scoreKey)) subtotalRatingCounts[scoreKey]++;
+                    }
+                });
+
+                document.getElementById(`subtotal-count-${category}`).textContent = subtotalIssueCount;
+                document.getElementById(`subtotal-score-${category}`).textContent = subtotalScore.toFixed(2);
+                scoreKeys.forEach(key => {
+                    document.getElementById(`subtotal-rating-${scoreIdKeys[key]}-${category}`).textContent = subtotalRatingCounts[key];
+                });
+
+                grandTotalIssueCount += subtotalIssueCount;
+                grandTotalScore += subtotalScore;
+                scoreKeys.forEach(key => { grandTotalRatingCounts[key] += subtotalRatingCounts[key]; });
+            });
+
+            document.getElementById('grandtotal-count').textContent = grandTotalIssueCount;
+            document.getElementById('grandtotal-score').textContent = grandTotalScore.toFixed(2);
+            scoreKeys.forEach(key => {
+                document.getElementById(`grandtotal-rating-${scoreIdKeys[key]}`).textContent = grandTotalRatingCounts[key];
+            });
+
+            const summaryDetails = document.getElementById('summary-details');
+            summaryDetails.innerHTML = '';
+            categories.forEach(category => {
+                const score = parseFloat(document.getElementById(`subtotal-score-${category}`).textContent);
+                const scoreElement = document.createElement('div');
+                scoreElement.className = 'p-3 bg-white rounded-md shadow-sm flex justify-between items-center';
+                const scoreColor = score > 0 ? 'text-blue-600' : (score < 0 ? 'text-red-600' : 'text-gray-800');
+                scoreElement.innerHTML = `<span class="font-medium text-gray-700">${category}:</span> <span class="font-bold text-lg ${scoreColor}">${score.toFixed(2)}</span>`;
+                summaryDetails.appendChild(scoreElement);
+            });
+            
+            const totalScoreEl = document.getElementById('total-score');
+            totalScoreEl.textContent = grandTotalScore.toFixed(2);
+            const totalScoreColor = grandTotalScore > 0 ? 'text-blue-600' : (grandTotalScore < 0 ? 'text-red-600' : 'text-gray-800');
+            totalScoreEl.className = `font-bold text-xl ${totalScoreColor}`;
+        }
+
+        function toggleSummary() {
+            const details = document.getElementById('summary-details');
+            const icon = document.getElementById('summary-toggle-icon');
+            const isHidden = details.classList.toggle('hidden');
+            icon.textContent = isHidden ? '▼' : '▲';
+        }
+
+        // Photo Report Modal Functions
+        function openPhotoReportModal() {
+            const reportContainer = document.getElementById('report-container');
+            reportContainer.innerHTML = ''; // Clear previous content
+            let photoFound = false;
+            const totalItems = checklistData.reduce((acc, val) => acc + val.count, 0);
+
+            for (let i = 0; i < totalItems; i++) {
+                const photoData = localStorage.getItem('photo_' + i);
+                const photoInfoData = localStorage.getItem('photo_info_' + i);
+
+                if (photoData && photoInfoData) {
+                    photoFound = true;
+                    const photoInfo = JSON.parse(photoInfoData);
+                    const savedComment = localStorage.getItem('photo_comment_' + i) || '';
+
+                    const entry = document.createElement('div');
+                    entry.className = 'bg-white rounded-xl shadow-lg overflow-hidden photo-entry';
+                    
+                    entry.innerHTML = `
+                        <div class="p-4 bg-gray-50 border-b photo-entry-header">
+                            <h3 class="font-bold text-gray-800">${photoInfo.category}</h3>
+                        </div>
+                        <div class="p-4 photo-entry-body">
+                            <div class="report-photo-container mb-4">
+                               <img src="${photoData}" class="report-photo" alt="점검 사진">
+                            </div>
+                            <textarea
+                                data-index="${i}"
+                                class="w-full h-24 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50"
+                                placeholder="사진에 대한 설명을 입력하세요..."
+                                oninput="saveComment(this)"
+                            >${savedComment}</textarea>
+                        </div>
+                    `;
+                    reportContainer.appendChild(entry);
+                }
+            }
+
+            if (!photoFound) {
+                reportContainer.innerHTML = `
+                    <div class="col-span-1 md:col-span-2 text-center bg-white p-12 rounded-xl shadow-lg">
+                        <p class="text-gray-500">점검표에 추가된 사진이 없습니다.</p>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('photo-report-modal').classList.remove('hidden');
+        }
+
+        function closePhotoReportModal() {
+            document.getElementById('photo-report-modal').classList.add('hidden');
+        }
+
+        function saveComment(textarea) {
+            const index = textarea.dataset.index;
+            localStorage.setItem('photo_comment_' + index, textarea.value);
+        }
+
+        function printPhotoReport() {
+            document.body.classList.add('printing-report');
+            window.print();
+            document.body.classList.remove('printing-report');
+        }
+    </script>
+</body>
+</html>
+

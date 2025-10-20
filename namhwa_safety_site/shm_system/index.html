@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>현장 안전보건경영시스템 점검 결과표</title>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; margin: 20px; background-color: #f7f7f7; color: #333; }
+        .container { max-width: 1000px; margin: auto; background-color: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1, h2 { text-align: center; color: #1a237e; }
+        h1 input {
+            font-size: inherit; /* Match h1 font size */
+            font-weight: bold;
+            color: #1a237e;
+            border: none;
+            border-bottom: 2px solid #ddd;
+            background-color: transparent;
+            width: 100px; /* Adjust width as needed */
+            text-align: center;
+            font-family: inherit;
+        }
+        h1 input:focus {
+            outline: none;
+            border-bottom-color: #3949ab;
+        }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; table-layout: fixed; }
+        th, td { border: 1px solid #ddd; padding: 12px; vertical-align: middle; text-align: center; }
+        th { background-color: #e8eaf6; font-weight: bold; }
+        .text-left { text-align: left; }
+        tfoot th, tfoot td { background-color: #f5f5f5; font-weight: bold; }
+        .input-text, textarea, select { width: 98%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; transition: border-color 0.3s; }
+        .input-text:focus, textarea:focus, select:focus { border-color: #3949ab; outline: none; }
+        textarea { resize: vertical; min-height: 50px; }
+        .input-number { width: 90%; text-align: center; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .progress-input { width: 80px; display: inline-block; vertical-align: middle; }
+        .header-table, .main-table { margin-bottom: 30px; }
+        .header-table td { background-color: #f9f9f9; }
+        .signature-section { margin-top: 40px; text-align: right; }
+        .signature-section span { margin-left: 50px; }
+        .section-title { font-size: 1.3em; font-weight: bold; margin-top: 40px; margin-bottom: 15px; border-bottom: 3px solid #3949ab; padding-bottom: 8px; color: #1a237e; }
+        .score-input { background-color: #eef; font-weight: bold; }
+        .results-table { margin-top: 30px; } /* Add some space above the results table */
+        .results-table th, .results-table tfoot th { background-color: #c5cae9; }
+        .results-table td, .results-table tfoot th { font-size: 1em; }
+        .results-table .input-number { width: 80px; }
+        #final-grade-display.excellent { color: #2e7d32; }
+        #final-grade-display.good { color: #f57c00; }
+        #final-grade-display.poor { color: #d32f2f; }
+        
+        .performance-table .eval-target {
+            width: 60px; /* 너비를 줄여 2자 단위 줄바꿈 유도 */
+            word-break: break-all; /* 단어 중간에서도 줄바꿈 허용 */
+        }
+        .performance-table .criteria { width: auto; text-align: left;} /* 개선요구사항이 공간을 차지하도록 auto로 설정 */
+        .performance-table .points { width: 70px; }
+        .performance-table .eval-select-cell { width: 100px; }
+        .performance-table .score-cell { width: 100px; }
+
+        .side-by-side-section { display: flex; gap: 20px; align-items: flex-start; }
+        .side-by-side-section > div { flex: 1; }
+        .major-process-textarea { width: 95%; height: 180px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; font-family: 'Malgun Gothic', sans-serif;}
+        
+        /* Modal and Link Styles */
+        .criteria-link {
+            cursor: pointer;
+            color: #3f51b5;
+            text-decoration: none;
+            transition: text-decoration 0.2s;
+        }
+        .criteria-link:hover { text-decoration: underline; }
+
+        #regulation-modal { 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background-color: rgba(0,0,0,0.5);
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+        }
+        #regulation-modal.visible { display: flex; }
+        #close-modal-btn { font-size: 2rem; line-height: 1; border: none; background: none; cursor: pointer; }
+        #modal-content { max-height: 60vh; overflow-y: auto; }
+
+        /* Print styles */
+        @media print {
+            @page { size: landscape; margin: 1cm; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background-color: #fff; font-size: 9pt; }
+            .container { box-shadow: none; border-radius: 0; padding: 0; margin: 0; width: 100%; max-width: 100%; }
+            thead { display: table-row-group; }
+            tfoot { display: table-row-group; }
+            th, .results-table th { background-color: #e8eaf6 !important; }
+            .header-table td { background-color: #f9f9f9 !important; }
+            .score-input { background-color: #eef !important; }
+            tfoot th, tfoot td { background-color: #f5f5f5 !important; }
+            input, textarea, select { border: 1px solid #ccc !important; background-color: #fff !important; padding: 4px; }
+            .input-text, textarea { width: 98%; }
+            .signature-section input { border: none; border-bottom: 1px solid #333; }
+            table, tr, td, .section-title, .side-by-side-section { page-break-inside: avoid; }
+            .section-title { page-break-before: auto; page-break-after: avoid; }
+            .criteria-link { color: #000; text-decoration: none; }
+            #regulation-modal, #add-supervisor-btn { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>(<input type="text" value="1분기">) 현장 안전보건경영시스템 점검 결과표</h1>
+    
+    <table class="header-table">
+        <colgroup>
+            <col style="width: 15%;">
+            <col style="width: 35%;">
+            <col style="width: 15%;">
+            <col style="width: 35%;">
+        </colgroup>
+        <tr>
+            <th>현장명</th>
+            <td><input type="text" class="input-text" value="오동지구 자연재해위험개선지구 정비사업"></td>
+            <th>점검일</th>
+            <td><input type="date" class="input-text" value="2025-10-01"></td>
+        </tr>
+        <tr>
+            <th>공정율</th>
+            <td><input type="number" step="0.1" class="input-number progress-input" value="0.0"> %</td>
+            <th>작성부서</th>
+            <td><input type="text" class="input-text" value="안전보건팀"></td>
+        </tr>
+    </table>
+
+    <div class="side-by-side-section">
+        <div>
+            <div class="section-title">평가 대상자</div>
+            <table class="header-table">
+                <tr>
+                    <th>현장소장</th>
+                    <td><input type="text" class="input-text" placeholder="현장소장 성명을 입력하세요"></td>
+                </tr>
+                <tr>
+                    <th>안전관리자</th>
+                    <td><input type="text" class="input-text" placeholder="안전관리자 성명을 입력하세요"></td>
+                </tr>
+                <tr>
+                    <th>관리감독자 <button type="button" id="add-supervisor-btn" style="margin-left: 10px; padding: 5px 10px; cursor: pointer;">+</button></th>
+                    <td id="supervisor-list">
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div>
+            <div class="section-title">주요 공정</div>
+            <textarea class="major-process-textarea" placeholder="현장의 주요 공정을 입력하세요."></textarea>
+        </div>
+    </div>
+
+    <div class="section-title">종합 결과</div>
+    <table class="results-table">
+        <thead>
+            <tr>
+                <th style="width: 5%;">구분</th>
+                <th>항목</th>
+                <th style="width: 10%;">배점</th>
+                <th style="width: 15%;">평점 / 건수</th>
+                <th style="width: 15%;">결과</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td rowspan="9" style="writing-mode: vertical-rl; text-orientation: mixed;">안전보건경영시스템</td>
+                <td class="text-left">1. 안전보건경영 방침 및 목표관리 절차</td>
+                <td>5</td>
+                <td><input type="number" id="comp-score-1" class="input-number score-input" readonly></td>
+                <td rowspan="7" id="system-score-sum" style="font-weight: bold; font-size: 1.2em;">0</td>
+            </tr>
+            <tr>
+                <td class="text-left">2. 안전보건관리책임자 등 업무수행 평가 절차</td>
+                <td>30</td>
+                <td><input type="number" id="comp-score-2" class="input-number score-input" readonly></td>
+            </tr>
+            <tr>
+                <td class="text-left">3. 종사자 의견 청취 절차</td>
+                <td>10</td>
+                <td><input type="number" id="comp-score-3" class="input-number score-input" readonly></td>
+            </tr>
+            <tr>
+                <td class="text-left">4. 비상사태 대비·대응 절차</td>
+                <td>20</td>
+                <td><input type="number" id="comp-score-4" class="input-number score-input" readonly></td>
+            </tr>
+            <tr>
+                <td class="text-left">5. 협력사 수준관리 절차</td>
+                <td>10</td>
+                <td><input type="number" id="comp-score-5" class="input-number score-input" readonly></td>
+            </tr>
+            <tr>
+                <td class="text-left">6. 안전보건관계 법령 등 이행관리 절차</td>
+                <td>20</td>
+                <td><input type="number" id="comp-score-6" class="input-number score-input" readonly></td>
+            </tr>
+            <tr>
+                <td class="text-left">7. 시스템 평가 및 개선 절차</td>
+                <td>5</td>
+                <td><input type="number" id="comp-score-7" class="input-number score-input" readonly></td>
+            </tr>
+            <tr>
+                <td class="text-left">중대재해 발생 여부 (1건당 -30점)</td>
+                <td>-30</td>
+                <td><input type="number" id="major-accident-count" class="input-number" value="0" min="0"></td>
+                <td id="major-accident-deduction" style="color: red; font-weight: bold;">0</td>
+            </tr>
+            <tr>
+                <td class="text-left">산재 발생 여부 (1건당 -5점)</td>
+                <td>-5</td>
+                <td><input type="number" id="work-accident-count" class="input-number" value="0" min="0"></td>
+                <td id="work-accident-deduction" style="color: red; font-weight: bold;">0</td>
+            </tr>
+            <tr>
+                <td rowspan="1">현장<br>안전관리</td>
+                <td class="text-left">현장 안전관리 평가 점수</td>
+                <td>40</td>
+                <td><input type="number" id="field-score-input" class="input-number" value="40" step="0.1" max="40" min="0"></td>
+                <td id="field-score-display" style="font-weight: bold; font-size: 1.2em;">40.0</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="4">환산점수 (안전보건경영시스템: 60점 만점)</th>
+                <th id="system-converted-score" style="font-size: 1.1em;">0.0</th>
+            </tr>
+            <tr>
+                <th colspan="4">환산점수 (현장 안전관리: 40점 만점)</th>
+                <th id="field-converted-score" style="font-size: 1.1em;">40.0</th>
+            </tr>
+            <tr>
+                <th colspan="4">총점</th>
+                <th id="final-total-score" style="font-size: 1.2em;">0.0</th>
+            </tr>
+            <tr>
+                <th colspan="4">평가등급</th>
+                <th id="final-grade-display" style="font-size: 1.2em; font-weight: bold;">-</th>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div id="evaluation-sections">
+        <!-- Sections 1-7 will be generated here -->
+    </div>
+
+
+    <div class="signature-section">
+        <span>수검 참여자: <input type="text" style="width: 100px;"> (서명)</span>
+        <span>수검 현장 대표: <input type="text" style="width: 100px;"> (서명)</span>
+        <span>점검자: <input type="text" style="width: 100px;"> (서명)</span>
+    </div>
+
+</div>
+
+<!-- Regulation Modal -->
+<div id="regulation-modal">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-2xl">
+        <div class="flex justify-between items-center border-b pb-3 mb-4">
+            <h2 class="text-xl font-bold text-gray-900">관련 법규 및 기준</h2>
+            <button id="close-modal-btn">&times;</button>
+        </div>
+        <div id="modal-content">
+            <!-- Regulation text will be injected here -->
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        
+        const sectionsData = [
+            { title: "1. 안전보건경영 방침 및 목표관리 절차 (배점: 5)", rows: [ { criteria: "방침 및 목표의 적정 수립 여부", points: 1.0, options: [{v: 1.0, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "<strong>산업안전보건법 제5조 (사업주의 의무)</strong><br>① 사업주는 이 법과 이 법에 따른 명령으로 정하는 산업재해 예방을 위한 기준을 지키고...안전 및 보건을 확보할 의무가 있다." }, { criteria: "법규 및 기타 요구사항의 반영 여부", points: 0.5, options: [{v: 0.5, t: '우수'}, {v: 0.3, t: '보통'}, {v: 0.1, t: '미흡'}], regulation: "<strong>산업안전보건기준에 관한 규칙 제33조 (안전보건관리규정의 작성)</strong><br>사업주는 법 제25조제1항에 따라 안전보건관리규정을 작성할 때에는 법규 및 기타 요구사항을 반영해야 한다." }, { criteria: "방침/목표 수립 시 근로자 참여 여부", points: 0.5, options: [{v: 0.5, t: '우수'}, {v: 0.3, t: '보통'}, {v: 0.1, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조 (근로자의 참여)</strong><br>사업주는 산업재해 예방에 관한 중요 사항에 대하여 근로자의 의견을 들어야 한다." }, { criteria: "안전보건 목표의 구체성 및 측정 가능성", points: 0.5, options: [{v: 0.5, t: '우수'}, {v: 0.3, t: '보통'}, {v: 0.1, t: '미흡'}], regulation: "안전보건경영시스템(KOSHA-MS) 인증 기준에 따라 목표는 구체적이고 측정 가능해야 합니다." }, { criteria: "목표 달성을 위한 자원(예산, 인력)의 적정성", points: 0.5, options: [{v: 0.5, t: '우수'}, {v: 0.3, t: '보통'}, {v: 0.1, t: '미흡'}], regulation: "<strong>산업안전보건법 제15조 (안전보건관리책임자)</strong><br>안전보건관리책임자는 안전보건관리규정의 시행 및 그 업무 수행에 필요한 예산을 편성하고 집행하여야 한다." }, { criteria: "방침/목표에 대한 경영자 검토 및 승인", points: 0.5, options: [{v: 0.5, t: '우수'}, {v: 0.3, t: '보통'}, {v: 0.1, t: '미흡'}], regulation: "안전보건경영시스템(KOSHA-MS)은 최고경영자의 검토 및 승인을 요구합니다." }, { criteria: "안전보건계획 전구성원 공유 및 게시", points: 0.5, options: [{v: 0.5, t: '우수'}, {v: 0.3, t: '보통'}, {v: 0.1, t: '미흡'}], regulation: "<strong>산업안전보건법 시행규칙 제26조 (안전보건관리규정의 게시 등)</strong><br>사업주는 안전보건관리규정을 근로자가 쉽게 볼 수 있는 장소에 게시하거나 갖추어 두어야 한다." }, { criteria: "목표 대비 실적의 정기적 검토 및 관리", points: 0.5, options: [{v: 0.5, t: '우수'}, {v: 0.3, t: '보통'}, {v: 0.1, t: '미흡'}], regulation: "성과측정은 안전보건경영시스템의 핵심 요소입니다." }, { criteria: "목표 미달성시 개선대책 수립 여부", points: 0.5, options: [{v: 0.5, t: '우수'}, {v: 0.3, t: '보통'}, {v: 0.1, t: '미흡'}], regulation: "지속적 개선 원칙에 따라 미달성 목표에 대한 시정조치가 필요합니다." } ] },
+            { title: "2. 안전보건관리책임자 등 업무수행 평가 절차 (배점: 30)", isPerformance: true, rows: [ { target: "안전보건총괄책임자", criteria: "위험성평가 체계 구축 및 실행 총괄", points: 2.5, options: [{v: 2.5, t: '우수'}, {v: 1.5, t: '보통'}, {v: 0.7, t: '미흡'}], regulation: "<strong>산업안전보건법 제62조 (안전보건총괄책임자)</strong>", rowspan: 2 }, { criteria: "도급·용역·위탁 시 산재예방 조치", points: 2.5, options: [{v: 2.5, t: '우수'}, {v: 1.5, t: '보통'}, {v: 0.7, t: '미흡'}], regulation: "<strong>산업안전보건법 제63조 (도급인의 안전조치 및 보건조치)</strong>" }, { target: "현장소장", criteria: "산재 예방계획 수립 및 이행 여부", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제15조 (안전보건관리책임자)</strong><br>안전보건관리책임자는 산업재해 예방계획의 수립에 관한 사항을 총괄·관리하여야 한다.", rowspan: 4 }, { criteria: "위험성평가 실시 여부", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제36조 (위험성평가의 실시)</strong>" }, { criteria: "안전보건 협의체 회의 주관 및 결과 관리", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제75조 (안전 및 보건에 관한 협의체 등의 구성·운영)</strong>" }, { criteria: "도급시 산업재해 예방조치(협의체 운영 등) 여부", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제64조 (도급에 따른 산업재해 예방조치)</strong>" }, { target: "관리감독자", criteria: "작업복·보호구 착용 교육지도 여부", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제16조 (관리감독자)</strong><br>관리감독자는 소속된 근로자의 작업복·보호구 및 방호장치의 점검과 그 착용·사용에 관한 교육·지도를 하여야 한다.", rowspan: 4 }, { criteria: "위험성평가 참여 및 개선조치 실행확인", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 시행규칙 제37조 (위험성평가 실시내용 및 결과의 기록·보존)</strong><br>관리감독자는 위험성평가에 참여하여야 한다." }, { criteria: "작업 시작 전 안전점검 실시 여부", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건기준에 관한 규칙 제35조 (작업시작 전 점검)</strong>" }, { criteria: "소속 근로자 의견 청취 및 개선 요구", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "관리감독자는 근로자와의 소통을 통해 현장의 유해·위험요인을 파악하고 개선해야 합니다." }, { target: "안전,보건<br>관리자", criteria: "위험성평가에 관한 보좌 및 지도, 조언", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 시행령 제18조 (안전관리자의 직무)</strong>", rowspan: 4 }, { criteria: "사업장 순회점검에 따른 지도 및 조치 건의", points: 1, options: [{v: 1, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "<strong>산업안전보건법 시행령 제18조 (안전관리자의 직무)</strong><br>안전관리자는 사업장을 순회점검·지도 및 조치 건의를 하여야 한다." }, { criteria: "작업환경측정 및 개선 지도·조언", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 시행령 제22조 (보건관리자의 직무)</strong>" }, { criteria: "건강진단 실시 준비 및 결과에 따른 사후관리 지도", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 시행령 제22조 (보건관리자의 직무)</strong>" }, { target: "근로자대표", criteria: "위험성평가 참여", points: 1, options: [{v: 1, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조 (근로자의 참여)</strong>", rowspan: 2 }, { criteria: "산업안전보건위원회 참여", points: 1, options: [{v: 1, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조 (산업안전보건위원회)</strong>" } ] },
+            { title: "3. 종사자 의견 청취 절차 (배점: 10)", rows: [ { criteria: "종사자 의견청취 절차 계획 수립 및 이행 여부", points: 3, options: [{v: 3, t: '우수'}, {v: 2, t: '보통'}, {v: 1, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조 (근로자의 참여)</strong>" }, { criteria: "청취 의견에 대한 개선안 이행 및 공유 여부", points: 3, options: [{v: 3, t: '우수'}, {v: 2, t: '보통'}, {v: 1, t: '미흡'}], regulation: "청취된 의견은 검토 후 조치하고 그 결과를 근로자에게 알려주어야 합니다." }, { criteria: "아차사고 발굴 및 개선활동", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "아차사고(Near-miss)는 중대재해의 전조증상이므로 적극적인 발굴 및 개선이 중요합니다." }, { criteria: "안전보건 제안 제도 운영 및 포상", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "근로자의 적극적인 참여를 유도하기 위한 제안 및 포상 제도는 효과적인 안전관리 방법입니다." } ] },
+            { title: "4. 비상사태 대비·대응 절차 (배점: 20)", rows: [ { criteria: "비상 연락 체계의 구성 및 교육 실시 여부", points: 7, options: [{v: 7, t: '우수'}, {v: 5, t: '보통'}, {v: 2, t: '미흡'}], regulation: "<strong>산업안전보건기준에 관한 규칙 제26조 (비상 연락체계)</strong>" }, { criteria: "시나리오별 모의 훈련 실시 여부", points: 7, options: [{v: 7, t: '우수'}, {v: 5, t: '보통'}, {v: 2, t: '미흡'}], regulation: "<strong>산업안전보건기준에 관한 규칙 제27조 (비상훈련)</strong>" }, { criteria: "비상시 대응 계획 수립 및 작성 여부", points: 3, options: [{v: 3, t: '우수'}, {v: 2, t: '보통'}, {v: 1, t: '미흡'}], regulation: "화재, 폭발, 붕괴 등 비상사태에 대비한 구체적인 대응 계획이 수립되어야 합니다." }, { criteria: "비상대응 장비/자재 확보 및 관리 상태", points: 3, options: [{v: 3, t: '우수'}, {v: 2, t: '보통'}, {v: 1, t: '미흡'}], regulation: "소화기, 방독면, 구급용구 등 비상 대응 장비는 즉시 사용 가능하도록 관리되어야 합니다." } ] },
+            { title: "5. 협력사 수준관리 절차 (배점: 10)", rows: [ { criteria: "협력사 선정 시 안전보건 수준 평가 여부", points: 3, options: [{v: 3, t: '우수'}, {v: 2, t: '보통'}, {v: 1, t: '미흡'}], regulation: "도급인의 의무로서, 수급인의 안전보건 관리 능력을 평가하는 것이 중요합니다." }, { criteria: "안전보건에 관한 정보 제공 및 공유 여부", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제64조 (도급에 따른 산업재해 예방조치)</strong>" }, { criteria: "정기 협력사 안전보건 점검 및 평가 실시", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제64조 제1항 제2호</strong><br>수급인의 작업장 순회점검 등 안전 및 보건에 관한 점검을 하여야 한다." }, { criteria: "위험성평가 관련 교육 및 자료 제공 여부", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "도급인은 수급인에게 작업장의 유해·위험 정보를 제공해야 합니다." }, { criteria: "협력사 산업안전보건관리비 집행 내역 확인 여부", points: 1, options: [{v: 1, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "<strong>건설업 산업안전보건관리비 계상 및 사용기준</strong>" } ] },
+            { title: "6. 안전보건관계 법령 등 이행관리 절차 (배점: 20)", rows: [ { criteria: "안전보건관리책임자 등 지정 및 교육 이수 여부", points: 3, options: [{v: 3, t: '우수'}, {v: 2, t: '보통'}, {v: 1, t: '미흡'}], regulation: "<strong>산업안전보건법 제15조~제19조</strong> 및 <strong>제29조~제32조</strong>" }, { criteria: "보호구 지급 및 관리, 장비 반입 시 점검 등", points: 3, options: [{v: 3, t: '우수'}, {v: 2, t: '보통'}, {v: 1, t: '미흡'}], regulation: "<strong>산업안전보건법 제38조 (안전조치)</strong> 및 <strong>산업안전보건기준에 관한 규칙 제32조 (보호구의 지급 등)</strong>" }, { criteria: "유해위험작업 작업계획서 작성 및 이행 여부", points: 3, options: [{v: 3, t: '우수'}, {v: 2, t: '보통'}, {v: 1, t: '미흡'}], regulation: "<strong>산업안전보건기준에 관한 규칙 제38조 (사전조사 및 작업계획서의 작성 등)</strong>" }, { criteria: "위험성평가 실시 및 결과의 기록·보존", points: 4, options: [{v: 4, t: '우수'}, {v: 2.5, t: '보통'}, {v: 1, t: '미흡'}], regulation: "<strong>산업안전보건법 제36조 (위험성평가의 실시)</strong>" }, { criteria: "물질안전보건자료(MSDS) 게시 및 교육", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제110조~제116조</strong>" }, { criteria: "산업안전보건위원회 설치 및 운영", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조 (산업안전보건위원회)</strong>" }, { criteria: "안전보건교육 실시 및 기록 관리", points: 3, options: [{v: 3, t: '우수'}, {v: 2, t: '보통'}, {v: 1, t: '미흡'}], regulation: "<strong>산업안전보건법 제29조 (근로자에 대한 안전보건교육)</strong>" } ] },
+            { title: "7. 시스템 평가 및 개선 절차 (배점: 5)", rows: [ { criteria: "주/월간 업무보고 자료 제출 및 기한 준수 여부", points: 1, options: [{v: 1, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "내부 성과측정 및 보고체계는 시스템 운영의 기본입니다." }, { criteria: "안전보건팀 권고사항 회람 또는 교육 실시 여부", points: 1, options: [{v: 1, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "내부 심사 또는 점검 결과는 관련 부서 및 근로자에게 공유되어야 합니다." }, { criteria: "성과측정 결과 환류 및 개선방안 검토 여부", points: 1, options: [{v: 1, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "Plan-Do-Check-Act (PDCA) 사이클에 따른 지속적 개선 활동입니다." }, { criteria: "내부심사(자체감사) 계획 수립 및 실시", points: 1, options: [{v: 1, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "안전보건경영시스템의 적절성, 타당성, 효과성을 평가하기 위해 정기적인 내부심사가 필요합니다." }, { criteria: "경영자 검토 실시 및 결과 기록", points: 1, options: [{v: 1, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "최고경영자는 시스템 운영 결과를 검토하고 개선 방향을 제시해야 합니다." } ] }
+        ];
+
+        const sectionsContainer = document.getElementById('evaluation-sections');
+        sectionsData.forEach((section, sectionIndex) => {
+            const isPerformanceTable = section.isPerformance;
+            const tableHTML = `
+                <div class="section-title">${section.title}</div>
+                <table class="main-table ${isPerformanceTable ? 'performance-table' : ''}">
+                    <thead>
+                        <tr>
+                            ${isPerformanceTable ? '<th>평가 대상</th>' : ''}
+                            <th>평가 기준</th>
+                            <th style="width: 70px;">배점</th>
+                            <th style="width: 100px;">평가</th>
+                            <th style="width: 100px;">평점</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${section.rows.map((row, rowIndex) => `
+                            <tr>
+                                ${isPerformanceTable && row.target ? `<td class="eval-target" rowspan="${row.rowspan || 1}">${row.target}</td>` : ''}
+                                <td class="text-left criteria-link" data-regulation="${row.regulation || '관련 규정 정보가 없습니다.'}">${row.criteria}</td>
+                                <td>${row.points.toFixed(1)}</td>
+                                <td>
+                                    <select class="eval-select">
+                                        ${row.options.map(opt => `<option value="${opt.v}" ${opt.t === '보통' ? 'selected' : ''}>${opt.t}</option>`).join('')}
+                                    </select>
+                                </td>
+                                <td><input type="number" step="0.1" class="input-number score-input" readonly></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="${isPerformanceTable ? '4' : '3'}">항목 소계</th>
+                            <td class="section-subtotal">0</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            `;
+            sectionsContainer.innerHTML += tableHTML;
+        });
+
+        const addSupervisorBtn = document.getElementById('add-supervisor-btn');
+        const supervisorList = document.getElementById('supervisor-list');
+        const maxSupervisors = 10;
+        
+        const majorAccidentInput = document.getElementById('major-accident-count');
+        const workAccidentInput = document.getElementById('work-accident-count');
+        const fieldScoreInput = document.getElementById('field-score-input');
+        
+        const modal = document.getElementById('regulation-modal');
+        const modalContent = document.getElementById('modal-content');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+
+        function showModal(content) {
+            modalContent.innerHTML = content;
+            modal.classList.add('visible');
+        }
+
+        function hideModal() {
+            modal.classList.remove('visible');
+        }
+
+        document.body.addEventListener('click', function(event) {
+            if (event.target.classList.contains('criteria-link')) {
+                const regulationText = event.target.dataset.regulation;
+                if (regulationText) {
+                    showModal(regulationText);
+                }
+            }
+        });
+
+        closeModalBtn.addEventListener('click', hideModal);
+        modal.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                hideModal();
+            }
+        });
+
+        function updateComprehensiveResults() {
+            let systemBaseScore = 0;
+            for (let i = 1; i <= 7; i++) {
+                const scoreInput = document.getElementById(`comp-score-${i}`);
+                if (scoreInput) {
+                    systemBaseScore += parseFloat(scoreInput.value) || 0;
+                }
+            }
+            document.getElementById('system-score-sum').textContent = systemBaseScore.toFixed(1);
+
+            const majorAccidents = parseInt(majorAccidentInput.value) || 0;
+            const majorDeduction = majorAccidents * -30;
+            document.getElementById('major-accident-deduction').textContent = majorDeduction;
+
+            const workAccidents = parseInt(workAccidentInput.value) || 0;
+            const workDeduction = workAccidents * -5;
+            document.getElementById('work-accident-deduction').textContent = workDeduction;
+
+            const systemFinalScore = systemBaseScore + majorDeduction + workDeduction;
+            
+            let systemConvertedScore = (systemFinalScore / 100) * 60;
+            systemConvertedScore = Math.max(0, systemConvertedScore); // 점수가 음수가 되지 않도록
+            document.getElementById('system-converted-score').textContent = systemConvertedScore.toFixed(1);
+
+            const fieldScore = parseFloat(fieldScoreInput.value) || 0;
+            const clampedFieldScore = Math.min(40, Math.max(0, fieldScore));
+            if (fieldScore !== clampedFieldScore) {
+                fieldScoreInput.value = clampedFieldScore;
+            }
+            document.getElementById('field-score-display').textContent = clampedFieldScore.toFixed(1);
+            document.getElementById('field-converted-score').textContent = clampedFieldScore.toFixed(1);
+
+            const finalTotalScore = systemConvertedScore + clampedFieldScore;
+            document.getElementById('final-total-score').textContent = finalTotalScore.toFixed(1);
+
+            const finalGradeEl = document.getElementById('final-grade-display');
+            let grade = '';
+            let gradeClass = '';
+            if (finalTotalScore >= 90) { grade = '우수'; gradeClass = 'excellent'; }
+            else if (finalTotalScore >= 80) { grade = '보통'; gradeClass = 'good'; }
+            else { grade = '미흡'; gradeClass = 'poor'; }
+            finalGradeEl.textContent = grade;
+            finalGradeEl.className = gradeClass;
+        }
+
+        function updateAllScores() {
+            document.querySelectorAll('.main-table').forEach((table, index) => {
+                let sectionSubtotal = 0;
+                table.querySelectorAll('tbody .score-input').forEach(input => {
+                    sectionSubtotal += parseFloat(input.value) || 0;
+                });
+                const subtotalCell = table.querySelector('tfoot .section-subtotal');
+                if (subtotalCell) subtotalCell.textContent = sectionSubtotal.toFixed(1);
+                
+                const compScoreInput = document.getElementById(`comp-score-${index + 1}`);
+                if(compScoreInput) {
+                    compScoreInput.value = sectionSubtotal.toFixed(1);
+                }
+            });
+            updateComprehensiveResults();
+        }
+        
+        document.body.addEventListener('change', function(event) {
+            if (event.target.matches('.eval-select')) {
+                const row = event.target.closest('tr');
+                const scoreInput = row.querySelector('.score-input');
+                if (scoreInput) {
+                    scoreInput.value = event.target.value;
+                    updateAllScores();
+                }
+            }
+        });
+
+        majorAccidentInput.addEventListener('input', updateComprehensiveResults);
+        workAccidentInput.addEventListener('input', updateComprehensiveResults);
+        fieldScoreInput.addEventListener('input', updateComprehensiveResults);
+
+        function updateSupervisorButtonState() {
+            addSupervisorBtn.disabled = supervisorList.querySelectorAll('.supervisor-entry').length >= maxSupervisors;
+        }
+
+        addSupervisorBtn.addEventListener('click', () => {
+            if (supervisorList.querySelectorAll('.supervisor-entry').length < maxSupervisors) {
+                const entryDiv = document.createElement('div');
+                entryDiv.className = 'supervisor-entry';
+                entryDiv.style.cssText = 'display:flex; align-items:center; margin-bottom:5px;';
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'input-text';
+                input.placeholder = '관리감독자 성명을 입력하세요';
+                input.style.flexGrow = '1';
+
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.textContent = '-';
+                removeBtn.style.cssText = 'margin-left:10px; padding:5px 10px; cursor:pointer;';
+                removeBtn.addEventListener('click', () => { entryDiv.remove(); updateSupervisorButtonState(); });
+
+                entryDiv.appendChild(input);
+                entryDiv.appendChild(removeBtn);
+                supervisorList.appendChild(entryDiv);
+                updateSupervisorButtonState();
+            }
+        });
+        
+        document.querySelectorAll('.eval-select').forEach(select => {
+            const row = select.closest('tr');
+            if (row) {
+                const scoreInput = row.querySelector('.score-input');
+                if (scoreInput) scoreInput.value = select.value;
+            }
+        });
+        updateSupervisorButtonState();
+        updateAllScores();
+    });
+</script>
+
+</body>
+</html>
+

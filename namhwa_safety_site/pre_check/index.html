@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>신규 착공 현장 안전보건 인터랙티브 체크리스트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Calm Neutral Professional -->
+    <!-- Application Structure Plan: The application is designed as an interactive dashboard. A top-level summary provides an at-a-glance overview of checklist completion status using a doughnut chart and a summary of items per category using a bar chart. Below the dashboard, a tab-based navigation allows users to switch between the 8 main checklist categories without reloading the page. This structure turns a static document into a dynamic, task-oriented tool. Users can interactively check off items, see their progress reflected in real-time on the dashboard, and view detailed requirements on demand via expandable sections. This user flow is chosen for its efficiency, clarity, and ability to manage complex information without overwhelming the user. -->
+    <!-- Visualization & Content Choices: 1. Overall Progress: Doughnut Chart (Chart.js/Canvas) to visually represent the completion percentage, which updates in real-time. This is highly intuitive for tracking progress. 2. Category Breakdown: Horizontal Bar Chart (Chart.js/Canvas) to show the number of checklist items in each category, helping users understand the scope and focus areas. 3. Checklist Items: Interactive HTML list with checkboxes and expandable sections (toggles). This allows for active task management and progressive disclosure of detailed information, keeping the UI clean and focused. This combination of dashboard visualizations and an interactive list provides both a macro and micro view of the safety compliance status. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+        }
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        .tab-active {
+            border-color: #0891b2;
+            color: #0891b2;
+            font-weight: 600;
+        }
+        .task-card {
+            transition: all 0.2s ease-in-out;
+        }
+        .task-card.completed {
+            background-color: #f0fdf4;
+        }
+        .task-card.completed label {
+            text-decoration: line-through;
+            color: #6b7280;
+        }
+        .details-content {
+            display: none;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            max-height: 0;
+        }
+        .details-content.show {
+            display: block;
+            max-height: 500px; /* Adjust as needed */
+        }
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 10mm;
+            }
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            header, main, footer, .no-print {
+                display: none !important;
+            }
+            #print-area {
+                display: block !important;
+            }
+            .print-item {
+                page-break-inside: avoid;
+            }
+            p, label, span, h1, h2, h3 {
+                color: #000 !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-4">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">신규 착공 현장 안전보건 체크리스트</h1>
+            <p class="mt-2 text-slate-600">중대재해처벌법 및 산업안전보건법 기반</p>
+        </header>
+
+        <div class="flex justify-between items-center mb-8 no-print">
+            <div class="flex items-center space-x-2">
+                <label for="site-name" class="font-semibold text-slate-700">현장명:</label>
+                <input type="text" id="site-name" class="w-64 border border-slate-300 rounded-md px-3 py-1.5 focus:ring-cyan-500 focus:border-cyan-500" placeholder="현장명을 입력하세요">
+            </div>
+            <button id="print-button" class="bg-cyan-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-cyan-700 transition">
+                인쇄하기
+            </button>
+        </div>
+
+        <main>
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="mb-8 p-6 bg-white rounded-2xl shadow-md">
+                <h2 class="text-2xl font-bold mb-4 text-slate-900">안전보건 현황 대시보드</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="md:col-span-1 flex flex-col items-center justify-center bg-slate-50 p-4 rounded-xl">
+                        <h3 class="text-lg font-semibold mb-2">전체 진행률</h3>
+                        <div class="chart-container relative w-full h-48 sm:h-56">
+                            <canvas id="progressChart"></canvas>
+                        </div>
+                        <p id="progressText" class="mt-2 text-xl font-bold text-cyan-600"></p>
+                    </div>
+                    <div class="md:col-span-2 bg-slate-50 p-4 rounded-xl">
+                        <h3 class="text-lg font-semibold mb-2">분야별 진행 현황</h3>
+                        <div class="chart-container relative w-full h-64 sm-h-72">
+                             <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Checklist Section -->
+            <section id="checklist" class="bg-white rounded-2xl shadow-md">
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold mb-4 text-slate-900">세부 점검 항목</h2>
+                    <div id="tabs-container" class="border-b border-slate-200">
+                        <nav class="-mb-px flex space-x-4 overflow-x-auto" aria-label="Tabs">
+                            <!-- Tabs will be dynamically inserted here -->
+                        </nav>
+                    </div>
+                </div>
+                
+                <div id="tasks-container" class="p-6 pt-4">
+                    <!-- Tasks for the selected tab will be dynamically inserted here -->
+                </div>
+            </section>
+        </main>
+        
+        <div id="print-area" class="hidden">
+             <!-- Print content will be dynamically inserted here -->
+        </div>
+
+        <footer class="text-center py-8">
+            <p class="text-sm text-slate-500">본 문서는 남화토건(주) 안전보건팀에서 작성하였습니다.</p>
+        </footer>
+    </div>
+
+    <script>
+        const checklistData = [
+            { id: 'c0_1', category: 0, title: '안전보건 목표와 경영방침', details: '- 현장의 유해·위험요인을 고려한 안전보건 목표 및 방침 수립 여부\n- 목표와 방침이 전 직원 및 협력업체에 공유되었는지 확인', notes: '경영책임자 주도', completed: false },
+            { id: 'c0_2', category: 0, title: '안전보건 총괄/전담 조직', details: '- 안전보건 업무를 총괄·관리하는 전담 조직 구성 여부\n- 해당 조직에 예산, 인력, 권한이 적절히 부여되었는지 확인', notes: '', completed: false },
+            { id: 'c0_3', category: 0, title: '유해·위험요인 확인/개선 절차', details: '- 유해·위험요인을 주기적으로 확인하고 개선하는 업무 절차(Process) 수립 여부\n- 절차에 따른 이행 여부 점검 및 관리 방안', notes: '반기 1회 이상 점검', completed: false },
+            { id: 'c0_4', category: 0, title: '안전보건 예산 및 인력', details: '- 중대재해 예방을 위해 필요한 안전보건 예산 편성 및 집행 계획\n- 법적 기준 이상의 안전·보건 관리 인력 배치 계획', notes: "'산업안전보건관리비'와 별개", completed: false },
+            { id: 'c0_5', category: 0, title: '안전보건관계법령 의무이행 점검', details: '- 법령에 따른 의무 이행 여부를 점검(반기 1회 이상)하는 계획 수립\n- 점검 후 후속 조치(인력 배치, 예산 추가 편성 등) 계획', notes: '', completed: false },
+            { id: 'c0_6', category: 0, title: '종사자 의견 청취 및 개선', details: '- 현장 근로자의 안전보건 관련 의견을 청취할 수 있는 절차 마련\n- 청취된 의견에 대한 검토 및 개선방안 이행 계획', notes: '', completed: false },
+            
+            { id: 'c1_1', category: 1, title: '안전관리계획서', details: '- 수립 대상 공사 여부 확인 (건설기술진흥법)\n- 계획서 내용의 적정성 (총괄/공종별 계획, 안전점검 계획 등)\n- 발주청 또는 인허가기관 제출 및 승인 완료 여부', notes: '대상 아닐 시, 소규모 안전관리계획 대상 여부 확인', completed: false },
+            { id: 'c1_2', category: 1, title: '유해·위험방지계획서', details: '- 수립 대상 공사 여부 확인 (산업안전보건법)\n- 계획서 내용의 적정성 (가설구조물, 굴착, 위험물 등)\n- 안전보건공단 제출 및 심사 완료 여부 (착공 전일까지)', notes: '', completed: false },
+            { id: 'c1_3', category: 1, title: '건설공사 안전보건대장', details: '- 발주자로부터 `설계안전보건대장` 인수\n- `공사안전보건대장` 작성 및 발주자 확인 완료 여부\n- 설계 단계의 위험요소 및 저감대책 반영 여부', notes: '총 공사금액 50억원 이상 공사', completed: false },
+            { id: 'c1_4', category: 1, title: '착공 신고 서류', details: '- 착공신고서 내 안전 관련 항목 누락 여부\n- 현장대리인, 안전관리자 등 기술인 선임 신고', notes: '', completed: false },
+            { id: 'c1_5', category: 1, title: '각종 인허가 사항', details: '- 도로점용, 가설건축물 축조, 위험물 저장/취급 등\n- 비산먼지, 특정공사 사전신고 등 환경 관련 신고', notes: '', completed: false },
+            { id: 'c1_6', category: 1, title: '보험 가입 증명', details: '- 산업재해보상보험, 고용보험 가입 증명원 확인', notes: '', completed: false },
+
+            { id: 'c2_1', category: 2, title: '안전보건관리조직', details: '- 안전보건관리책임자, 관리감독자, 안전관리자/보건관리자 등 법정 인원 선임\n- 조직도 및 각 책임과 권한 명확화 (R&R)\n- 협력업체를 포함한 안전보건협의체 구성 및 운영 계획', notes: '공사 규모에 따른 선임 기준 충족', completed: false },
+            { id: 'c2_2', category: 2, title: '산업안전보건관리비', details: '- 도급내역서 내 산업안전보건관리비 적정 계상 여부\n- 착공 전 사용 계획서 수립 및 내용의 적정성 검토\n- 집행 절차 및 기준 숙지', notes: '', completed: false },
+            { id: 'c2_3', category: 2, title: '안전보건경영시스템', details: '- 현장 안전보건 목표 및 방침 수립\n- KOSHA-MS 또는 ISO45001 등 인증 취득 현장의 경우, 현장 적용 계획', notes: '', completed: false },
+            { id: 'c2_4', category: 2, title: '협력업체 안전보건 수준 평가', details: '- 협력업체 선정 시 안전보건 역량 및 수준 평가 기준 마련\n- 도급사업 시 안전보건 확보 의무 사항 전달 및 이행 여부 확인 계획', notes: '중대재해처벌법상 도급인의 의무', completed: false },
+
+            { id: 'c3_1', category: 3, title: '최초 위험성평가', details: '- 착공 전 최초 위험성평가 실시 여부 (전 공종 대상)\n- 평가 결과에 따른 위험성 감소대책 수립 및 실행 계획\n- TBM, 작업허가제(PTW) 등 위험성평가 연계 활동 계획', notes: '관리감독자, 근로자 참여 필수', completed: false },
+            { id: 'c3_2', category: 3, title: '현장 주변 환경 조사', details: '- 인접 건물, 도로, 보행자 통행 현황 파악 (공중이용시설 포함)\n- 지반 상태, 지장물(가스관, 통신/전력선 등) 현황 파악 및 도면 확보', notes: "'시민재해' 예방", completed: false },
+            { id: 'c3_3', category: 3, title: '고위험 작업 식별', details: '- 굴착, 추락, 붕괴, 감전, 화재/폭발 위험 공종 식별\n- 해당 공종에 대한 특별 안전대책 수립', notes: '', completed: false },
+
+            { id: 'c4_1', category: 4, title: '가설 시설물', details: '- 가설 울타리, 게이트, 공사 안내 표지판 설치 계획\n- 가설 사무실, 식당, 화장실, 휴게시설 등 설치 및 위생/안전 기준 충족', notes: '', completed: false },
+            { id: 'c4_2', category: 4, title: '가설 전기/기계', details: '- 가설 분전반 설치 위치 및 안전 조치 (잠금장치, 접지, 누전차단기 등)\n- 가설 급수, 소화전, 양수 설비 계획', notes: '', completed: false },
+            { id: 'c4_3', category: 4, title: '안전보건 표지', details: '- 현장 내 유해·위험 장소에 대한 안전보건표지 부착 계획', notes: '', completed: false },
+            { id: 'c4_4', category: 4, title: '자재 야적장', details: '- 자재 반입/반출 동선 및 야적장 확보 계획\n- 종류별/규격별 구분 적재 및 붕괴/낙하 방지 조치 계획', notes: '', completed: false },
+
+            { id: 'c5_1', category: 5, title: '안전보건교육', details: '- 연간 안전보건교육 계획 수립 (정기, 특별, 신규채용자 교육 등)\n- 신규채용자 기초안전보건교육 이수증 확인 절차 마련', notes: '', completed: false },
+            { id: 'c5_2', category: 5, title: '개인보호구(PPE)', details: '- 공종별/작업별 개인보호구 지급 계획 및 기준 수립\n- 보호구 지급/관리 대장 마련', notes: '', completed: false },
+            { id: 'c5_3', category: 5, title: '건강 관리', details: '- 배치 전 건강진단 대상 유해인자 파악 및 계획 수립\n- 혹서기/혹한기 근로자 건강보호 대책 수립', notes: '', completed: false },
+            { id: 'c5_4', category: 5, title: '근로자 참여 절차', details: '- 위험성평가, 작업중지 요청, 안전보건 제안 등 근로자 참여 절차 마련 및 공지', notes: '', completed: false },
+
+            { id: 'c6_1', category: 6, title: '건설기계/장비', details: '- 반입 예정 장비 목록 및 안전인증/검사 합격 여부 확인 계획\n- 장비 작업계획서(신호수 배치, 작업반경 통제 등) 접수 및 검토 계획', notes: '', completed: false },
+            { id: 'c6_2', category: 6, title: '가설구조물', details: '- 비계, 거푸집 동바리, 흙막이 지보공 등 설치/해체 계획\n- 구조검토서, 조립도, 시방서 등 확보 및 검토 계획', notes: '', completed: false },
+
+            { id: 'c7_1', category: 7, title: '비상연락망 구축', details: '- 현장 내/외부(소방서, 병원 등) 비상연락망 작성 및 비치\n- 사고 유형별 보고 및 대응 체계 수립', notes: '', completed: false },
+            { id: 'c7_2', category: 7, title: '응급 구호장비', details: '- 구급함, 들것, 소화기 등 비상용 기자재 확보 및 비치 계획', notes: '', completed: false },
+            { id: 'c7_3', category: 7, title: '비상대피 계획 및 훈련', details: '- 비상대피로 및 집결지 지정\n- 재난/사고 유형별 비상대피 훈련 계획 수립 및 실시 계획', notes: '', completed: false },
+        ];
+
+        const categories = [
+            "경영책임자/관리체계",
+            "법규/행정 서류",
+            "안전보건 관리체계",
+            "현장 위험성 평가",
+            "현장 안전시설/환경",
+            "근로자 관리/교육",
+            "장비/고위험작업",
+            "비상대응 계획"
+        ];
+
+        let currentTab = 0;
+        let progressChart, categoryChart;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTabs();
+            renderTasks();
+            initCharts();
+            updateDashboard();
+
+            document.getElementById('print-button').addEventListener('click', () => {
+                preparePrintVersion();
+                setTimeout(() => window.print(), 100); // Allow time for images to render
+            });
+        });
+        
+        function initTabs() {
+            const tabsContainer = document.getElementById('tabs-container').querySelector('nav');
+            tabsContainer.innerHTML = categories.map((category, index) => `
+                <a href="#" 
+                   class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm text-slate-500 hover:border-slate-300 hover:text-slate-700 ${index === 0 ? 'tab-active' : ''}"
+                   data-tab-index="${index}">
+                    ${category}
+                </a>
+            `).join('');
+
+            tabsContainer.addEventListener('click', e => {
+                e.preventDefault();
+                if (e.target.tagName === 'A') {
+                    const tabIndex = parseInt(e.target.dataset.tabIndex);
+                    if (tabIndex !== currentTab) {
+                        currentTab = tabIndex;
+                        document.querySelectorAll('#tabs-container a').forEach(a => a.classList.remove('tab-active'));
+                        e.target.classList.add('tab-active');
+                        renderTasks();
+                    }
+                }
+            });
+        }
+
+        function renderTasks() {
+            const tasksContainer = document.getElementById('tasks-container');
+            const tasksForTab = checklistData.filter(item => item.category === currentTab);
+            
+            tasksContainer.innerHTML = tasksForTab.map(item => `
+                <div id="task-${item.id}" class="task-card border border-slate-200 rounded-lg mb-3 ${item.completed ? 'completed' : ''}">
+                    <div class="p-4 flex items-start">
+                        <input type="checkbox" id="${item.id}" data-task-id="${item.id}" class="mt-1 h-5 w-5 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500" ${item.completed ? 'checked' : ''}>
+                        <div class="ml-4 flex-1">
+                            <label for="${item.id}" class="font-semibold text-slate-800">${item.title}</label>
+                            <div class="flex items-center mt-2">
+                                <button data-details-id="${item.id}" class="details-toggle text-sm text-cyan-600 hover:text-cyan-800 font-medium">상세보기</button>
+                                ${item.notes ? `<span class="ml-4 text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">${item.notes}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div id="details-${item.id}" class="details-content bg-slate-50 px-4 pb-4">
+                        <pre class="text-sm text-slate-600 whitespace-pre-wrap font-sans">${item.details}</pre>
+                    </div>
+                </div>
+            `).join('');
+
+            tasksContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', handleTaskToggle);
+            });
+             tasksContainer.querySelectorAll('.details-toggle').forEach(button => {
+                button.addEventListener('click', handleDetailsToggle);
+            });
+        }
+
+        function handleTaskToggle(e) {
+            const taskId = e.target.dataset.taskId;
+            const task = checklistData.find(item => item.id === taskId);
+            if (task) {
+                task.completed = e.target.checked;
+                document.getElementById(`task-${taskId}`).classList.toggle('completed', task.completed);
+                updateDashboard();
+            }
+        }
+
+        function handleDetailsToggle(e) {
+            const detailsId = e.target.dataset.detailsId;
+            const detailsContent = document.getElementById(`details-${detailsId}`);
+            detailsContent.classList.toggle('show');
+            e.target.textContent = detailsContent.classList.contains('show') ? '상세닫기' : '상세보기';
+        }
+
+        function updateDashboard() {
+            const totalTasks = checklistData.length;
+            const completedTasks = checklistData.filter(item => item.completed).length;
+            
+            document.getElementById('progressText').textContent = `${completedTasks} / ${totalTasks} 항목 완료`;
+            
+            if (progressChart) {
+                progressChart.data.datasets[0].data = [completedTasks, totalTasks - completedTasks];
+                progressChart.update();
+            }
+
+            if(categoryChart) {
+                const { completedCounts, incompleteCounts } = getCategoryCounts();
+                categoryChart.data.datasets[0].data = completedCounts;
+                categoryChart.data.datasets[1].data = incompleteCounts;
+                categoryChart.update();
+            }
+        }
+
+        function getCategoryCounts() {
+            const completedCounts = Array(categories.length).fill(0);
+            const incompleteCounts = Array(categories.length).fill(0);
+
+            checklistData.forEach(item => {
+                if (item.completed) {
+                    completedCounts[item.category]++;
+                } else {
+                    incompleteCounts[item.category]++;
+                }
+            });
+            return { completedCounts, incompleteCounts };
+        }
+
+        function initCharts() {
+            const progressCtx = document.getElementById('progressChart').getContext('2d');
+            progressChart = new Chart(progressCtx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [0, checklistData.length],
+                        backgroundColor: ['#0891b2', '#e2e8f0'],
+                        borderColor: ['#fff', '#fff'],
+                        borderWidth: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    }
+                }
+            });
+
+            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            const { completedCounts, incompleteCounts } = getCategoryCounts();
+            categoryChart = new Chart(categoryCtx, {
+                type: 'bar',
+                data: {
+                    labels: categories,
+                    datasets: [{
+                        label: '완료',
+                        data: completedCounts,
+                        backgroundColor: '#22c55e',
+                    },{
+                        label: '미완료',
+                        data: incompleteCounts,
+                        backgroundColor: '#f97316',
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            beginAtZero: true,
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                           stacked: true,
+                           grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.x !== null) {
+                                        label += context.parsed.x + '개';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function preparePrintVersion() {
+            const printContainer = document.getElementById('print-area');
+            const progressChartImg = progressChart.toBase64Image();
+            const categoryChartImg = categoryChart.toBase64Image();
+            const progressText = document.getElementById('progressText').textContent;
+            const siteName = document.getElementById('site-name').value;
+            
+            let html = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h1 style="font-size: 20px; font-weight: bold;">신규 착공 현장 안전보건 체크리스트</h1>
+                </div>
+                 <div style="text-align: left; margin-bottom: 20px; font-size: 12px; font-weight: bold;">
+                    <span>현장명: </span>
+                    <span>${siteName || '...........................................'}</span>
+                </div>
+                <div class="print-item" style="margin-bottom: 20px; border: 1px solid #ccc; padding: 10px;">
+                    <h2 style="font-size: 14px; font-weight: bold; margin-bottom: 10px; text-align: center;">안전보건 현황 대시보드 (인쇄 시점 기준)</h2>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px;">
+                        <div style="width: 30%; text-align: center;">
+                            <h3 style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">전체 진행률</h3>
+                            <img src="${progressChartImg}" style="width: 100%; max-width: 180px; margin: 0 auto;">
+                            <p style="font-size: 11px; font-weight: bold; margin-top: 5px;">${progressText}</p>
+                        </div>
+                        <div style="width: 70%;">
+                            <h3 style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">분야별 진행 현황</h3>
+                            <img src="${categoryChartImg}" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            categories.forEach((category, index) => {
+                html += `<h2 style="font-size: 14px; font-weight: bold; margin-top: 12px; margin-bottom: 6px; border-bottom: 1.5px solid #333; padding-bottom: 3px;">${index + 1}. ${category}</h2>`;
+                const tasksForCategory = checklistData.filter(item => item.category === index);
+
+                tasksForCategory.forEach(item => {
+                    const completedStatus = item.completed ? '[ O ]' : '[ &nbsp; ]';
+                    html += `
+                        <div class="print-item" style="margin-bottom: 6px; font-size: 8pt;">
+                            <p style="font-weight: 600;">${completedStatus} ${item.title}</p>
+                            <div style="padding-left: 25px;">
+                                <pre style="white-space: pre-wrap; font-family: inherit; margin: 3px 0; color: #555;">${item.details}</pre>
+                                ${item.notes ? `<p style="font-size: 7pt; color: #777;">※ ${item.notes}</p>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+
+             html += `
+                <div style="text-align: center; padding-top: 20px; border-top: 1px solid #ccc; margin-top: 20px;">
+                    <p style="font-size: 8pt; color: #555;">본 문서는 남화토건(주) 안전보건팀에서 작성하였습니다.</p>
+                </div>
+            `;
+
+            printContainer.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
+
