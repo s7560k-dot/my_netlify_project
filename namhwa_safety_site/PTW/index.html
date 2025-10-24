@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>작업허가서 웹페이지</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f6;
+        }
+        .section-container {
+            background-color: white;
+            border-radius: 0.75rem; /* 12px */
+            border: 1px solid #e5e7eb; /* border-gray-200 */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            overflow: hidden;
+        }
+        .section-title {
+            font-size: 1.125rem; /* 18px */
+            font-weight: 600;
+            color: #1f2937; /* text-gray-800 */
+            padding: 1rem 1.5rem; /* 16px 24px */
+            border-bottom: 1px solid #e5e7eb;
+        }
+        /* 1번 섹션 제목 왼쪽 정렬을 위해 padding-left 제거 */
+        #accordion-toggle .section-title {
+            padding-left: 1.5rem; /* 24px */
+            padding-right: 1.5rem; /* 24px */
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 0;
+        }
+        /* 아코디언 버튼 내부의 패딩을 수정하여 왼쪽 정렬 맞춤 */
+        #accordion-toggle {
+            padding-left: 0;
+            padding-right: 1.5rem; /* 24px */
+        }
+        
+        .toggle-switch {
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            width: 44px;
+            height: 24px;
+            position: relative;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider {
+            background-color: #2563eb; /* bg-blue-600 */
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+        
+        /* 사진 갤러리 */
+        .photo-gallery {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem; /* 8px */
+        }
+        @media (min-width: 768px) {
+            .photo-gallery {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        .gallery-item {
+            position: relative;
+            aspect-ratio: 1 / 1;
+        }
+        .gallery-delete-button {
+            position: absolute;
+            top: 0.25rem; /* 4px */
+            right: 0.25rem; /* 4px */
+            background-color: rgba(220, 38, 38, 0.8); /* bg-red-600 */
+            color: white;
+            width: 1.25rem; /* 20px */
+            height: 1.25rem; /* 20px */
+            border-radius: 9999px; /* rounded-full */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem; /* 12px */
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .gallery-delete-button:hover {
+            background-color: #dc2626; /* bg-red-600 */
+        }
+
+        /* 인쇄 스타일 */
+        @media print {
+            body {
+                background-color: #fff !important;
+                font-family: 'Malgun Gothic', sans-serif;
+                font-size: 10pt;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-container {
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+            }
+            .section-container {
+                border: 1px solid #000 !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                page-break-inside: avoid;
+            }
+            .section-title {
+                font-size: 14pt;
+                font-weight: bold;
+                color: #000 !important;
+                padding: 8px 12px !important;
+                border-bottom: 1px solid #000 !important;
+            }
+            /* 1번 제목 인쇄 시 패딩 보정 */
+            #accordion-toggle .section-title {
+                 padding-left: 12px !important;
+                 padding-right: 12px !important;
+                 border-bottom: 0 !important;
+            }
+            #accordion-toggle {
+                padding-right: 12px !important;
+            }
+            
+            #accordion-content, .detail-list {
+                display: block !important; /* 모든 내용을 강제로 펼침 */
+            }
+            h1, h2, h3 {
+                color: #000 !important;
+            }
+            input, textarea {
+                border: 1px solid #ccc !important;
+                font-size: 10pt !important;
+            }
+            .photo-gallery {
+                display: grid !important;
+                grid-template-columns: repeat(4, 1fr) !important;
+            }
+            .gallery-item {
+                border: 1px solid #ccc;
+            }
+            .hide-on-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 md:p-8">
+
+    <div class="print-container max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center text-gray-900 mb-6">작업허가서</h1>
+
+        <form id="work-permit-form" class="space-y-6">
+            
+            <!-- 현장명 및 날짜/허가번호 -->
+            <div class="section-container">
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label for="site-name" class="block text-sm font-medium text-gray-700 mb-1">현장명</label>
+                        <input type="text" id="site-name" name="site-name" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="current-date" class="block text-sm font-medium text-gray-700 mb-1">날짜</label>
+                            <input type="date" id="current-date" name="current-date" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="permit-number" class="block text-sm font-medium text-gray-700 mb-1">허가번호</label>
+                            <input type="text" id="permit-number" name="permit-number" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1. 작업허가서 항목 선택 -->
+            <div class="section-container">
+                <!-- [수정] 버튼 자체의 패딩을 조절해 왼쪽 정렬 맞춤 -->
+                <button type="button" id="accordion-toggle" aria-expanded="false" class="w-full flex justify-between items-center text-left">
+                    <h2 class="section-title">1. 작업허가서 항목 선택</h2>
+                    <svg class="w-5 h-5 transform transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div id="accordion-content" style="display: none;" class="p-6 border-t border-gray-200">
+                    <ul class="space-y-4">
+                        <!-- 화기작업 -->
+                        <li class="flex items-center justify-between">
+                            <span class="font-medium text-gray-700">화기작업</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="check-fire-work" data-controls="fire-work-list">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </li>
+                        <!-- 일반작업 -->
+                        <li class="flex items-center justify-between">
+                            <span class="font-medium text-gray-700">일반작업</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="check-general-work" data-controls="general-work-list">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </li>
+                        <!-- (보충) 밀폐공간 출입작업허가 -->
+                        <li class="flex items-center justify-between">
+                            <span class="font-medium text-gray-700">(보충) 밀폐공간 출입작업허가</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="check-confined-space" data-controls="confined-space-list">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </li>
+                        <!-- (보충) 정전작업허가 -->
+                        <li class="flex items-center justify-between">
+                            <span class="font-medium text-gray-700">(보충) 정전작업허가</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="check-electrical" data-controls="electrical-list">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </li>
+                        <!-- (보충) 굴착작업허가 -->
+                        <li class="flex items-center justify-between">
+                            <span class="font-medium text-gray-700">(보충) 굴착작업허가</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="check-excavation" data-controls="excavation-list">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </li>
+                        <!-- (보충) 고소작업 -->
+                        <li class="flex items-center justify-between">
+                            <span class="font-medium text-gray-700">(보충) 고소작업</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="check-high-altitude" data-controls="high-altitude-list">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </li>
+                        <!-- (보충) 중장비 사용작업 허가 -->
+                        <li class="flex items-center justify-between">
+                            <span class="font-medium text-gray-700">(보충) 중장비 사용작업 허가</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="check-heavy-equipment" data-controls="heavy-equipment-list">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 2. 세부작업 허가 목록 -->
+            <div class="section-container">
+                <h2 class="section-title">2. 세부작업 허가 목록</h2>
+                <div class="p-6 space-y-6">
+
+                    <!-- 화기작업 허가 목록 -->
+                    <div id="fire-work-list" class="detail-list" style="display: none;">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">(보충) 화기작업 허가 목록</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="photo-attach-wrapper" data-item-id="fire-1">
+                                <label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border">
+                                    <span class="text-sm text-gray-700">작업 구역 설정 및 통행 제한</span>
+                                    <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded">
+                                </label>
+                            </div>
+                            <div class="photo-attach-wrapper" data-item-id="fire-2">
+                                <label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border">
+                                    <span class="text-sm text-gray-700">불티 비산 방지 조치 (방화포 등)</span>
+                                    <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded">
+                                </label>
+                            </div>
+                            <div class="photo-attach-wrapper" data-item-id="fire-3">
+                                <label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border">
+                                    <span class="text-sm text-gray-700">작업장 주변 소화기 비치</span>
+                                    <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded">
+                                </label>
+                            </div>
+                            <div class="photo-attach-wrapper" data-item-id="fire-4">
+                                <label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border">
+                                    <span class="text-sm text-gray-700">화기 감시자 배치</span>
+                                    <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded">
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="button" class="photo-attach-button no-print text-sm text-blue-600 hover:text-blue-800 font-medium" data-file-input-id="file-fire">
+                                <i class="fas fa-camera mr-1"></i> 사진 첨부
+                            </button>
+                            <input type="file" id="file-fire" class="photo-input hidden" data-gallery-id="gallery-fire" multiple accept="image/*" capture="environment">
+                            <!-- [수정] 갤러리에 data-file-input-id 추가 (삭제 기능용) -->
+                            <div id="gallery-fire" class="photo-gallery mt-4" data-file-input-id="file-fire">
+                                <!-- 첨부된 사진 썸네일이 여기에 추가됩니다. -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 일반작업 허가 목록 -->
+                    <div id="general-work-list" class="detail-list" style="display: none;">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">(보충) 일반작업 허가 목록</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="photo-attach-wrapper" data-item-id="gen-1">
+                                <label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border">
+                                    <span class="text-sm text-gray-700">작업구역의 설정</span>
+                                    <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded">
+                                </label>
+                            </div>
+                            <div class="photo-attach-wrapper" data-item-id="gen-2">
+                                <label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border">
+                                    <span class="text-sm text-gray-700">작업의 제한(위험요인 확인)</span>
+                                    <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded">
+                                </label>
+                            </div>
+                            <div class="photo-attach-wrapper" data-item-id="gen-3">
+                                <label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border">
+                                    <span class="text-sm text-gray-700">필요한 표지 부착</span>
+                                    <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded">
+                                </label>
+                            </div>
+                            <div class="photo-attach-wrapper" data-item-id="gen-4">
+                                <label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border">
+                                    <span class="text-sm text-gray-700">안전모, 안전화 등 개인보호구 착용</span>
+                                    <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded">
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="button" class="photo-attach-button no-print text-sm text-blue-600 hover:text-blue-800 font-medium" data-file-input-id="file-general">
+                                <i class="fas fa-camera mr-1"></i> 사진 첨부
+                            </button>
+                            <input type="file" id="file-general" class="photo-input hidden" data-gallery-id="gallery-general" multiple accept="image/*" capture="environment">
+                            <div id="gallery-general" class="photo-gallery mt-4" data-file-input-id="file-general"></div>
+                        </div>
+                    </div>
+
+                    <!-- (보충) 밀폐공간 -->
+                    <div id="confined-space-list" class="detail-list" style="display: none;">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">(보충) 밀폐공간 출입작업허가</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="photo-attach-wrapper" data-item-id="conf-1"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">산소 및 유해가스 농도 측정</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                            <div class="photo-attach-wrapper" data-item-id="conf-2"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">환기 장비 설치 및 가동</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                            <div class="photo-attach-wrapper" data-item-id="conf-3"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">감시인 배치</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                            <div class="photo-attach-wrapper" data-item-id="conf-4"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">구조 장비 및 보호구 비치</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="button" class="photo-attach-button no-print text-sm text-blue-600 hover:text-blue-800 font-medium" data-file-input-id="file-confined">
+                                <i class="fas fa-camera mr-1"></i> 사진 첨부
+                            </button>
+                            <input type="file" id="file-confined" class="photo-input hidden" data-gallery-id="gallery-confined" multiple accept="image/*" capture="environment">
+                            <div id="gallery-confined" class="photo-gallery mt-4" data-file-input-id="file-confined"></div>
+                        </div>
+                    </div>
+
+                    <!-- (보충) 정전작업 -->
+                    <div id="electrical-list" class="detail-list" style="display: none;">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">(보충) 정전작업허가</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="photo-attach-wrapper" data-item-id="elec-1"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">전원 차단 및 잠금장치(LOTO)</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                            <div class="photo-attach-wrapper" data-item-id="elec-2"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">잔류 전하 방전</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                            <div class="photo-attach-wrapper" data-item-id="elec-3"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">검전기 사용 (불활선 확인)</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                            <div class="photo-attach-wrapper" data-item-id="elec-4"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">절연용 보호구 착용</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="button" class="photo-attach-button no-print text-sm text-blue-600 hover:text-blue-800 font-medium" data-file-input-id="file-electrical">
+                                <i class="fas fa-camera mr-1"></i> 사진 첨부
+                            </button>
+                            <input type="file" id="file-electrical" class="photo-input hidden" data-gallery-id="gallery-electrical" multiple accept="image/*" capture="environment">
+                            <div id="gallery-electrical" class="photo-gallery mt-4" data-file-input-id="file-electrical"></div>
+                        </div>
+                    </div>
+
+                    <!-- (보충) 굴착작업 -->
+                    <div id="excavation-list" class="detail-list" style="display: none;">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">(보충) 굴착작업허가</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="photo-attach-wrapper" data-item-id="exc-1"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">지하 매설물 확인 (도면, GPR)</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                            <div class="photo-attach-wrapper" data-item-id="exc-2"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">흙막이 지보공 설치</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                            <div class="photo-attach-wrapper" data-item-id="exc-3"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">안전한 경사면 확보 (기울기)</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                            <div class="photo-attach-wrapper" data-item-id="exc-4"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">안전 통로 및 비상 대피로 확보</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="button" class="photo-attach-button no-print text-sm text-blue-600 hover:text-blue-800 font-medium" data-file-input-id="file-excavation">
+                                <i class="fas fa-camera mr-1"></i> 사진 첨부
+                            </button>
+                            <input type="file" id="file-excavation" class="photo-input hidden" data-gallery-id="gallery-excavation" multiple accept="image/*" capture="environment">
+                            <div id="gallery-excavation" class="photo-gallery mt-4" data-file-input-id="file-excavation"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- (보충) 고소작업 -->
+                    <div id="high-altitude-list" class="detail-list" style="display: none;">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">(보충) 고소작업</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="photo-attach-wrapper" data-item-id="high-1"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">안전한 작업발판 설치</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                            <div class="photo-attach-wrapper" data-item-id="high-2"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">안전난간 설치</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                            <div class="photo-attach-wrapper" data-item-id="high-3"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">안전대 부착설비</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                            <div class="photo-attach-wrapper" data-item-id="high-4"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">안전모, 안전대 착용</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="button" class="photo-attach-button no-print text-sm text-blue-600 hover:text-blue-800 font-medium" data-file-input-id="file-high-altitude">
+                                <i class="fas fa-camera mr-1"></i> 사진 첨부
+                            </button>
+                            <input type="file" id="file-high-altitude" class="photo-input hidden" data-gallery-id="gallery-high-altitude" multiple accept="image/*" capture="environment">
+                            <div id="gallery-high-altitude" class="photo-gallery mt-4" data-file-input-id="file-high-altitude"></div>
+                        </div>
+                    </div>
+
+                    <!-- (보충) 중장비 -->
+                    <div id="heavy-equipment-list" class="detail-list" style="display: none;">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">(보충) 중장비 사용작업 허가</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="photo-attach-wrapper" data-item-id="heavy-1"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">면허, 자격증 확인</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                            <div class="photo-attach-wrapper" data-item-id="heavy-2"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">작업계획서 확인</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                            <div class="photo-attach-wrapper" data-item-id="heavy-3"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">작업반경 내 접근 금지 조치</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                            <div class="photo-attach-wrapper" data-item-id="heavy-4"><label class="flex items-center justify-between p-3 bg-gray-50 rounded-md border"><span class="text-sm text-gray-700">신호수 배치</span><input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded"></label></div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="button" class="photo-attach-button no-print text-sm text-blue-600 hover:text-blue-800 font-medium" data-file-input-id="file-heavy-equipment">
+                                <i class="fas fa-camera mr-1"></i> 사진 첨부
+                            </button>
+                            <input type="file" id="file-heavy-equipment" class="photo-input hidden" data-gallery-id="gallery-heavy-equipment" multiple accept="image/*" capture="environment">
+                            <div id="gallery-heavy-equipment" class="photo-gallery mt-4" data-file-input-id="file-heavy-equipment"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- 3. 확인 -->
+            <div class="section-container mb-6">
+                <h2 class="section-title">3. 확인</h2>
+                <!-- [수정] 3열 그리드로 변경하여 '확인자' 추가 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
+                    <!-- 작성자 -->
+                    <div class="p-4 bg-gray-50 rounded-lg border">
+                        <h3 class="font-semibold text-gray-700 mb-2">작성자</h3>
+                        <div>
+                            <label for="creator-name" class="block text-sm font-medium text-gray-600 mb-1">성명</label>
+                            <input type="text" id="creator-name" name="creator-name" class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                        <div class="mt-4">
+                            <label for="creator-role" class="block text-sm font-medium text-gray-600 mb-1">소속 / 직책</label>
+                            <input type="text" id="creator-role" name="creator-role" class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                    </div>
+                    <!-- 확인자 (신규 추가) -->
+                    <div class="p-4 bg-gray-50 rounded-lg border">
+                        <h3 class="font-semibold text-gray-700 mb-2">확인자</h3>
+                        <div>
+                            <label for="verifier-name" class="block text-sm font-medium text-gray-600 mb-1">성명</label>
+                            <input type="text" id="verifier-name" name="verifier-name" class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                        <div class="mt-4">
+                            <label for="verifier-role" class="block text-sm font-medium text-gray-600 mb-1">소속 / 직책</label>
+                            <input type="text" id="verifier-role" name="verifier-role" class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                    </div>
+                    <!-- 승인자 -->
+                    <div class="p-4 bg-gray-50 rounded-lg border">
+                        <h3 class="font-semibold text-gray-700 mb-2">승인자</h3>
+                        <div>
+                            <label for="approver-name" class="block text-sm font-medium text-gray-600 mb-1">성명</label>
+                            <input type="text" id="approver-name" name="approver-name" class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                        <div class="mt-4">
+                            <label for="approver-role" class="block text-sm font-medium text-gray-600 mb-1">소속 / 직책</label>
+                            <input type="text" id="approver-role" name="approver-role" class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 4. 첨부 서류 -->
+            <div class="section-container mb-6">
+                <h2 class="section-title">4. 첨부 서류</h2>
+                <div class="p-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <label class="flex items-center p-3 bg-gray-50 rounded-md border">
+                        <input type="checkbox" id="doc-plan" name="doc-plan" class="form-checkbox h-5 w-5 text-blue-600 rounded">
+                        <span class="ml-3 text-sm font-medium text-gray-700">작업계획서</span>
+                    </label>
+                    <label class="flex items-center p-3 bg-gray-50 rounded-md border">
+                        <input type="checkbox" id="doc-risk" name="doc-risk" class="form-checkbox h-5 w-5 text-blue-600 rounded">
+                        <span class="ml-3 text-sm font-medium text-gray-700">위험성평가서</span>
+                    </label>
+                    <label class="flex items-center p-3 bg-gray-50 rounded-md border">
+                        <input type="checkbox" id="doc-drawing" name="doc-drawing" class="form-checkbox h-5 w-5 text-blue-600 rounded">
+                        <span class="ml-3 text-sm font-medium text-gray-700">관련 도면</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 등록 / 인쇄 버튼 -->
+            <div class="no-print flex justify-end space-x-4">
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                    등록
+                </button>
+                <button type="button" id="print-btn" class="px-6 py-2 bg-gray-600 text-white font-semibold rounded-md shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">
+                    인쇄
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- [수정] 모든 스크립트 코드를 try...catch로 감싸 '빈 화면' 오류 방지
+            try {
+                // --- 0. 공유 변수 ---
+                // [수정] 공유 변수를 try 블록 최상단으로 이동 (ReferenceError 방지)
+                let toggles = {}; // { 'fire-work-list': true, 'general-work-list': false, ... }
+                let fileStores = new Map(); // fileInputId -> fileStore (Map)
+
+                // --- 1. 날짜 자동 설정 ---
+                const dateInput = document.getElementById('current-date');
+                if (dateInput) {
+                    dateInput.valueAsDate = new Date();
+                }
+
+                // --- 2. 메인 폼 (이벤트 위임용) ---
+                const form = document.getElementById('work-permit-form');
+                if (!form) {
+                    console.error("메인 폼 'work-permit-form'을 찾을 수 없습니다.");
+                    return; 
+                }
+
+                // --- 3. 아코디언 설정 ---
+                const accordionToggle = document.getElementById('accordion-toggle');
+                const accordionContent = document.getElementById('accordion-content');
+                if (accordionToggle && accordionContent) {
+                    accordionToggle.addEventListener('click', () => {
+                        const isExpanded = accordionToggle.getAttribute('aria-expanded') === 'true';
+                        accordionToggle.setAttribute('aria-expanded', !isExpanded);
+                        accordionContent.style.display = isExpanded ? 'none' : 'block';
+                        accordionToggle.querySelector('svg').classList.toggle('rotate-180');
+                    });
+                }
+
+                // --- 4. 세부 섹션 토글 설정 ---
+                // [수정] HTML 구조 변경에 맞춰 label 대신 input에서 data-controls를 찾음
+                const toggleCheckboxes = form.querySelectorAll('input[type="checkbox"][data-controls]');
+                toggleCheckboxes.forEach(checkbox => {
+                    const targetId = checkbox.dataset.controls;
+                    const targetElement = document.getElementById(targetId);
+
+                    if (!targetElement) return;
+
+                    // 초기 상태 설정
+                    const isChecked = checkbox.checked;
+                    toggles[targetId] = isChecked;
+                    targetElement.style.display = isChecked ? 'block' : 'none';
+
+                    // change 이벤트 리스너
+                    checkbox.addEventListener('change', (e) => {
+                        const isChecked = e.target.checked;
+                        toggles[targetId] = isChecked;
+                        targetElement.style.display = isChecked ? 'block' : 'none';
+                    });
+                });
+
+                // --- 5. 인쇄 설정 ---
+                const printButton = document.getElementById('print-btn');
+                if (printButton) {
+                    printButton.addEventListener('click', () => {
+                        // [수정] toggles 변수를 올바르게 참조
+                        Object.keys(toggles).forEach(listId => {
+                            const listElement = document.getElementById(listId);
+                            if (listElement && !toggles[listId]) {
+                                // 1번 섹션의 부모 li도 숨기기
+                                const toggleLi = form.querySelector(`[data-controls="${listId}"]`)?.closest('li');
+                                if (toggleLi) toggleLi.classList.add('hide-on-print');
+                                // 2번 섹션 자체를 숨기기
+                                listElement.classList.add('hide-on-print');
+                            }
+                        });
+                        
+                        window.print();
+                    });
+
+                    // 인쇄 후: 숨김 클래스 제거
+                    window.addEventListener('afterprint', () => {
+                        document.querySelectorAll('.hide-on-print').forEach(el => {
+                            el.classList.remove('hide-on-print');
+                        });
+                    });
+                }
+
+                // --- 6. 이벤트 위임: 사진 첨부 및 삭제 (하나의 리스너로 통합) ---
+                form.addEventListener('click', (e) => {
+                    const attachButton = e.target.closest('.photo-attach-button');
+                    const deleteButton = e.target.closest('.gallery-delete-button');
+
+                    // (A) 사진 첨부 버튼 클릭
+                    if (attachButton) {
+                        e.preventDefault();
+                        const fileInputId = attachButton.dataset.fileInputId;
+                        const fileInput = document.getElementById(fileInputId);
+                        if (fileInput) {
+                            fileInput.click(); // 숨겨진 input[type=file] 클릭
+                        }
+                    }
+
+                    // (B) 사진 삭제 버튼 클릭
+                    if (deleteButton) {
+                        e.preventDefault();
+                        const fileId = deleteButton.dataset.fileId;
+                        const gallery = deleteButton.closest('.photo-gallery');
+                        if (!fileId || !gallery) return;
+
+                        // [수정] 갤러리의 data-file-input-id 속성을 이용해 fileInputId를 찾음
+                        const fileInputId = gallery.dataset.fileInputId;
+                        const fileStore = fileStores.get(fileInputId); // 중앙 fileStores 참조
+
+                        // 1. 썸네일 삭제
+                        deleteButton.closest('.gallery-item').remove();
+                        // 2. fileStore에서 파일 정보 삭제
+                        if (fileStore && fileStore.has(fileId)) {
+                            fileStore.delete(fileId);
+                        }
+                    }
+                });
+
+                // --- 7. 파일 입력(input[type=file]) 설정 ---
+                const fileInputs = form.querySelectorAll('input[type="file"].photo-input');
+                fileInputs.forEach(fileInput => {
+                    const fileInputId = fileInput.id;
+                    const galleryId = fileInput.dataset.galleryId;
+                    const gallery = document.getElementById(galleryId);
+                    
+                    if (!gallery) return;
+
+                    // [수정] 이 input을 위한 fileStore 생성 및 중앙 fileStores에 등록
+                    const fileStore = new Map();
+                    fileStores.set(fileInputId, fileStore);
+
+                    fileInput.addEventListener('change', (e) => {
+                        // [수정] 중앙 fileStores에서 올바른 fileStore를 찾아 전달
+                        handleFiles(e.target.files, fileStores.get(fileInputId), gallery);
+                        // 동일한 파일을 다시 첨부할 수 있도록 value 초기화
+                        e.target.value = null; 
+                    });
+                });
+
+                // --- 8. 파일 처리 및 썸네일 생성 함수 ---
+                function handleFiles(files, fileStore, gallery) {
+                    if (!files || !files.length || !fileStore || !gallery) return;
+
+                    Array.from(files).forEach(file => {
+                        const fileId = `${file.name}-${file.lastModified}-${file.size}`;
+                        
+                        // 중복 체크
+                        if (fileStore.has(fileId)) {
+                            return; // 이미 있는 파일임
+                        }
+
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            // 썸네일 DOM 생성
+                            const item = document.createElement('div');
+                            item.className = 'gallery-item'; // [수정] 'relative' 클래스 제거 (삭제 버튼이 이미 absolute)
+                            item.innerHTML = `
+                                <img src="${e.target.result}" alt="${file.name}" class="w-full h-full object-cover rounded-md">
+                                <button type="button" class="gallery-delete-button" data-file-id="${fileId}">
+                                    &times;
+                                </button>
+                            `;
+                            gallery.appendChild(item);
+                            
+                            // fileStore에 파일 정보 저장
+                            fileStore.set(fileId, file);
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }
+
+            } catch (error) {
+                // --- 9. 최종 오류 처리 ---
+                console.error("작업허가서 스크립트 초기화 중 오류 발생:", error);
+                // [수정] 오류 발생 시 2차 오류를 막기 위해 화면 조작 대신 console.error만 사용
+            }
+        });
+    </script>
+</body>
+</html>
+
