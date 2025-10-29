@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>중량물 작업 안전율 계산기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+        .card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
+        }
+        .card-header {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1a202c;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+        .input-group {
+            margin-bottom: 1.25rem;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            transition: border-color 0.2s;
+            font-size: 0.95rem;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+        .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .gap-6 { gap: 1.5rem; }
+        
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .result-box {
+            border-radius: 8px;
+            padding: 1.25rem;
+            text-align: center;
+            border: 1px solid transparent;
+        }
+        .result-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+        }
+        .result-value {
+            font-weight: 800;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .result-status {
+            font-weight: 700;
+            font-size: 1.1rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+        }
+        
+        /* Status Colors */
+        .status-ok {
+            background-color: #dcfce7;
+            color: #166534;
+            border-color: #bbf7d0;
+        }
+        .status-ok .result-status { background-color: #bbf7d0; color: #166534; }
+        .status-ok .result-value { color: #16a34a; }
+
+        .status-ng {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border-color: #fecaca;
+        }
+        .status-ng .result-status { background-color: #fecaca; color: #991b1b; }
+        .status-ng .result-value { color: #dc2626; }
+
+        .status-info {
+            background-color: #e0f2fe;
+            color: #0c4a6e;
+            border-color: #bae6fd;
+        }
+        .status-info .result-status { background-color: #bae6fd; color: #0c4a6e; }
+        .status-info .result-value { color: #0284c7; }
+
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .radio-group input[type="radio"] {
+            margin-right: 0.5rem;
+        }
+        .radio-group label:has(input:checked) {
+            background-color: #ebf8ff;
+            border-color: #2563eb;
+        }
+        .footer-text {
+            text-align: center;
+            margin-top: 2rem;
+            color: #718096;
+            font-size: 0.9rem;
+        }
+        
+        /* Print Styles */
+        @media print {
+            body {
+                font-family: 'Inter', 'Noto Sans KR', sans-serif;
+                background-color: #ffffff;
+            }
+            .container {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                border: none;
+                box-shadow: none;
+            }
+            .card {
+                border: 1px solid #ccc;
+                padding: 1rem;
+                margin-bottom: 1rem;
+                box-shadow: none;
+                page-break-inside: avoid;
+            }
+            .card-header {
+                font-size: 1.1rem;
+            }
+            .no-print {
+                display: none;
+            }
+            input, select {
+                border: 1px solid #ccc !important;
+                background-color: #fdfdfd !important;
+            }
+            /* 인쇄 시 입력된 값만 보이도록 처리 */
+            input[type="text"], input[type="number"], input[type="date"], select {
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                appearance: none;
+                padding: 0.5rem;
+                font-size: 0.9rem;
+            }
+            .radio-group {
+                display: none; /* 인쇄 시 라디오 버튼 숨김 */
+            }
+            /* 선택된 라디오 값만 텍스트로 표시 (JS로 처리 필요) */
+            .print-only {
+                display: none;
+            }
+            @page {
+                size: A4;
+                margin: 2cm;
+            }
+            .result-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            .result-box {
+                page-break-inside: avoid;
+            }
+        }
+        .print-only { display: none; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">
+            중량물 작업 안전율 계산기
+        </h1>
+
+        <!-- 1. 작업 개요 -->
+        <div class="card">
+            <h2 class="card-header">1. 작업 개요</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="input-group">
+                    <label for="companyName">① 업체명</label>
+                    <input type="text" id="companyName" value="정일건설(주)">
+                </div>
+                <div class="input-group">
+                    <label for="workType">② 공종</label>
+                    <input type="text" id="workType" value="호안공">
+                </div>
+                <div class="input-group">
+                    <label for="workCrew">③ 작업인원</label>
+                    <input type="number" id="workCrew" value="4">
+                </div>
+                <div class="input-group">
+                    <label for="dateCreated">④ 작성일</label>
+                    <input type="date" id="dateCreated" value="2024-12-23">
+                </div>
+                <div class="input-group">
+                    <label for="dateDiscussed">⑤ 협의일</label>
+                    <input type="date" id="dateDiscussed" value="2024-12-23">
+                </div>
+                <div class="input-group">
+                    <label for="workPeriod">⑥ 작업기간</label>
+                    <input type="text" id="workPeriod" value="12.24 ~ 12.27">
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 작업 조건 -->
+        <div class="card">
+            <h2 class="card-header">2. 작업 조건 (제원표 확인용)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="input-group">
+                    <label for="workRadius">① 작업 반경 (m)</label>
+                    <input type="number" id="workRadius" value="32">
+                </div>
+                <div class="input-group">
+                    <label for="boomLength">② 붐 길이 (m)</label>
+                    <input type="number" id="boomLength" value="35.8">
+                </div>
+            </div>
+            <p class="text-sm text-gray-600 mt-4">
+                ※ 위 값을 기준으로 크레인 제원표(Load Chart)를 확인하여 '3. 크레인 제원'의 '⑤ 정격 하중' 값을 입력하십시오.
+            </p>
+        </div>
+
+        <!-- 3. 크레인 제원 및 중량물 -->
+        <div class="card">
+            <h2 class="card-header">3. 크레인 제원 및 중량물</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="input-group">
+                    <label for="craneModel">③ 기종/모델</label>
+                    <input type="text" id="craneModel" value="LTM1400-7.1">
+                </div>
+                <div class="input-group">
+                    <label for="craneRatedLoad">④ 크레인 정격 하중 (ton)</label>
+                    <input type="number" id="craneRatedLoad" value="35.5">
+                </div>
+                <div class="input-group">
+                    <label for="loadWeight">⑤ 중량물 하중 (ton)</label>
+                    <input type="number" id="loadWeight" value="27.2">
+                </div>
+            </div>
+            <p class="text-sm text-gray-600 mt-4">
+                ※ 중량물 하중은 실제 무게이며, 안전 계산 시 동하중(1.15배)이 자동으로 적용됩니다.
+            </p>
+        </div>
+
+        <!-- 4. 줄걸이 용구 제원 -->
+        <div class="card">
+            <h2 class="card-header">4. 줄걸이 용구 제원</h2>
+            
+            <!-- 와이어로프/웹슬링 선택 -->
+            <div class="input-group">
+                <label>⑥ 줄걸이 종류</label>
+                <div class="grid grid-cols-2 gap-4 radio-group">
+                    <label>
+                        <input type="radio" id="slingTypeWire" name="slingType" value="wire" checked> 와이어로프
+                    </label>
+                    <label>
+                        <input type="radio" id="slingTypeWeb" name="slingType" value="web"> 웹슬링
+                    </label>
+                </div>
+                <div id="printSlingType" class="print-only"></div>
+            </div>
+
+            <!-- 공통 입력 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="input-group">
+                    <label for="slingSpec">⑦ 규격 (참고용)</label>
+                    <input type="text" id="slingSpec" value="32mm">
+                </div>
+                <div class="input-group">
+                    <label for="slingBreakingLoad">⑧ 파단 하중 (ton, 1줄 기준)</label>
+                    <input type="number" id="slingBreakingLoad" value="69">
+                    <p class="text-xs text-red-600 font-semibold mt-1">※ 제조사 제원을 꼭 확인할 것</p>
+                </div>
+                <div class="input-group">
+                    <label for="slingCount">⑨ 줄걸이 수 (ea)</label>
+                    <input type="number" id="slingCount" value="4">
+                </div>
+            </div>
+            
+            <!-- 하중 계수 -->
+            <div class="input-group">
+                <label for="loadCoefficient">⑩ 줄걸이 방법 (하중 계수)</label>
+                <select id="loadCoefficient">
+                    <option value="1.0">1줄 걸이 (1.0)</option>
+                    <option value="1.155" selected>2줄 걸이 (60° 이내 / 1.155)</option>
+                    <option value="1.414">2줄 걸이 (90° 이내 / 1.414)</option>
+                    <option value="1.732">4줄 걸이 (60° 이내 / 1.732)</option>
+                    <option value="2.121">4줄 걸이 (90° 이내 / 2.121)</option>
+                    <option value="2.0">초크 걸이 (2.0)</option>
+                </select>
+            </div>
+
+            <!-- 와이어로프 전용 -->
+            <div id="wireRopeOptions">
+                <div class="input-group">
+                    <label>⑪ 단말 고정 방법 (효율)</label>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 radio-group">
+                        <label><input type="radio" name="terminalEfficiency" value="0.7"> 꼬아 넣기 (70%)</label>
+                        <label><input type="radio" name="terminalEfficiency" value="1.0"> 합금 고정 (100%)</label>
+                        <label><input type="radio" name="terminalEfficiency" value="0.9" checked> 압축 고정 (90%)</label>
+                        <label><input type="radio" name="terminalEfficiency" value="0.8"> 클립 고정 (80%)</label>
+                        <label><input type="radio" name="terminalEfficiency" value="0.8"> 웨지 소켓 (80%)</label>
+                    </div>
+                    <div id="printTerminalEfficiency" class="print-only"></div>
+                </div>
+            </div>
+
+            <!-- 샤클 -->
+            <div class="border-t border-gray-200 mt-6 pt-6">
+                <h3 class="font-semibold text-lg text-gray-700 mb-4">샤클 제원</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="input-group">
+                        <label for="shackleSpec">⑫ 규격 (참고용)</label>
+                        <input type="text" id="shackleSpec" value="1 3/8">
+                    </div>
+                    <div class="input-group">
+                        <label for="shackleWLL">⑬ W.L.L (ton, 1개 기준)</label>
+                        <input type="number" id="shackleWLL" value="13.5">
+                    </div>
+                    <div class="input-group">
+                        <label for="shacklePinDiameter">⑭ 핀 직경 (mm)</label>
+                        <input type="number" id="shacklePinDiameter" value="38">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 버튼 -->
+        <div class="card no-print">
+            <button id="printButton" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition duration-200 text-lg">
+                인쇄 (PDF로 저장)
+            </button>
+        </div>
+
+        <!-- 5. 계산 결과 -->
+        <div class="card">
+            <h2 class="card-header">5. 안전성 검토 결과</h2>
+            <div class="result-grid">
+                <!-- 크레인 -->
+                <div id="resultCraneBox" class="result-box">
+                    <div class="result-title">크레인 안전율</div>
+                    <div id="resultCraneValue" class="result-value">0%</div>
+                    <div id="resultCraneStatus" class="result-status">N/A</div>
+                    <div class="text-xs text-gray-500 mt-2">※ 85% 미만 'OK'</div>
+                </div>
+                <!-- 줄걸이 -->
+                <div id="resultSlingBox" class="result-box">
+                    <div class="result-title">줄걸이 안전율</div>
+                    <div id="resultSlingValue" class="result-value">0</div>
+                    <div id="resultSlingStatus" class="result-status">N/A</div>
+                    <div class="text-xs text-gray-500 mt-2">※ 6 이상 'OK'</div>
+                </div>
+                <!-- 샤클 WLL -->
+                <div id="resultShackleWLLBox" class="result-box">
+                    <div class="result-title">샤클 안전성 (W.L.L)</div>
+                    <div id="resultShackleWLLValue" class="result-value">0 ton</div>
+                    <div id="resultShackleWLLStatus" class="result-status">N/A</div>
+                    <div class="text-xs text-gray-500 mt-2">※ 필요 하중 < W.L.L 'OK'</div>
+                </div>
+                <!-- 샤클 전단 -->
+                <div id="resultShackleShearBox" class="result-box">
+                    <div class="result-title">샤클 전단 검토</div>
+                    <div id="resultShackleShearValue" class="result-value">0 kg/㎠</div>
+                    <div id="resultShackleShearStatus" class="result-status">N/A</div>
+                    <div class="text-xs text-gray-500 mt-2">※ 924 kg/㎠ 미만 'OK'</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer-text">
+            남화토건(주) 안전보건팀
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputs = document.querySelectorAll('input, select');
+            const printButton = document.getElementById('printButton');
+
+            // --- Element Caching ---
+            // Inputs
+            const craneRatedLoadEl = document.getElementById('craneRatedLoad');
+            const loadWeightEl = document.getElementById('loadWeight');
+            const slingTypeWireEl = document.getElementById('slingTypeWire');
+            const slingTypeWebEl = document.getElementById('slingTypeWeb');
+            const slingBreakingLoadEl = document.getElementById('slingBreakingLoad');
+            const slingCountEl = document.getElementById('slingCount');
+            const loadCoefficientEl = document.getElementById('loadCoefficient');
+            const shackleWLLEl = document.getElementById('shackleWLL');
+            const shacklePinDiameterEl = document.getElementById('shacklePinDiameter');
+            
+            // Options
+            const wireRopeOptionsEl = document.getElementById('wireRopeOptions');
+            const terminalEfficiencyEls = document.querySelectorAll('input[name="terminalEfficiency"]');
+
+            // Print-only text
+            const printSlingTypeEl = document.getElementById('printSlingType');
+            const printTerminalEfficiencyEl = document.getElementById('printTerminalEfficiency');
+
+            // Results
+            const resultCraneBox = document.getElementById('resultCraneBox');
+            const resultCraneValue = document.getElementById('resultCraneValue');
+            const resultCraneStatus = document.getElementById('resultCraneStatus');
+
+            const resultSlingBox = document.getElementById('resultSlingBox');
+            const resultSlingValue = document.getElementById('resultSlingValue');
+            const resultSlingStatus = document.getElementById('resultSlingStatus');
+
+            const resultShackleWLLBox = document.getElementById('resultShackleWLLBox');
+            const resultShackleWLLValue = document.getElementById('resultShackleWLLValue');
+            const resultShackleWLLStatus = document.getElementById('resultShackleWLLStatus');
+
+            const resultShackleShearBox = document.getElementById('resultShackleShearBox');
+            const resultShackleShearValue = document.getElementById('resultShackleShearValue');
+            const resultShackleShearStatus = document.getElementById('resultShackleShearStatus');
+            
+            // --- Helper Functions ---
+            const g = (el) => parseFloat(el.value) || 0;
+            
+            const setStatus = (box, valueEl, statusEl, value, status, unit = '') => {
+                let statusClass = 'status-info';
+                if (status === 'OK') statusClass = 'status-ok';
+                if (status === 'NG') statusClass = 'status-ng';
+
+                box.className = `result-box ${statusClass}`;
+                valueEl.innerText = `${value}${unit}`;
+                statusEl.innerText = status;
+            };
+
+            // --- Core Logic ---
+            function calculateSafety() {
+                try {
+                    // 1. Get Base Values
+                    const loadWeight = g(loadWeightEl);
+                    const maxLoad = loadWeight * 1.15; // 최대 인양 하중 (ton)
+                    const maxLoad_kg = maxLoad * 1000; // (kg)
+                    const craneRatedLoad = g(craneRatedLoadEl);
+                    const slingCount = g(slingCountEl);
+                    const loadCoefficient = g(loadCoefficientEl);
+
+                    // 2. Crane Safety
+                    let craneSafety = 0;
+                    if (craneRatedLoad > 0) {
+                        craneSafety = (maxLoad / craneRatedLoad) * 100;
+                    }
+                    if (craneSafety < 85 && craneSafety > 0) {
+                        setStatus(resultCraneBox, resultCraneValue, resultCraneStatus, craneSafety.toFixed(2), 'OK', '%');
+                    } else if (craneSafety <= 0) {
+                        setStatus(resultCraneBox, resultCraneValue, resultCraneStatus, '0', 'N/A', '%');
+                    } else {
+                        setStatus(resultCraneBox, resultCraneValue, resultCraneStatus, craneSafety.toFixed(2), 'NG', '%');
+                    }
+
+                    // 3. Sling Safety
+                    const isWireRope = slingTypeWireEl.checked;
+                    let terminalEfficiency = 1.0; // Web sling default
+                    if (isWireRope) {
+                        const selectedTerminal = document.querySelector('input[name="terminalEfficiency"]:checked');
+                        terminalEfficiency = selectedTerminal ? g(selectedTerminal) : 0.9; // Default to 90% if none selected
+                    }
+                    
+                    const slingBreakingLoad = g(slingBreakingLoadEl);
+                    const slingNumerator = slingBreakingLoad * slingCount * terminalEfficiency;
+                    const slingDenominator = maxLoad * loadCoefficient;
+                    let slingSafety = 0;
+                    if (slingDenominator > 0) {
+                        slingSafety = slingNumerator / slingDenominator;
+                    }
+
+                    if (slingSafety >= 6) {
+                        setStatus(resultSlingBox, resultSlingValue, resultSlingStatus, slingSafety.toFixed(2), 'OK');
+                    } else {
+                        setStatus(resultSlingBox, resultSlingValue, resultSlingStatus, slingSafety.toFixed(2), 'NG');
+                    }
+
+                    // 4. Shackle WLL Safety
+                    const shackleWLL = g(shackleWLLEl);
+                    let requiredWLL = 0;
+                    if (slingCount > 0) {
+                        requiredWLL = (maxLoad * loadCoefficient) / slingCount;
+                    }
+
+                    if (shackleWLL > 0 && requiredWLL <= shackleWLL) {
+                        setStatus(resultShackleWLLBox, resultShackleWLLValue, resultShackleWLLStatus, requiredWLL.toFixed(2), 'OK', ' ton');
+                    } else {
+                        setStatus(resultShackleWLLBox, resultShackleWLLValue, resultShackleWLLStatus, requiredWLL.toFixed(2), 'NG', ' ton');
+                    }
+
+                    // 5. Shackle Shear Safety
+                    const pinDiameter_mm = g(shacklePinDiameterEl);
+                    const pinRadius_cm = pinDiameter_mm / 20.0; // mm -> cm / 2
+                    const pinArea_cm2 = Math.PI * Math.pow(pinRadius_cm, 2);
+                    const totalShearArea = slingCount * 2 * pinArea_cm2; // 2 = 양쪽 전단
+                    const shearForce_kg = maxLoad_kg * loadCoefficient;
+                    
+                    let shearStress = 0;
+                    if (totalShearArea > 0) {
+                        shearStress = shearForce_kg / totalShearArea;
+                    }
+
+                    const shearLimit = 924; // SS400 허용전단응력
+                    if (shearStress > 0 && shearStress < shearLimit) {
+                        setStatus(resultShackleShearBox, resultShackleShearValue, resultShackleShearStatus, shearStress.toFixed(2), 'OK', ' kg/㎠');
+                    } else {
+                        setStatus(resultShackleShearBox, resultShackleShearValue, resultShackleShearStatus, shearStress.toFixed(2), 'NG', ' kg/㎠');
+                    }
+                    
+                } catch (error) {
+                    console.error("Calculation error:", error);
+                }
+            }
+
+            // --- UI Logic ---
+            function updateSlingUI() {
+                const isWireRope = slingTypeWireEl.checked;
+                if (isWireRope) {
+                    wireRopeOptionsEl.style.display = 'block';
+                } else {
+                    wireRopeOptionsEl.style.display = 'none';
+                }
+                
+                // Update print-only text
+                printSlingTypeEl.innerText = isWireRope ? '줄걸이 종류: 와이어로프' : '줄걸이 종류: 웹슬링';
+            }
+
+            function updatePrintData() {
+                // Update print text for sling type
+                printSlingTypeEl.innerText = slingTypeWireEl.checked ? '줄걸이 종류: 와이어로프' : '줄걸이 종류: 웹슬링';
+
+                // Update print text for terminal efficiency
+                if (slingTypeWireEl.checked) {
+                    const selectedTerminalLabel = document.querySelector('input[name="terminalEfficiency"]:checked');
+                    if (selectedTerminalLabel) {
+                        printTerminalEfficiencyEl.innerText = `단말 고정: ${selectedTerminalLabel.parentElement.innerText}`;
+                        printTerminalEfficiencyEl.style.display = 'block';
+                    }
+                } else {
+                    printTerminalEfficiencyEl.style.display = 'none';
+                }
+            }
+
+            // --- Event Listeners ---
+            inputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    calculateSafety();
+                    if(input.name === 'slingType') {
+                        updateSlingUI();
+                    }
+                });
+            });
+
+            printButton.addEventListener('click', () => {
+                updatePrintData(); // 인쇄 직전 데이터 업데이트
+                window.print();
+            });
+
+            // --- Initial Load ---
+            updateSlingUI();
+            calculateSafety();
+            updatePrintData();
+        });
+    </script>
+</body>
+</html>
+
