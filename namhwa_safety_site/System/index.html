@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>남화토건 안전보건경영시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* prose 스타일을 간단히 흉내냅니다 */
+        .prose h2 {
+            font-size: 1.5rem; /* 24px */
+            font-weight: 600; /* semibold */
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #e5e7eb; /* gray-200 */
+            padding-bottom: 0.5rem;
+        }
+        .prose h3 {
+            font-size: 1.25rem; /* 20px */
+            font-weight: 600;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .prose p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        .prose ul, .prose ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+            list-style-position: outside;
+        }
+        .prose li {
+            margin-bottom: 0.5rem;
+        }
+        .prose blockquote {
+            border-left: 4px solid #60a5fa; /* blue-400 */
+            padding-left: 1rem;
+            margin-left: 0;
+            margin-bottom: 1rem;
+            font-style: italic;
+            color: #4b5563; /* gray-600 */
+        }
+        .toc-link {
+            display: block;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem; /* rounded-md */
+            color: #374151; /* gray-700 */
+            transition: all 0.2s ease;
+        }
+        .toc-link:hover {
+            background-color: #f3f4f6; /* gray-100 */
+            color: #111827; /* gray-900 */
+        }
+        .download-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db; /* gray-300 */
+            border-radius: 0.375rem; /* rounded-md */
+            background-color: #f9fafb; /* gray-50 */
+            transition: all 0.2s ease;
+            color: #3b82f6; /* blue-600 */
+            font-weight: 500;
+        }
+        .download-link:hover {
+            background-color: #f3f4f6; /* gray-100 */
+            border-color: #9ca3af; /* gray-400 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen py-12 px-4">
+    <div class="max-w-7xl mx-auto">
+        <!-- 뒤로가기 버튼 -->
+        <div class="mb-4">
+            <a href="index.html" class="inline-block text-cyan-700 hover:text-cyan-900 font-semibold transition-colors">
+                &larr; 자료실 홈으로 돌아가기
+            </a>
+        </div>
+
+        <div class="bg-white p-6 md:p-10 rounded-xl shadow-2xl">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 text-center mb-10">
+                남화토건(주) 안전보건경영시스템
+            </h1>
+
+            <!-- 1. PDF 다운로드 섹션 -->
+            <section id="download-section" class="mb-12">
+                <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                    <h2 class="text-2xl font-semibold text-gray-800 mt-0 mb-5 border-b border-gray-300 pb-2">
+                        시스템 문서 원본 (PDF)
+                    </h2>
+                    <p class="mb-4 text-gray-600">
+                        아래 목록에서 원본 PDF 문서를 다운로드하실 수 있습니다. (링크는 실제 파일 경로로 수정해야 합니다)
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <a href="/manuals/01. 안전보건경영 매뉴얼(240102최종).pdf" download class="download-link">1. 안전보건 경영 매뉴얼</a>
+                        <a href="/manuals/02. 안전보건 경영 방침 및 목표 관리 절차서(240102최종).pdf" download class="download-link">2. 안전보건 경영 방침 및 목표 관리 절차서</a>
+                        <a href="/manuals/03. 안전보건팀 설치 및 업무수행 절차서(230515수정).pdf" download class="download-link">3. 안전보건팀 설치 및 업무수행 절차서</a>
+                        <a href="/manuals/04. 유해위험 확인 및 개선 절차서(230429최종)수정중중.pdf" download class="download-link">4. 유해위험 확인 및 개선 절차서</a>
+                        <a href="/manuals/05. 위험성평가 절차서(230715최종).pdf" download class="download-link">5. 위험성평가 절차서</a>
+                        <a href="/manuals/06. 예산편성 및 집행절차서(220429최종).pdf" download class="download-link">6. 예산편성 및 집행절차서</a>
+                        <a href="/manuals/07. 안전보건관리책임자 등 업무수행 및 평가 절차서(220429최종).pdf" download class="download-link">7. 안전보건관리책임자 등 업무수행 및 평가 절차서</a>
+                        <a href="/manuals/08. 안전보건관리자 배치 절차서(220429최종).pdf" download class="download-link">8. 안전보건관리자 배치 절차서</a>
+                        <a href="/manuals/09. 종사자 의견청취 절차서(220429최종).pdf" download class="download-link">9. 종사자 의견 청취 절차서</a>
+                        <a href="/manuals/10. 비상사태 대비 대응 절차서(251028최종)_현장배포용.pdf" download class="download-link">10. 비상사태 대비 대응 절차서</a>
+                        <!-- 새로 추가된 4개 링크 -->
+                        <a href="/manuals/11. 적격 하수급인 관리 절차서(220429최종).pdf" download class="download-link">11. 적격 하수급인 관리 절차서</a>
+                        <a href="/manuals/12. 재해 재발방지 절차서(220429최종).pdf" download class="download-link">12. 재해 재발방지 절차서</a>
+                        <a href="/manuals/13. 안전보건 관계법령 등 이행관리 절차서(220429최종).pdf" download class="download-link">13. 안전보건 관계법령 등 이행관리 절차서</a>
+                        <a href="/manuals/14. 현장 안전보건 업무 수행 절차서(240102최종).pdf" download class="download-link">14. 현장 안전보건 업무 수행 절차서</a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. 웹 매뉴얼 섹션 -->
+            <section id="web-manual-section">
+                <h2 class="text-2xl font-semibold text-gray-800 mt-8 mb-5 border-b-2 border-cyan-500 pb-2">
+                    웹 매뉴얼 : 1. 안전보건 경영 매뉴얼
+                </h2>
+
+                <div class="flex flex-col md:flex-row gap-8">
+                    <!-- 목차 (TOC) -->
+                    <nav class="md:w-1/4 sticky top-12 self-start bg-gray-50 p-4 rounded-lg border">
+                        <h3 class="font-semibold text-lg mb-3">빠른 이동</h3>
+                        <ul class="space-y-1">
+                            <li><a href="#toc-policy" class="toc-link">1. 경영방침 및 목표</a></li>
+                            <li><a href="#toc-purpose" class="toc-link">2. 목적 및 적용범위</a></li>
+                            <li><a href="#toc-definitions" class="toc-link">3. 용어의 정의</a></li>
+                            <li><a href="#toc-organization" class="toc-link">4. 안전보건 조직</a></li>
+                            <li><a href="#toc-roles" class="toc-link">5. 책임과 권한 및 역할</a></li>
+                            <li><a href="#toc-system" class="toc-link">6. 시스템 제·개정 및 관리</a></li>
+                        </ul>
+                    </nav>
+
+                    <!-- 본문 내용 -->
+                    <div class="md:w-3/4 prose prose-lg max-w-none">
+                        <!-- '01. 안전보건경영 매뉴얼' PDF의 주요 내용을 HTML로 변환 -->
+
+                        <section id="toc-policy">
+                            <h2>1. 경영방침 및 목표</h2>
+                            
+                            <h3>대표이사 안전경영 핵심이념</h3>
+                            <ol>
+                                <li><strong>경영이념:</strong> 성실시공, 윤리경영, 지역사회 공헌, 최고의 품질, 고부가가치 창출</li>
+                                <li><strong>비전:</strong> 미래 지향적 경영, 경쟁력강화(기술증대), 지식경영(고부가가치 창출), 변화관리(정보화 구축)</li>
+                                <li><strong>안전경영 핵심 이념:</strong>
+                                    <ul>
+                                        <li>인간생명 존중의 기초사상 확립</li>
+                                        <li>산업안전보건 법규 준수</li>
+                                        <li>위험성 평가의 전사 참여</li>
+                                        <li>안전보건경영시스템 체제 확립</li>
+                                        <li>전사 참여를 통한 무재해 유지</li>
+                                    </ul>
+                                </li>
+                            </ol>
+                            
+                            <blockquote class="bg-yellow-50 border-yellow-300">
+                                <h3>안전보건 경영방침 (대표이사)</h3>
+                                <p>남화토건(주)는 인간존중의 이념을 근본으로 안전하고 쾌적한 작업환경을 조성함으로써 근로자의 안전보건을 유지 증진시키고 사회에 공헌하며, 회사의 무한한 가치창조를 위하여 안전보건 경영방침을 다음과 같이 정하고 이를 철저히 이행한다.</p>
+                                <ol>
+                                    <li>임직원, 협력사, 종사자 모두가 안전보건의 기본 원칙을 실천하고 법규를 준수하는 안전보건 문화를 정착시킨다.</li>
+                                    <li>자기규율 예방 체계를 구축하고 이행 점검하여 지속적으로 발전시킨다.</li>
+                                    <li>현장 내 위험 요소를 적극 파악, 평가하여 예방 대책을 수립하고 안전보건 개선 활동을 함으로써 예방 중심의 안전보건 경영을 실천한다.</li>
+                                    <li>산업재해 최소화와 무재해 목표 달성을 위해 노력한다.</li>
+                                </ol>
+                            </blockquote>
+
+                            <h3>안전보건 경영목표 (2024년)</h3>
+                            <ol>
+                                <li>중대재해 0건, 재해율 전년 대비 50% 감소</li>
+                                <li>사전 위험성평가 활동 100% 실시 (TBM 활동 포함)</li>
+                                <li>안전보건관리체계(협력사포함) 위험성평가 관련 교육 100% 이수</li>
+                                <li>분기별 전 현장 작업계획서 작성, 위험성평가, 안전보건교육 방문 지원</li>
+                                <li>분기 현장별 안전보건관리체계 안전보건 업무 수행 방문 지원</li>
+                            </ol>
+
+                            <h3>본사 안전보건팀 안전보건 경영목표 (2024년)</h3>
+                            <ol>
+                                <li>전 현장에 대한 최소 년 2회 이상 내실 있는 안전보건점검</li>
+                                <li>년 2회 본사 주관 안전보건 관리감독자 교육 실시</li>
+                                <li>점검 결과 동종 유사 현장에 대한 Feed-Back 100% 달성</li>
+                                <li>년 1회 전 현장 안전관리자 대상 안전보건 간담회 실시</li>
+                                <li>년 1회 이상 현장 불시 점검 실시</li>
+                            </ol>
+                        </section>
+
+                        <section id="toc-purpose">
+                            <h2>2. 목적 및 적용범위</h2>
+                            <h3>1. 목적</h3>
+                            <p>산업안전보건법 제14조 대표이사의 안전보건 관련 법령과 중대재해처벌법 등에서 정한 안전·보건 확보를 위하여 요구되는 다양한 조치 의무를 이행함으로써 산업재해를 예방하여 종사자 등의 생명과 신체를 보호함을 목적으로 한다.</p>
+                            <h3>2. 적용 범위</h3>
+                            <p>회사의 안전보건 확보와 관련되는 본사 및 건설 현장, 외주 협력업체, 종사자 등을 대상으로 적용한다.</p>
+                        </section>
+
+                        <section id="toc-definitions">
+                            <h2>3. 용어의 정의</h2>
+                            <dl class="space-y-4">
+                                <div>
+                                    <dt class="font-semibold">3.1. 대표이사(경영책임자)</dt>
+                                    <dd>사업을 대표하고 사업을 총괄하는 권한과 책임이 있는 사람 또는 이에 준하여 안전보건에 관한 업무를 담당하는 사람을 말한다.</dd>
+                                </div>
+                                <div>
+                                    <dt class="font-semibold">3.2. 종사자</dt>
+                                    <dd>가. 근로기준법상의 근로자</dd>
+                                    <dd>나. 도급, 용역, 위탁 등 계약의 형식에 관계없이 그 사업의 수행을 위하여 대가를 목적으로 노무를 제공한 자</dd>
+                                    <dd>다. 사업이 여러 차례의 도급에 따라 행하여지는 경우에는 각 단계의 수급인 및 수급인과 근로기준법상의 근로자 또는 대가를 목적으로 노무를 제공하는 자와의 관계가 있는 자를 말한다.</dd>
+                                </div>
+                                <div>
+                                    <dt class="font-semibold">3.3 안전보건 경영 시스템</dt>
+                                    <dd>안전보건 매뉴얼과 절차서 등 안전보건 활동의 절차와 방법 등을 규정한 문서를 말한다.</dd>
+                                </div>
+                                <!-- 기타 용어 정의 생략 -->
+                            </dl>
+                        </section>
+
+                        <section id="toc-organization">
+                            <h2>4. 안전보건 조직</h2>
+                            <p>본사 안전보건팀은 대표이사 직속 기구로 설치한다.</p>
+                            <!-- 조직도 이미지는 텍스트로 대체 -->
+                            <h3>본사 조직</h3>
+                            <ul>
+                                <li>이사회</li>
+                                <li>대표이사
+                                    <ul>
+                                        <li>상임감사</li>
+                                        <li>안전보건팀 (안전보건 관리총괄)</li>
+                                        <li>상무이사</li>
+                                        <li>총무부, 경리부, 업무부, 관리부, 건축부, 토목부</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                            <h3>현장 조직</h3>
+                            <ul>
+                                <li>안전보건관리(총괄)책임자 (현장소장)
+                                    <ul>
+                                        <li>안전보건관리자</li>
+                                        <li>관리감독자 (품질, 건축, 토목, 기계설비, 기타 팀장)</li>
+                                        <li>협력업체 (소장)</li>
+                                    </ul>
+                                </li>
+                                <li>협의체: 안전보건협의체, 안전보건위원회, 노사협의체</li>
+                            </ul>
+                        </section>
+
+                        <section id="toc-roles">
+                            <h2>5. 책임과 권한 및 역할</h2>
+                            <h3>5.1 대표이사</h3>
+                            <ul>
+                                <li>안전보건 경영 시스템 제·개정, 승인, 관리</li>
+                                <li>시스템 운영 관련 관계자 권한 부여 및 확인 보고</li>
+                                <li>경영방침 및 목표 설정, 계획 승인</li>
+                                <li>조직 구성, 인력, 예산 등 자원의 지원</li>
+                                <li>이사회 보고 및 승인</li>
+                                <li>시스템의 평가 및 지속적인 개선</li>
+                            </ul>
+                            <h3>5.2 본사 안전보건팀장</h3>
+                            <ul>
+                                <li>안전보건 경영 시스템 제·개정, 실무, 검토, 실행 및 이행상태 점검 및 총괄 관리</li>
+                                <li>안전보건 경영방침, 목표 수립, 대표이사 보고, 공표, 실행, 전파 등 이행에 관한 실무</li>
+                                <li>시스템 이행상태(현장 등) 점검(반기 1회) 및 대표이사 보고</li>
+                                <li>안전보건관리책임자 등 직무수행 충실성 평가(반기 1회) 및 대표이사 보고</li>
+                                <!-- 기타 역할 생략 -->
+                            </ul>
+                            <h3>5.3 현장소장 (안전보건관리책임자)</h3>
+                            <ul>
+                                <li>안전보건 경영 시스템의 성실한 이행, 자원의 요청</li>
+                                <li>시스템의 비효율적 운영내용에 대한 개선 건의</li>
+                                <li>본사 안전보건팀장의 지도 조언, 요구, 점검에 대한 성실한 협조</li>
+                                <li>산업재해 예방계획 수립, 위험성평가 실시, 안전보건교육 등 법적 직무수행</li>
+                            </ul>
+                            <!-- 기타 역할 생략 -->
+                        </section>
+
+                        <section id="toc-system">
+                            <h2>6. 시스템 제·개정 및 관리</h2>
+                            <h3>7.1 시스템의 작성, 검토, 승인 절차</h3>
+                            <p>안전보건팀 작성 → 유관부서 및 종사자 등에 의한 검토 → 대표이사 승인 → 이사회 승인 → 최종 승인 후 유관부서 공람</p>
+                            
+                            <h3>7.5 이사회 보고 및 승인</h3>
+                            <p>대표이사는 ① 경영방침 및 목표, ② 안전보건 관리 조직, ③ 안전보건관련 예산 및 시설 현황, ④ 전년도 활동실적 및 차년도 활동계획, ⑤ 안전보건 경영 시스템(제·개정) 등을 수립하여 매년 이사회에 보고하고 이사회의 승인 후 시행해야 한다.</p>
+
+                            <h3>7.8 시스템의 구성</h3>
+                            <ol>
+                                <li>[1] 안전보건 경영 매뉴얼</li>
+                                <li>[2] 안전보건 경영방침 및 목표관리 절차서</li>
+                                <li>[3] 안전보건팀 설치 및 업무수행 절차서</li>
+                                <li>[4] 유해 위험요인 확인 및 개선 절차서</li>
+                                <li>[5] 위험성 평가 절차서</li>
+                                <li>[6] 예산편성 및 집행 절차서</li>
+                                <li>[7] 안전보건관리책임자 등 업무수행 및 평가 절차서</li>
+                                <li>[8] 안전보건 관리자 등 배치 절차서</li>
+                                <li>[9] 종사자 의견 청취 절차서</li>
+                                <li>[10] 비상사태 대비 대응 절차서</li>
+                                <li>[11] 적격 하수급인 관리 절차서</li>
+                                <li>[12] 재해 재발 방지 절차서</li>
+                                <li>[13] 안전보건 관계 법령 등 이행관리 절차서</li>
+                                <li>[14] 현장 안전보건 업무수행 절차서</li>
+                                <li>[15] 시스템 평가 및 개선 절차서</li>
+                            </ol>
+                        </section>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</body>
+</html>
+
