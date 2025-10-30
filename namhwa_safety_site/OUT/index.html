@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>아웃트리거 받침철판 규격 계산기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f0f2f5;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #9ca3af;
+            padding: 10px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 0.875rem; /* 14px */
+        }
+        th {
+            background-color: #f3f4f6; /* bg-gray-100 */
+            font-weight: 700;
+        }
+        td.label {
+            background-color: #f3f4f6;
+            font-weight: 700;
+            width: 25%;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid #d1d5db; /* border-gray-300 */
+            border-radius: 0.375rem; /* rounded-md */
+            text-align: right;
+        }
+        .calc-result {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #1d4ed8; /* text-blue-700 */
+        }
+        .calc-final-result {
+            font-weight: 700;
+            font-size: 1.125rem;
+            color: #be123c; /* text-rose-700 */
+        }
+        .image-box {
+            border: 2px dashed #d1d5db;
+            border-radius: 0.5rem;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            background-color: #f9fafb;
+            cursor: pointer;
+            overflow: hidden;
+            padding: 8px;
+        }
+        .image-box img {
+            max-width: 100%;
+            max-height: 250px;
+            object-fit: contain;
+            border-radius: 0.375rem;
+        }
+        
+        /* 토스트 메시지 */
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #2d3748;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 0.375rem;
+            z-index: 100;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* 확인 모달 */
+        #confirmModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 110;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        #confirmModal.show {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 24px;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+        }
+
+        /* 인쇄 스타일 */
+        @media print {
+            body {
+                background-color: #ffffff;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-container {
+                box-shadow: none;
+                margin: 0;
+                max-width: 100%;
+                padding: 0;
+            }
+            input[type="number"] {
+                border: none;
+                -moz-appearance: textfield; /* Firefox */
+            }
+            /* WebKit browsers like Chrome/Safari */
+            input[type=number]::-webkit-inner-spin-button,
+            input[type=number]::-webkit-outer-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+            .image-box {
+                border: 1px solid #000;
+                min-height: 150px; /* 인쇄 시 높이 조절 */
+            }
+            .image-box img {
+                max-height: 150px;
+            }
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- 메인 컨테이너 -->
+    <div class="container mx-auto max-w-4xl bg-white shadow-lg rounded-lg p-6 md:p-10 print-container">
+
+        <!-- 상단 버튼 (인쇄 시 숨김) -->
+        <div class="mb-6 flex flex-wrap gap-2 no-print">
+            <button id="saveButton" class="bg-blue-600 text-white px-4 py-2 rounded-md font-bold hover:bg-blue-700">로컬 저장</button>
+            <button id="loadButton" class="bg-green-600 text-white px-4 py-2 rounded-md font-bold hover:bg-green-700">불러오기</button>
+            <button id="printButton" class="bg-gray-700 text-white px-4 py-2 rounded-md font-bold hover:bg-gray-800">인쇄하기</button>
+            <button id="resetButton" class="bg-red-600 text-white px-4 py-2 rounded-md font-bold hover:bg-red-700">초기화</button>
+        </div>
+
+        <!-- 문서 제목 -->
+        <h1 class="text-3xl font-bold text-center mb-6">아웃트리거 받침철판 규격 계산기</h1>
+        
+        <!-- 1. 아웃트리거 규격 계산 -->
+        <h2 class="text-xl font-bold mb-3">1. 아웃트리거 규격 계산</h2>
+        <table class="mb-6" id="calculatorTable">
+            <thead>
+                <tr>
+                    <th>항목</th>
+                    <th>산출 근거 (제원 입력)</th>
+                    <th>단위</th>
+                    <th>결과</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="label">장비 총 중량 (A)</td>
+                    <td><input type="number" id="totalWeight" placeholder="숫자만 입력"></td>
+                    <td>ton</td>
+                    <td id="totalWeight_res">0.00</td>
+                </tr>
+                <tr>
+                    <td class="label">인양 하중 (B)</td>
+                    <td><input type="number" id="liftingLoad" placeholder="숫자만 입력"></td>
+                    <td>ton</td>
+                    <td id="liftingLoad_res">0.00</td>
+                </tr>
+                <tr>
+                    <td class="label">아웃트리거 갯수 (N)</td>
+                    <td><input type="number" id="outriggerCount" value="4" placeholder="기본 4개"></td>
+                    <td>ea</td>
+                    <td id="outriggerCount_res">4</td>
+                </tr>
+                <tr>
+                    <td class="label">아웃트리거 반력 (R)</td>
+                    <td class="text-sm font-mono">(A+B) × 1.25 ÷ N</td>
+                    <td>ton/ea</td>
+                    <td class="calc-result" id="reactionForce_res">0.00</td>
+                </tr>
+                <tr>
+                    <td class="label">지반 허용 지지력 (P)</td>
+                    <td><input type="number" id="groundCapacity" placeholder="아래 표 참고"></td>
+                    <td>ton/㎡</td>
+                    <td id="groundCapacity_res">0.00</td>
+                </tr>
+                <tr>
+                    <td class="label">받침 철판 최소 면적 (S)</td>
+                    <td class="text-sm font-mono">R ÷ P</td>
+                    <td>㎡</td>
+                    <td class="calc-result" id="minArea_res">0.000</td>
+                </tr>
+                <tr>
+                    <td class="label">받침 철판 규격</td>
+                    <td class="text-sm font-mono">√S (정사각형 가정)</td>
+                    <td>mm x mm</td>
+                    <td class="calc-final-result" id="plateSpecs_res">0 x 0</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- 2. 지내력 데이터 (편집 가능) -->
+        <h2 class="text-xl font-bold mb-3">2. 지내력 데이터 (참고)</h2>
+        <div class="flex justify-end mb-2 no-print">
+            <button id="addRowButton" class="bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600">행 추가</button>
+        </div>
+        <table class="mb-6">
+            <thead>
+                <tr>
+                    <th>지반의 종류</th>
+                    <th>허용 지지력 (ton/㎡)</th>
+                    <th class="no-print">삭제</th>
+                </tr>
+            </thead>
+            <tbody id="groundDataBody">
+                <!-- 기본 데이터 (편집 가능) - 첨부 이미지 기준 -->
+                <tr>
+                    <td contenteditable="true">콘크리트 (압축강도 30MPa)</td>
+                    <td contenteditable="true">612.2</td>
+                    <td class="no-print"><button class="deleteRow text-red-500 hover:text-red-700">삭제</button></td>
+                </tr>
+                <tr>
+                    <td contenteditable="true">굳은 암반</td>
+                    <td contenteditable="true">100</td>
+                    <td class="no-print"><button class="deleteRow text-red-500 hover:text-red-700">삭제</button></td>
+                </tr>
+                <tr>
+                    <td contenteditable="true">연암</td>
+                    <td contenteditable="true">30</td>
+                    <td class="no-print"><button class="deleteRow text-red-500 hover:text-red-700">삭제</button></td>
+                </tr>
+                <tr>
+                    <td contenteditable="true">자갈</td>
+                    <td contenteditable="true">20</td>
+                    <td class="no-print"><button class="deleteRow text-red-500 hover:text-red-700">삭제</button></td>
+                </tr>
+                <tr>
+                    <td contenteditable="true">자갈과 모래의 혼합물</td>
+                    <td contenteditable="true">15</td>
+                    <td class="no-print"><button class="deleteRow text-red-500 hover:text-red-700">삭제</button></td>
+                </tr>
+                <tr>
+                    <td contenteditable="true">모래</td>
+                    <td contenteditable="true">10</td>
+                    <td class="no-print"><button class="deleteRow text-red-500 hover:text-red-700">삭제</button></td>
+                </tr>
+                <tr>
+                    <td contenteditable="true">진흙 (연약 점토)</td>
+                    <td contenteditable="true">5</td>
+                    <td class="no-print"><button class="deleteRow text-red-500 hover:text-red-700">삭제</button></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- 3. 이미지 삽입 (1행 2열) -->
+        <h2 class="text-xl font-bold mb-3">3. 예시</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- 이미지 박스 1 -->
+            <label for="imageUpload1" class="image-box">
+                <div id="imageBox1" class="text-center">
+                    <img src="https://github.com/s7560k-dot/my-image4/blob/main/%EC%8A%A4%ED%81%AC%EB%A6%B0%EC%83%B7%202025-10-30%20103014.png?raw=true" alt="예시 사진 1">
+                </div>
+            </label>
+            <input type="file" id="imageUpload1" accept="image/*" class="hidden no-print">
+            
+            <!-- 이미지 박스 2 -->
+            <label for="imageUpload2" class="image-box">
+                <div id="imageBox2" class="text-center">
+                    <img src="https://github.com/s7560k-dot/my-image4/blob/main/%EC%8A%A4%ED%81%AC%EB%A6%B0%EC%83%B7%202025-10-30%20103035.png?raw=true" alt="예시 사진 2">
+                </div>
+            </label>
+            <input type="file" id="imageUpload2" accept="image/*" class="hidden no-print">
+        </div>
+
+        <!-- 추가된 내용: 건축물 바닥 운용 시 안전성 검토 -->
+        <div id="structuralWarning" class="mt-10 pt-6 border-t border-gray-300">
+            <h2 class="text-2xl font-bold mb-4">4. (중요) 건축물 바닥(슬래브) 운용 시 안전성 검토</h2>
+            
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-800 p-4 rounded-md mb-6" role="alert">
+                <p class="font-bold text-lg">경고 : 위험!</p>
+                <p>현재 계산기의 '지내력 데이터'는 [지반(땅)이나 기초] 에 장비를 설치할 때 사용하는 값입니다. 이 값을 건축물의 <br>**1층 바닥(슬래브)**에 절대로 적용해서는 안 됩니다. 구조물(슬래브)의 내력은 지반의 내력과 완전히 다릅니다.</p>
+                <p class="mt-2">아래 내용은 1층 바닥에서 장비 운용 시 필요한 [전문적인 안전성 검토 절차]에 대한 설명이며, [반드시 자격을 갖춘 <br>구조기술사가 수행해야 합니다.]</p>
+            </div>
+
+            <div class="space-y-6 text-sm md:text-base">
+                <h3 class="text-xl font-bold mb-2">1단계: 정보 수집 (입력 데이터)</h3>
+                <ul class="list-disc list-inside space-y-2 pl-4">
+                    <li><strong>장비 측 정보:</strong>
+                        <ul class="list-decimal list-inside ml-6 mt-1">
+                            <li>최대 아웃트리거 반력 (R) (본 계산기의 1번 항목에서 계산 가능)</li>
+                            <li>아웃트리거 규격 및 정확한 배치 위치</li>
+                        </ul>
+                    </li>
+                    <li><strong>건물 측 정보:</strong>
+                        <ul class="list-decimal list-inside ml-6 mt-1">
+                            <li>구조 도면 (구조 평면도, 상세도)</li>
+                            <li>구조 계산서 (설계 활하중(Live Load) 값 확인)</li>
+                            <li>콘크리트 설계 강도 (fck)</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h3 class="text-xl font-bold mb-2">2단계: 전문가 검토 의뢰 (필수)</h3>
+                <p>수집한 모든 자료(장비 제원, 아웃트리거 반력, 구조 도면)를 가지고 <strong>'구조기술사'</strong>에게 공식적으로 구조 안전성 검토를 의뢰해야 합니다. 현장 관리자가 임의로 판단해서는 안 됩니다.</p>
+
+                <h3 class="text-xl font-bold mb-2">3단계: 구조기술사의 안전성 분석</h3>
+                <p>구조기술사는 다음 항목들을 계산하여 바닥의 안전성을 검토합니다.</p>
+                <ul class="list-disc list-inside space-y-2 pl-4">
+                    <li><strong>펀칭 전단 (Punching Shear) 검토 (가장 중요):</strong> 아웃트리거의 집중 하중이 슬래브를 뚫고 파괴시키지 않는지 계산합니다.</li>
+                    <li><strong>슬래브 휨 (Bending Moment) 검토:</strong> 하중으로 인해 슬래브가 아래로 휘어져 균열/파괴되지 않는지 철근량을 기준으로 계산합니다.</li>
+                    <li><strong>보 (Beam) / 거더 (Girder) 검토:</strong> 슬래브의 하중을 전달받는 보(Beam)가 추가 하중을 견딜 수 있는지 검토합니다.</li>
+                    <li><strong>기둥 (Column) 검토:</strong> 보가 전달한 하중을 최종적으로 지지하는 기둥이 안전한지 검토합니다.</li>
+                </ul>
+
+                <h3 class="text-xl font-bold mb-2">4단계: 결과 및 대책 수립</h3>
+                <p>구조 검토 결과에 따라 다음과 같은 대책이 결정됩니다.</p>
+                <ul class="list-decimal list-inside space-y-2 pl-4">
+                    <li><strong>안전:</strong> 바닥 구조가 충분히 튼튼하여 별도 조치 불필요 (드문 경우).</li>
+                    <li><strong>하중 분산 필요:</strong> 펀칭 파괴 등을 방지하기 위해, 계산된 크기 이상의 <strong>두꺼운 강판(Steel Plate)이나 H-빔 받침대</strong>를 설치하여 하중을 넓게 분산시킵니다.</li>
+                    <li><strong>동바리(Shoring) 설치 필요:</strong> 하중 분산만으로 부족할 때, 장비 설치 위치의 <strong>바로 아래층 바닥</strong>에 <strong>동바리(시스템 서포트)</strong>를 촘촘하게 설치하여 하중을 하부 구조로 직접 전달시킵니다.</li>
+                    <li><strong>작업 불가:</strong> 구조적으로 보강이 불가능하거나 위험하다고 판단되는 경우.</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 토스트 메시지 (알림) -->
+    <div id="toast">메시지</div>
+
+    <!-- 확인 모달 (초기화) -->
+    <div id="confirmModal">
+        <div class="modal-content">
+            <h3 class="text-lg font-bold mb-4" id="modalTitle">확인</h3>
+            <p class="mb-6" id="modalMessage">정말로 모든 내용을 초기화하시겠습니까? 저장된 데이터가 삭제됩니다.</p>
+            <div class="flex justify-end gap-3">
+                <button id="modalCancel" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400">취소</button>
+                <button id="modalConfirm" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const calculatorInputs = document.querySelectorAll('#calculatorTable input[type="number"]');
+            const storageKey = 'outriggerCalculatorData_v2';
+
+            // --- 1. 아웃트리거 계산 로직 ---
+            const totalWeightInput = document.getElementById('totalWeight');
+            const liftingLoadInput = document.getElementById('liftingLoad');
+            const outriggerCountInput = document.getElementById('outriggerCount');
+            const groundCapacityInput = document.getElementById('groundCapacity');
+
+            const totalWeight_res = document.getElementById('totalWeight_res');
+            const liftingLoad_res = document.getElementById('liftingLoad_res');
+            const outriggerCount_res = document.getElementById('outriggerCount_res');
+            const reactionForce_res = document.getElementById('reactionForce_res');
+            const groundCapacity_res = document.getElementById('groundCapacity_res');
+            const minArea_res = document.getElementById('minArea_res');
+            const plateSpecs_res = document.getElementById('plateSpecs_res');
+
+            function calculateSpecs() {
+                const A = parseFloat(totalWeightInput.value) || 0;
+                const B = parseFloat(liftingLoadInput.value) || 0;
+                const N = parseFloat(outriggerCountInput.value) || 4; // 0 입력 방지, 기본 4
+                const P = parseFloat(groundCapacityInput.value) || 0;
+
+                const R = (N > 0) ? ((A + B) * 1.25) / N : 0;
+                const S = (P > 0) ? R / P : 0;
+                const side_m = Math.sqrt(S);
+                const side_mm = Math.ceil(side_m * 1000); // 안전을 위해 올림 처리
+
+                // 결과 필드 업데이트
+                totalWeight_res.textContent = A.toFixed(2);
+                liftingLoad_res.textContent = B.toFixed(2);
+                outriggerCount_res.textContent = (N > 0 ? N : 4);
+                reactionForce_res.textContent = R.toFixed(2);
+                groundCapacity_res.textContent = P.toFixed(2);
+                minArea_res.textContent = S.toFixed(3);
+                plateSpecs_res.textContent = `${side_mm} x ${side_mm}`;
+            }
+
+            calculatorInputs.forEach(input => input.addEventListener('input', calculateSpecs));
+
+            // --- 2. 지내력 데이터 테이블 편집 ---
+            const groundDataBody = document.getElementById('groundDataBody');
+            const addRowButton = document.getElementById('addRowButton');
+
+            addRowButton.addEventListener('click', () => {
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td contenteditable="true">새 항목</td>
+                    <td contenteditable="true">0</td>
+                    <td class="no-print"><button class="deleteRow text-red-500 hover:text-red-700">삭제</button></td>
+                `;
+                groundDataBody.appendChild(newRow);
+            });
+
+            groundDataBody.addEventListener('click', (event) => {
+                if (event.target.classList.contains('deleteRow')) {
+                    event.target.closest('tr').remove();
+                }
+            });
+
+            // --- 3. 이미지 삽입 로직 ---
+            const imageUpload1 = document.getElementById('imageUpload1');
+            const imageUpload2 = document.getElementById('imageUpload2');
+            const imageBox1 = document.getElementById('imageBox1');
+            const imageBox2 = document.getElementById('imageBox2');
+
+            function handleImageUpload(event, boxElement) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    boxElement.innerHTML = ''; // 기존 내용 삭제
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    boxElement.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+                event.target.value = null; // 동일 파일 다시 선택 가능하도록
+            }
+
+            imageUpload1.addEventListener('change', (e) => handleImageUpload(e, imageBox1));
+            imageUpload2.addEventListener('change', (e) => handleImageUpload(e, imageBox2));
+
+            // --- 4. 저장/불러오기/인쇄/초기화 ---
+            const saveButton = document.getElementById('saveButton');
+            const loadButton = document.getElementById('loadButton');
+            const printButton = document.getElementById('printButton');
+            const resetButton = document.getElementById('resetButton');
+
+            // 4a. 저장
+            saveButton.addEventListener('click', () => {
+                const data = {
+                    totalWeight: totalWeightInput.value,
+                    liftingLoad: liftingLoadInput.value,
+                    outriggerCount: outriggerCountInput.value,
+                    groundCapacity: groundCapacityInput.value,
+                    groundDataHTML: groundDataBody.innerHTML,
+                    imageBox1HTML: imageBox1.innerHTML,
+                    imageBox2HTML: imageBox2.innerHTML,
+                };
+
+                try {
+                    localStorage.setItem(storageKey, JSON.stringify(data));
+                    showToast('데이터가 브라우저에 저장되었습니다.');
+                } catch (e) {
+                    console.error('저장 실패:', e);
+                    showToast('저장에 실패했습니다. 저장 공간이 부족할 수 있습니다.', 'error');
+                }
+            });
+
+            // 4b. 불러오기
+            loadButton.addEventListener('click', () => {
+                const savedData = localStorage.getItem(storageKey);
+                if (!savedData) {
+                    showToast('저장된 데이터가 없습니다.', 'error');
+                    return;
+                }
+
+                try {
+                    const data = JSON.parse(savedData);
+                    totalWeightInput.value = data.totalWeight || '';
+                    liftingLoadInput.value = data.liftingLoad || '';
+                    outriggerCountInput.value = data.outriggerCount || '4';
+                    groundCapacityInput.value = data.groundCapacity || '';
+                    
+                    if (data.groundDataHTML) groundDataBody.innerHTML = data.groundDataHTML;
+                    if (data.imageBox1HTML) imageBox1.innerHTML = data.imageBox1HTML;
+                    if (data.imageBox2HTML) imageBox2.innerHTML = data.imageBox2HTML;
+
+                    calculateSpecs(); // 불러오기 후 계산 갱신
+                    showToast('저장된 데이터를 불러왔습니다.');
+                } catch (e) {
+                    console.error('불러오기 실패:', e);
+                    showToast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
+                }
+            });
+
+            // 4c. 인쇄
+            printButton.addEventListener('click', () => {
+                window.print();
+            });
+
+            // 4d. 초기화 (모달 사용)
+            resetButton.addEventListener('click', () => {
+                showModal('초기화 확인', '정말로 모든 내용을 초기화하시겠습니까? 저장된 데이터가 삭제됩니다.');
+            });
+
+            // --- 5. 유틸리티 함수 (토스트, 모달) ---
+            const toast = document.getElementById('toast');
+            const modal = document.getElementById('confirmModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalMessage = document.getElementById('modalMessage');
+            const modalCancel = document.getElementById('modalCancel');
+            const modalConfirm = document.getElementById('modalConfirm');
+
+            function showToast(message, type = 'success') {
+                toast.textContent = message;
+                toast.style.backgroundColor = type === 'error' ? '#c53030' : '#2d3748';
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+            
+            function showModal(title, message) {
+                modalTitle.textContent = title;
+                modalMessage.textContent = message;
+                modal.classList.add('show');
+            }
+
+            function hideModal() {
+                modal.classList.remove('show');
+            }
+
+            modalCancel.addEventListener('click', hideModal);
+            
+            modalConfirm.addEventListener('click', () => {
+                // 실제 초기화 로직
+                localStorage.removeItem(storageKey);
+                
+                totalWeightInput.value = '';
+                liftingLoadInput.value = '';
+                outriggerCountInput.value = '4';
+                groundCapacityInput.value = '';
+
+                // 지내력 테이블 초기화
+                groundDataBody.innerHTML = `
+                    <tr>
+                        <td contenteditable="true">콘크리트 (압축강도 30MPa)</td>
+                        <td contenteditable="true">612.2</td>
+                        <td class="no-print"><button class="deleteRow text-red-500 hover:text-red-700">삭제</button></td>
+                    </tr>
+                    <tr>
+                        <td contenteditable="true">굳은 암반</td>
+                        <td contenteditable="true">100</td>
+                        <td class="no-print"><button class="deleteRow text-red-500 hover:text-red-700">삭제</button></td>
+                    </tr>
+                    <tr>
+                        <td contenteditable="true">연암</td>
+                        <td contenteditable="true">30</td>
+                        <td class="no-print"><button class="deleteRow text-red-500 hover:text-red-700">삭제</button></td>
+                    </tr>
+                    <tr>
+                        <td contenteditable="true">자갈</td>
+                        <td contenteditable="true">20</td>
+                        <td class="no-print"><button class="deleteRow text-red-500 hover:text-red-700">삭제</button></td>
+                    </tr>
+                    <tr>
+                        <td contenteditable="true">자갈과 모래의 혼합물</td>
+                        <td contenteditable="true">15</td>
+                        <td class="no-print"><button class="deleteRow text-red-500 hover:text-red-700">삭제</button></td>
+                    </tr>
+                    <tr>
+                        <td contenteditable="true">모래</td>
+                        <td contenteditable="true">10</td>
+                        <td class="no-print"><button class="deleteRow text-red-500 hover:text-red-700">삭제</button></td>
+                    </tr>
+                    <tr>
+                        <td contenteditable="true">진흙 (연약 점토)</td>
+                        <td contenteditable="true">5</td>
+                        <td class="no-print"><button class="deleteRow text-red-500 hover:text-red-700">삭제</button></td>
+                    </tr>
+                `;
+                
+                // 이미지 박스 초기화
+                imageBox1.innerHTML = '<span class="text-lg">사진 1</span><br>클릭하여 이미지 삽입';
+                imageBox2.innerHTML = '<span class="text-lg">사진 2</span><br>클릭하여 이미지 삽입';
+
+                calculateSpecs(); // 계산 초기화
+                hideModal();
+                showToast('모든 내용이 초기화되었습니다.');
+            });
+
+            // 페이지 로드 시 기본 계산 실행
+            calculateSpecs();
+        });
+    </script>
+
+    <!-- 추가된 텍스트 -->
+    <div class="text-center text-sm text-gray-600 mt-8 pb-4 print:mt-4 print:pb-2">
+        남화토건(주)안전보건팀
+    </div>
+</body>
+</html>
+
+
+
+
