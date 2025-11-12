@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주간 안전보건 이행 점검표 (최종-v2)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Noto Sans KR (Korean font) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Inter 폰트를 기본으로 하되, 한글은 Noto Sans KR을 사용 */
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+        }
+
+        /* Noto Sans KR이 Inter보다 먼저 적용되는 것을 방지하기 위한 추가 설정 */
+        :lang(ko) {
+            font-family: 'Noto Sans KR', 'Inter', sans-serif;
+        }
+
+        /* 인쇄 시 스타일 */
+        @media print {
+            .print\:hidden {
+                display: none;
+            }
+            /* 인쇄 시에는 textarea를 숨깁니다. */
+            textarea.input-full {
+                display: none !important;
+            }
+            
+            /* 인쇄 시에는 print-content div를 보여줍니다. */
+            .print-content {
+                display: block !important;
+            }
+
+            input, select {
+                border: 1px solid #e5e7eb;
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                appearance: none;
+                padding: 4px;
+            }
+
+            select {
+                padding-right: 1.5rem;
+                background-image: none;
+            }
+
+            /* 인쇄 시 O, X, 세모 배경색 강제 적용 */
+            option[value="O"], .bg-green-100 {
+                background-color: #dcfce7 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            option[value="X"], .bg-red-100 {
+                background-color: #fee2e2 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            option[value="△"], .bg-yellow-100 {
+                background-color: #fef9c3 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            tr {
+                page-break-inside: avoid !important;
+            }
+        }
+        
+        /* textarea 스타일 (화면용) */
+        .input-full {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid transparent; 
+            box-sizing: border-box; 
+            min-height: 60px; 
+            overflow-y: hidden; /* 높이 조절 시 스크롤바 깜빡임 방지 */
+        }
+        
+        /* 포커스 시 테두리 표시 */
+        .input-full:focus {
+            border-color: #3b82f6;
+            outline: none;
+        }
+
+        /* 인쇄용 div 스타일 (화면에서는 숨김) */
+        .print-content {
+            display: none; /* 화면에서는 숨김 */
+            width: 100%;
+            min-height: 60px; /* textarea와 최소 높이 맞춤 */
+            padding: 0.5rem; /* textarea와 패딩 맞춤 */
+            box-sizing: border-box;
+            font-family: inherit; /* 폰트 상속 */
+            line-height: inherit; /* 줄간격 상속 */
+            white-space: pre-wrap; /* 줄바꿈 및 공백 유지 */
+            word-wrap: break-word; /* 긴 단어 자동 줄바꿈 */
+        }
+    </style>
+    <script>
+        // 이행 여부(O, X, △)에 따라 배경색 변경
+        function updateBgColor(selectElement) {
+            selectElement.classList.remove('bg-green-100', 'bg-red-100', 'bg-yellow-100', 'text-green-800', 'text-red-800', 'text-yellow-800');
+            if (selectElement.value === 'O') {
+                selectElement.classList.add('bg-green-100', 'text-green-800');
+            } else if (selectElement.value === 'X') {
+                selectElement.classList.add('bg-red-100', 'text-red-800');
+            } else if (selectElement.value === '△') {
+                selectElement.classList.add('bg-yellow-100', 'text-yellow-800');
+            }
+        }
+
+        /* 화면 자동 높이 조절 + 인쇄용 div 내용 동기화 함수 */
+        function syncAndResize(textarea) {
+            // 1. 화면의 textarea 높이 자동 조절
+            textarea.style.height = 'auto'; // 높이 초기화
+            textarea.style.height = textarea.scrollHeight + 'px'; // 스크롤 높이만큼 설정
+            
+            // 2. 인쇄용 div 찾기 (textarea 바로 다음 요소)
+            const printDiv = textarea.nextElementSibling;
+            
+            // 3. 인쇄용 div에 텍스트 내용 실시간 복사
+            if (printDiv && printDiv.classList.contains('print-content')) {
+                printDiv.innerText = textarea.value;
+            }
+        }
+
+        /* 엑셀 서식 복사 기능 (대분류 중복 제거) */
+        function copyToExcel() {
+            let copyString = '';
+            
+            // --- 1. 상단 정보 수집 ---
+            copyString += '현장명:\t' + document.getElementById('site_name').value + '\n';
+            copyString += '보고 주차:\t' + document.getElementById('report_week').value + '\n';
+            copyString += '제출일:\t' + document.getElementById('submission_date').value + '\n';
+            copyString += '작성자:\t' + document.getElementById('author').value + '\n';
+            copyString += '검토자:\t' + document.getElementById('reviewer').value + '\n';
+            copyString += '\n'; // 구분선
+
+            // --- 2. 테이블 헤더 수집 ---
+            const headers = [
+                "대분류", 
+                "핵심 관리 항목 (KPI)", 
+                "금주 계획", 
+                "금주 실적 (정량/정성)", 
+                "이행 (O,X,△)", 
+                "증빙 자료 (파일명)", 
+                "미이행 사유 및 특이사항"
+            ];
+            copyString += headers.join('\t') + '\n';
+
+            // --- 3. 테이블 본문 수집 ---
+            const tableBody = document.querySelector('tbody');
+
+            tableBody.querySelectorAll('tr').forEach(row => {
+                const cells = row.querySelectorAll('td');
+                let rowData = [];
+                let cellIndex = 0;
+                
+                // [수정된 로직] 3.1. 대분류 (rowspan 처리)
+                // rowspan 속성이 있는 셀(첫 번째 행)에만 대분류 텍스트를 추가합니다.
+                if (cells[cellIndex].hasAttribute('rowspan')) {
+                    rowData.push(cells[cellIndex].innerText); // 첫 행에만 카테고리 추가
+                    cellIndex++; // 다음 셀로 이동
+                } else {
+                    // [수정] 2번째 행부터는 빈 칸으로 추가
+                    rowData.push(""); 
+                }
+                
+                // 3.2. 나머지 셀 수집
+                
+                // 핵심 관리 항목 (KPI)
+                rowData.push(cells[cellIndex].innerText);
+                cellIndex++;
+
+                // 엑셀에서 줄바꿈을 유지하려면 값을 ""로 감싸야 합니다.
+                const formatTextForExcel = (text) => {
+                    if (text.includes('\n') || text.includes('\t') || text.includes(',')) {
+                        text = text.replace(/"/g, '""'); // 따옴표 자체를 이스케이프
+                        return `"${text}"`;
+                    }
+                    return text;
+                };
+
+                // 금주 계획 (textarea)
+                rowData.push(formatTextForExcel(cells[cellIndex].querySelector('textarea').value));
+                cellIndex++;
+
+                // 금주 실적 (textarea)
+                rowData.push(formatTextForExcel(cells[cellIndex].querySelector('textarea').value));
+                cellIndex++;
+
+                // 이행 (select)
+                rowData.push(cells[cellIndex].querySelector('select').value);
+                cellIndex++;
+
+                // 증빙 자료 (textarea)
+                rowData.push(formatTextForExcel(cells[cellIndex].querySelector('textarea').value));
+                cellIndex++;
+
+                // 미이행 사유 (textarea)
+                rowData.push(formatTextForExcel(cells[cellIndex].querySelector('textarea').value));
+                cellIndex++;
+                
+                // 행 결합
+                copyString += rowData.join('\t') + '\n';
+            });
+
+            // --- 4. 클립보드에 복사 ---
+            navigator.clipboard.writeText(copyString).then(() => {
+                const copyButton = document.getElementById('copyButton');
+                const originalText = copyButton.innerHTML;
+                copyButton.innerHTML = `... 복사됨! ...`; // 간단하게 변경
+                setTimeout(() => {
+                    copyButton.innerHTML = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('클립보드 복사 실패:', err);
+                alert('클립보드 복사에 실패했습니다.');
+            });
+        }
+        
+        /* [추가] 데이터베이스(DB) 복사 기능 (23개 항목) */
+        function copyForDatabase() {
+            let dbData = [];
+
+            // --- 1. 기본 정보 3개 수집 (A, B, C열) ---
+            dbData.push(document.getElementById('site_name').value);
+            dbData.push(document.getElementById('submission_date').value);
+            dbData.push(document.getElementById('author').value);
+
+            // --- 2. 핵심 항목 20개 '이행' 값 수집 (D ~ W열) ---
+            // querySelectorAll은 DOM 순서대로 20개의 select를 가져옵니다.
+            const selects = document.querySelectorAll('tbody select');
+            
+            selects.forEach(select => {
+                dbData.push(select.value);
+            });
+
+            // --- 3. 탭으로 구분된 한 줄의 문자열 생성 ---
+            const copyString = dbData.join('\t');
+
+            // --- 4. 클립보드에 복사 ---
+            navigator.clipboard.writeText(copyString).then(() => {
+                const dbCopyButton = document.getElementById('dbCopyButton');
+                const originalText = dbCopyButton.innerHTML;
+                dbCopyButton.innerHTML = `... DB 복사됨! ...`; // 간단하게 변경
+                setTimeout(() => {
+                    dbCopyButton.innerHTML = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('DB 복사 실패:', err);
+                alert('DB 복사에 실패했습니다.');
+            });
+        }
+
+        // DOM 로드 후 이벤트 리스너 설정
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const textareas = document.querySelectorAll('textarea.input-full');
+            textareas.forEach(textarea => {
+                textarea.addEventListener('input', () => syncAndResize(textarea));
+                syncAndResize(textarea); // 페이지 로드 시 실행
+            });
+        });
+        
+    </script>
+</head>
+<body class="bg-gray-100 p-4 sm:p-8">
+    <div class="container mx-auto max-w-7xl bg-white shadow-lg rounded-lg overflow-hidden">
+        <!-- 헤더 및 버튼 -->
+        <header class="bg-blue-600 text-white p-6 print:hidden">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl md:text-3xl font-bold">주간 안전보건 이행 점검표</h1>
+                <div class="flex flex-wrap gap-2 justify-end">
+                    <!-- 데이터 복사 버튼 (서식용) -->
+                    <button 
+                        id="copyButton"
+                        onclick="copyToExcel()"
+                        class="bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow hover:bg-blue-400 transition duration-300 ease-in-out">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block -mt-1 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        데이터 복사
+                    </button>
+                    <!-- DB 복사 버튼 (데이터베이스용) -->
+                    <button 
+                        id="dbCopyButton"
+                        onclick="copyForDatabase()"
+                        class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow hover:bg-green-500 transition duration-300 ease-in-out">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block -mt-1 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V3zm1 2v1h12V5H4zm0 5a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm1 2v1h12v-1H4zm0 5a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm1 2v1h12v-1H4z" clip-rule="evenodd" />
+                        </svg>
+                        DB 복사
+                    </button>
+                    <!-- 인쇄 버튼 -->
+                    <button 
+                        onclick="window.print()"
+                        class="bg-white text-blue-600 font-semibold py-2 px-4 rounded-lg shadow hover:bg-gray-50 transition duration-300 ease-in-out">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block -mt-1 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        인쇄
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 모바일용 제목 (인쇄 시 숨김) -->
+        <div class="p-4 sm:hidden print:hidden">
+            <h1 class="text-xl font-bold text-gray-800">주간 안전보건 이행 점검표</h1>
+        </div>
+
+        <!-- 인쇄용 제목 -->
+        <div class="hidden print:block pt-6 pb-4 text-center">
+            <h1 class="text-3xl font-bold text-black">주간 안전보건 이행 점검표</h1>
+        </div>
+
+        <!-- 결재 라인 -->
+        <section class="p-4 md:p-6 border-b">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700"></h2>
+            <!-- 현장명 입력란 -->
+            <div class="mb-4 flex items-center">
+                <label for="site_name" class="w-24 text-sm font-medium text-gray-600 whitespace-nowrap">현장명:</label>
+                <input type="text" id="site_name" class="flex-1 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <!-- 기존 결재란 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="flex items-center">
+                    <label for="report_week" class="w-24 text-sm font-medium text-gray-600 whitespace-nowrap">보고 주차:</label>
+                    <input type="text" id="report_week" class="flex-1 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="flex items-center">
+                    <label for="submission_date" class="w-24 text-sm font-medium text-gray-600 whitespace-nowrap">제출일:</label>
+                    <input type="date" id="submission_date" class="flex-1 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="flex items-center">
+                    <label for="author" class="w-24 text-sm font-medium text-gray-600 whitespace-nowrap">작성자:</label>
+                    <input type="text" id="author" placeholder="OOO" class="flex-1 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    <span class="ml-2 text-sm text-gray-600">(서명)</span>
+                </div>
+                <div class="flex items-center">
+                    <label for="reviewer" class="w-24 text-sm font-medium text-gray-600 whitespace-nowrap">검토자:</label>
+                    <input type="text" id="reviewer" placeholder="OOO" class="flex-1 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    <span class="ml-2 text-sm text-gray-600">(서명)</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 점검표 테이블 -->
+        <section class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 border-t">
+                <thead class="bg-gray-50">
+                    <tr class="divide-x divide-gray-200">
+                        <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-1/12">대분류</th>
+                        <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-2/12">핵심 관리 항목 (KPI)</th>
+                        <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-3/12">금주 계획</th>
+                        <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-1/12">금주 실적 <br>(정량/정성)</th>
+                        <th scope="col" class="px-1 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-1/12">이행 (O,X,△)</th>
+                        <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-2/12">증빙 자료 (파일명)</th>
+                        <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-2/12">미이행 사유 및 특이사항</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <!-- 1. 위험성평가 -->
+                    <tr class="divide-x divide-gray-200">
+                        <td rowspan="3" class="px-3 py-2 align-middle text-center font-semibold text-gray-700">1. 위험성평가</td>
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">1.1. 주간 위험성평가 실시</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+                    <tr class="divide-x divide-gray-200">
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">1.2. 위험성 감소 대책 이행</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+                    <tr class="divide-x divide-gray-200">
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">1.3. 근로자 참여</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+
+                    <!-- 2. 근로자 참여 -->
+                    <tr class="divide-x divide-gray-200">
+                        <td rowspan="2" class="px-3 py-2 align-middle text-center font-semibold text-gray-700">2. 근로자 참여</td>
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">2.1. 작업 전 안전점검(TBM)</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+                    <tr class="divide-x divide-gray-200">
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">2.2. 안전제안/아차사고</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+
+                    <!-- 3. 안전보건교육 -->
+                    <tr class="divide-x divide-gray-200">
+                        <td rowspan="5" class="px-3 py-2 align-middle text-center font-semibold text-gray-700">3. 안전보건교육</td>
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">3.1. 신규채용자교육</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+                    <tr class="divide-x divide-gray-200">
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">3.2. 작업내용 변경교육</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+                    <tr class="divide-x divide-gray-200">
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">3.3. 특별교육(고위험)</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+                    <tr class="divide-x divide-gray-200">
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">3.4. 정기안전교육(근로자)</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+                    <tr class="divide-x divide-gray-200">
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">3.5. 정기안전교육(관리감독자)</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+
+                    <!-- 4. 안전점검 -->
+                    <tr class="divide-x divide-gray-200">
+                        <td rowspan="5" class="px-3 py-2 align-middle text-center font-semibold text-gray-700">4. 안전점검</td>
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">4.1. 합동 안전점검</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+                    <tr class="divide-x divide-gray-200">
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">4.2. 사업주 순회점검</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+                    <tr class="divide-x divide-gray-200">
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">4.3. 관리감독자 순회점검</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+                    <tr class="divide-x divide-gray-200">
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">4.4. 안전관리자 순회점검</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+                    <tr class="divide-x divide-gray-200">
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">4.5. 점검 후속조치(지적사항)</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+
+                    <!-- 5. 도급/협력사 -->
+                    <tr class="divide-x divide-gray-200">
+                        <td rowspan="3" class="px-3 py-2 align-middle text-center font-semibold text-gray-700">5. 도급/협력사</td>
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">5.1. 안전보건협의체</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+                    <tr class="divide-x divide-gray-200">
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">5.2. 위험작업허가(PTW)</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+                     <tr class="divide-x divide-gray-200">
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">5.3. 도급인 현장 점검</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+
+                    <!-- 6. 비상대응 -->
+                    <tr class="divide-x divide-gray-200">
+                        <td rowspan="2" class="px-3 py-2 align-middle text-center font-semibold text-gray-700">6. 비상대응</td>
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">6.1. 주간 비상자재 점검</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+                    <tr class="divide-x divide-gray-200">
+                        <td class="px-3 py-2 align-middle text-center text-sm text-gray-600 break-keep">6.2. 비상대응훈련</td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-1 align-middle">
+                            <select onchange="updateBgColor(this)" class="w-full p-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-bold text-center" style="min-height: 60px;">
+                                <option value="">-</option>
+                                <option value="O">O</option>
+                                <option value="X">X</option>
+                                <option value="△">△</option>
+                            </select>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                        <td class="p-0 align-top">
+                            <textarea class="input-full print:hidden" oninput="syncAndResize(this)"></textarea>
+                            <div class="print-content"></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 하단 푸터 -->
+        <footer class="p-4 md:p-6 text-center text-sm text-gray-500 border-t border-gray-200">
+            안전보건팀
+        </footer>
+
+    </div>
+</body>
+</html>
