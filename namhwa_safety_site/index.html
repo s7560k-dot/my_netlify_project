@@ -2,129 +2,73 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>남화토건 안전보건 자료실</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>접근 제한</title>
+    <!-- Tailwind CSS 로드 -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* 간단한 폰트 설정 */
         body {
-            font-family: 'Inter', sans-serif;
-        }
-        /* 버튼 공통 스타일 */
-        .category-button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            font-weight: 600; /* semibold 대신 600 사용 */
-            padding: 1rem 1.5rem; /* py-4 px-6 */
-            border-radius: 0.5rem; /* rounded-lg */
-            font-size: 1.125rem; /* text-lg */
-            transition: all 0.3s ease;
-            color: white;
-            min-height: 80px; /* 버튼 높이 통일 */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen py-12 px-4">
-    <div class="max-w-5xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-2xl">
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 text-center mb-10">
-            남화토건(주) 안전보건팀 자료실
-        </h1>
+<body class="bg-gray-100 h-screen flex items-center justify-center">
 
-        <!-- 카테고리 1: 시스템 & 매뉴얼 (제목 수정) -->
-        <div>
-            <h2 class="text-2xl font-semibold text-gray-800 mt-8 mb-5 border-b-2 border-cyan-500 pb-2">
-                시스템 & 매뉴얼 (Systems & Manuals)
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <!-- (준비중) 안전보건경영시스템 (링크 수정) -->
-                <a href="shms-manual.html" class="category-button bg-cyan-600 hover:bg-cyan-700">
-                    안전보건경영시스템 (웹 매뉴얼)
-                </a>
-
-                <!-- (준비중) 매뉴얼 링크 -->
-                <a href="#" class="category-button bg-gray-400 text-gray-800 cursor-not-allowed opacity-70" onclick="event.preventDefault();">
-                    안전보건 매뉴얼 (준비중)
-                </a>
-                
-                <!-- (준비중) R&R 링크 -->
-                <a href="#" class="category-button bg-gray-400 text-gray-800 cursor-not-allowed opacity-70" onclick="event.preventDefault();">
-                    R&R (준비중)
-                </a>
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-sm">
+        <h1 class="text-2xl font-bold mb-4 text-center text-gray-800">접근 제한</h1>
+        <p class="text-gray-600 mb-6 text-center">이 페이지에 접근하려면 비밀번호가 필요합니다.</p>
+        
+        <!-- 비밀번호 입력 폼 -->
+        <div class="space-y-4">
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 sr-only">비밀번호</label>
+                <input type="password" id="password" name="password" class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="비밀번호 입력">
             </div>
+            
+            <button id="submitButton" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 ease-in-out">
+                입장
+            </button>
         </div>
-
-        <!-- 카테고리 2: SOP & 점검표 -->
-        <div>
-            <h2 class="text-2xl font-semibold text-gray-800 mt-10 mb-5 border-b-2 border-amber-500 pb-2">
-                SOP & 점검표 (SOPs & Checklists)
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <!-- '/shm_system/' 폴더로 연결되는 링크 (SOP 카테고리에 유지) -->
-                <a href="/shm_system/" class="category-button bg-amber-500 hover:bg-amber-600">
-                    안전보건 경영시스템 (SHM System)
-                </a>
-
-                <!-- (준비중) SOP 링크 -->
-                <a href="#" class="category-button bg-gray-400 text-gray-800 cursor-not-allowed opacity-70" onclick="event.preventDefault();">
-                    표준작업절차서 (SOP) (준비중)
-                </a>
-
-                <!-- '/pre_check/' 폴더로 연결되는 링크 -->
-                <a href="/pre_check/" class="category-button bg-amber-500 hover:bg-amber-600">
-                    신규 착공 현장 체크리스트
-                </a>
-                
-                <!-- '/daily_arch/' 폴더로 연결되는 링크 -->
-                <a href="/daily_arch/" class="category-button bg-amber-500 hover:bg-amber-600">
-                    건축공사 일일 안전점검표
-                </a>
-                
-                <!-- '/daily_ce/' 폴더로 연결되는 링크 -->
-                <a href="/daily_ce/" class="category-button bg-amber-500 hover:bg-amber-600">
-                    토목공사 일일 안전점검표
-                </a>
-
-                <!-- '/sh_check/' 폴더로 연결되는 링크 -->
-                <a href="/sh_check/" class="category-button bg-amber-500 hover:bg-amber-600">
-                    현장 안전보건 점검 (SH Check)
-                </a>
-
-                <!-- '/AHA/' 폴더로 연결되는 링크 -->
-                <a href="/AHA/" class="category-button bg-amber-500 hover:bg-amber-600">
-                    위험성 평가표 (AHA)
-                </a>
-                
-                <!-- '/PTW/' 폴더로 연결되는 링크 -->
-                <a href="/PTW/" class="category-button bg-amber-500 hover:bg-amber-600">
-                    작업허가서 (PTW)
-                </a>
-            </div>
-        </div>
-
-        <!-- 카테고리 3: 안전 계산기 -->
-        <div>
-            <h2 class="text-2xl font-semibold text-gray-800 mt-10 mb-5 border-b-2 border-emerald-500 pb-2">
-                안전 계산기 (Safety Calculators)
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <!-- '/work/' 폴더로 연결되는 링크 -->
-                <a href="/work/" class="category-button bg-emerald-600 hover:bg-emerald-700">
-                    중량물취급 안전율 계산기
-                </a>
-
-                <!-- '/OUT/' 폴더로 연결되는 링크 -->
-                <a href="/OUT/" class="category-button bg-emerald-600 hover:bg-emerald-700">
-                    아웃트리거 받침철판 규격 계산기
-                </a>
-            </div>
-        </div>
-
+        
+        <!-- 오류 메시지 표시 영역 -->
+        <p id="errorMessage" class="text-red-500 text-sm mt-4 text-center"></p>
     </div>
+
+    <script>
+        // 1. 비밀번호를 이곳에 설정하세요. (주의: 소스 보기에 노출됩니다)
+        const CORRECT_PASSWORD = "nh4088108184"; 
+        
+        // 2. 실제 접속할 페이지 (1단계에서 변경한 파일 이름)
+        const MAIN_PAGE = "main.html";
+
+        const passwordInput = document.getElementById('password');
+        const submitButton = document.getElementById('submitButton');
+        const errorMessage = document.getElementById('errorMessage');
+
+        function checkPassword() {
+            const enteredPassword = passwordInput.value;
+
+            if (enteredPassword === CORRECT_PASSWORD) {
+                // 비밀번호가 맞으면 메인 페이지로 이동
+                window.location.href = MAIN_PAGE;
+            } else {
+                // 비밀번호가 틀리면 오류 메시지 표시
+                errorMessage.textContent = "비밀번호가 올바르지 않습니다.";
+                passwordInput.value = ""; // 입력 필드 비우기
+                passwordInput.focus(); // 다시 포커스
+            }
+        }
+
+        // '입장' 버튼 클릭 시
+        submitButton.addEventListener('click', checkPassword);
+
+        // 'Enter' 키를 눌렀을 때
+        passwordInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                checkPassword();
+            }
+        });
+    </script>
 </body>
 </html>
-
-
-
