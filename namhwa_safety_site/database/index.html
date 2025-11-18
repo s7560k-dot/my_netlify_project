@@ -1,0 +1,822 @@
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  doc,
+  setDoc,
+  deleteDoc
+} from 'firebase/firestore';
+import { setLogLevel } from 'firebase/firestore'; // Firestore 로깅
+
+// --- Firebase 설정 ---
+// (수정) 캔버스 미리보기 환경과 호환되도록 __firebase_config 변수를 사용합니다.
+const firebaseConfig = typeof __firebase_config !== 'undefined'
+  ? JSON.parse(__firebase_config)
+  : {
+    apiKey: "YOUR_PREVIEW_API_KEY", // 이 값은 캔버스 환경에서 자동으로 채워집니다.
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+// (수정) 캔버스 미리보기 환경의 __app_id를 사용합니다.
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-preview-app-id';
+
+// --- 앱 초기화 ---
+let app;
+let db;
+let auth;
+
+try {
+  app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  auth = getAuth(app);
+  setLogLevel('debug'); // Firestore 로깅 레벨 설정
+} catch (error) {
+  console.error("Firebase 초기화 오류:", error);
+  // 앱이 죽지 않도록 기본값 할당
+  db = null;
+  auth = null;
+}
+
+
+// --- 상수 정의 ---
+const SITES = [
+  '현장 A', '현장 B', '현장 C', '현장 D', '현장 E',
+  '현장 F', '현장 G', '현장 H', '현장 I', '현장 J', '현장 K'
+];
+
+const CATEGORIES = [
+  { 
+    id: 'riskAssessment', 
+    name: '위험성평가', 
+    subCategories: [
+      { id: 'ra_weekly', name: '1.1 주간 위험성평가 실시' },
+      { id: 'ra_measures', name: '1.2 위험성감소대책 이행' },
+      { id: 'ra_participation', name: '1.3 근로자 참여' },
+    ]
+  },
+  { 
+    id: 'tbm', 
+    name: 'TBM (Tool Box Meeting)',
+    subCategories: [
+      { id: 'tbm_inspection', name: '2.1 작업전 안전점검' },
+      { id: 'tbm_nearmiss', name: '2.2 안전제안/아차사고' },
+    ]
+  },
+  { 
+    id: 'training', 
+    name: '안전보건교육',
+    subCategories: [
+      { id: 'tr_new', name: '3.1 신규채용자교육' },
+      { id: 'tr_change', name: '3.2 작업내용 변경교육' },
+      { id: 'tr_special', name: '3.3 특별안전교육' },
+      { id: 'tr_regular_worker', name: '3.4 정기안전교육(근로자)' },
+      { id: 'tr_regular_manager', name: '3.5 정기안전교육(관리감독자)' },
+    ]
+  },
+  { 
+    id: 'inspection', 
+    name: '안전점검',
+    subCategories: [
+      { id: 'insp_joint', name: '4.1 합동안전점검' },
+      { id: 'insp_owner', name: '4.2 사업주 순회점검' },
+      { id: 'insp_manager', name: '4.3 관리감독자 순회점검' },
+      { id: 'insp_safety', name: '4.4 안전관리자 순회점검' },
+      { id: 'insp_followup', name: '4.5 점검 후속조치(지적사항)' },
+    ]
+  },
+  { 
+    id: 'contractor', 
+    name: '도급/협력사 관리',
+    subCategories: [
+      { id: 'cont_council', name: '5.1 안전보건협의체' },
+      { id: 'cont_ptw', name: '5.2 위험작업허가(PTW)' },
+      { id: 'cont_plan', name: '5.3 작업계획수립' },
+    ]
+  },
+  { 
+    id: 'emergency', 
+    name: '비상대응',
+    subCategories: [
+      { id: 'em_check', name: '6.1 비상자재 재고 점검' },
+      { id: 'em_drill', name: '6.2 비상대응훈련' },
+    ]
+  },
+];
+
+// --- 헬퍼 컴포넌트 ---
+
+// 0. 로딩 스피너
+function LoadingSpinner() {
+  return (
+    <div className="flex justify-center items-center h-screen">
+      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+  );
+}
+
+// 0. 알림창
+function Alert({ message, type, onClose }) {
+  const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+  return (
+    <div className={`fixed top-5 right-5 ${bgColor} text-white p-4 rounded-lg shadow-lg z-50`}>
+      <span>{message}</span>
+      <button onClick={onClose} className="ml-4 font-bold">X</button>
+    </div>
+  );
+}
+
+// 0. 탭 버튼
+function TabButton({ children, onClick, isActive }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`py-3 px-6 font-semibold rounded-t-lg focus:outline-none transition-colors duration-200
+        ${isActive
+          ? 'bg-white text-blue-600 border-b-2 border-blue-600'
+          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+        }
+      `}
+    >
+      {children}
+    </button>
+  );
+}
+
+// 0. 아이콘
+function Icon({ path, size = 6 }) {
+  return (
+    <svg className={`w-${size} h-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={path} />
+    </svg>
+  );
+}
+
+// 1. 보고서 제출 폼
+function SubmissionForm({ db, userId, appId, setAlert }) {
+  const getInitialFormState = () => {
+    const categoriesState = {};
+    CATEGORIES.forEach(cat => {
+      categoriesState[cat.id] = {}; // Create an object for the main category
+      cat.subCategories.forEach(subCat => {
+        // Create an object for each sub-category
+        categoriesState[cat.id][subCat.id] = { plan: '', performance: '', status: '' };
+      });
+    });
+    return {
+      reportingWeek: '',
+      siteName: SITES[0],
+      proofLink: '',
+      categories: categoriesState
+    };
+  };
+
+  const [formData, setFormData] = useState(getInitialFormState());
+  const [isLoading, setIsLoading] = useState(false);
+  const [todayDate, setTodayDate] = useState(''); // For display
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCategoryChange = (catId, subCatId, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      categories: {
+        ...prev.categories,
+        [catId]: {
+          ...prev.categories[catId],
+          [subCatId]: {
+            ...prev.categories[catId][subCatId],
+            [field]: value
+          }
+        }
+      }
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!db) {
+      setAlert({ type: 'error', message: '데이터베이스에 연결되지 않았습니다.' });
+      return;
+    }
+    if (!formData.reportingWeek) {
+      setAlert({ type: 'error', message: '보고 주차를 입력하세요.' });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // 데이터베이스 경로
+      const dbPath = `artifacts/${appId}/public/data/weeklyReports`;
+      
+      const docData = {
+        ...formData,
+        userId: userId,
+        createdAt: new Date().toISOString(),
+      };
+
+      // ------------------------------------------------------------------
+      // (NEW) Google Sheets로 데이터 전송
+      // ------------------------------------------------------------------
+      // 1. Google Apps Script에서 '배포' > '새 배포'를 클릭합니다.
+      // 2. '웹 앱'으로 유형을 선택하고, '액세스 권한이 있는 사용자'를 '모든 사용자'로 설정합니다.
+      // 3. '배포' 버튼을 누르고 표시되는 '웹 앱 URL'을 복사하여 아래에 붙여넣습니다.
+      const GOOGLE_SCRIPT_URL = '여기에_배포된_Google_Apps_Script_URL을_붙여넣으세요';
+
+      if (GOOGLE_SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbxpiNvC4okYlRJ3PVAfeztw82AfmYEPjmnRAfU13EERQnQV8D4PCwq215NGu_vbTTWS/exec') {
+        try {
+          const response = await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            // 'no-cors' 대신 'cors' (기본값)를 사용하고 Apps Script에서 JSON을 반환하도록 합니다.
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(docData) // Firestore로 보내는 동일한 데이터
+          });
+          
+          const result = await response.json();
+          if (result.status === 'success') {
+            console.log("Google Sheets로 데이터 전송 성공");
+          } else {
+            console.warn("Google Sheets 전송 중 문제 발생:", result.message);
+            // 사용자에게 이 경고를 표시할 수도 있지만,
+            // Firestore 저장이 메인이므로 일단 콘솔에만 기록합니다.
+          }
+
+        } catch (sheetError) {
+          console.error("Google Sheets 전송 중 네트워크 오류:", sheetError);
+          // Firestore 저장이 성공했으므로, 이 오류를 사용자에게 알리지 않습니다.
+        }
+      }
+      // ------------------------------------------------------------------
+      // (기존) Firestore에 저장
+      // ------------------------------------------------------------------
+      await addDoc(collection(db, dbPath), docData);
+
+      setAlert({ type: 'success', message: '보고서가 성공적으로 제출되었습니다.' });
+      setFormData(getInitialFormState()); // 폼 초기화
+      // 폼 초기화 후 주차/날짜 다시 설정
+      setDefaultWeekAndDate();
+
+    } catch (error) {
+      console.error("제출 오류:", error);
+      setAlert({ type: 'error', message: `제출 실패: ${error.message}` });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ISO 주차 계산 (월요일 기준)
+  const getISOWeek = (date) => {
+    const dt = new Date(date.valueOf());
+    const dayn = (date.getDay() + 6) % 7;
+    dt.setDate(dt.getDate() - dayn + 3);
+    const firstThursday = dt.valueOf();
+    dt.setMonth(0, 1);
+    if (dt.getDay() !== 4) {
+      dt.setMonth(0, 1 + ((4 - dt.getDay()) + 7) % 7);
+    }
+    return 1 + Math.ceil((firstThursday - dt) / 604800000);
+  };
+
+  const setDefaultWeekAndDate = () => {
+     const today = new Date();
+     const year = today.getFullYear();
+     const week = getISOWeek(today);
+     const defaultWeek = `${year}-W${String(week).padStart(2, '0')}`;
+     setFormData(prev => ({ ...prev, reportingWeek: defaultWeek }));
+     setTodayDate(today.toLocaleDateString('ko-KR')); // 오늘 날짜 설정
+  };
+
+  // 컴포넌트 마운트 시 기본 주차 및 날짜 설정
+  useEffect(() => {
+    setDefaultWeekAndDate();
+  }, []);
+
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-8 p-4 md:p-8 bg-white shadow-xl rounded-2xl border border-gray-100">
+      {isLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500"></div>
+        </div>
+      )}
+
+      {/* 헤더: 보고 주차 및 현장 선택 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* 보고 주차 */}
+        <div>
+          <label htmlFor="reportingWeek" className="block text-sm font-medium text-gray-700">
+            보고 주차 (예: 2025-W30)
+          </label>
+          <input
+            type="week"
+            id="reportingWeek"
+            name="reportingWeek"
+            value={formData.reportingWeek}
+            onChange={handleInputChange}
+            required
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        </div>
+        
+        {/* 현장 이름 */}
+        <div>
+          <label htmlFor="siteName" className="block text-sm font-medium text-gray-700">현장 이름</label>
+          <select
+            id="siteName"
+            name="siteName"
+            value={formData.siteName}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          >
+            {SITES.map(site => (
+              <option key={site} value={site}>{site}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* --- NEW: 제출일자 표시 --- */}
+        <div>
+          <label htmlFor="submissionDate" className="block text-sm font-medium text-gray-700">제출일자</label>
+          <input
+            type="text"
+            id="submissionDate"
+            name="submissionDate"
+            value={todayDate}
+            readOnly
+            disabled
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 text-gray-700"
+          />
+        </div>
+      </div>
+
+      {/* 점검 항목 */}
+      <div className="space-y-6">
+        {CATEGORIES.map(cat => (
+          <div key={cat.id} className="border border-gray-200 p-4 rounded-lg">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">{cat.name}</h3>
+            <div className="space-y-4">
+              {cat.subCategories.map(subCat => (
+                <div key={subCat.id} className="border border-gray-100 p-3 rounded-md">
+                  <h4 className="text-md font-semibold text-gray-700 mb-3">{subCat.name}</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* 금주 계획 */}
+                    <textarea
+                      placeholder="금주 계획"
+                      rows="3"
+                      value={formData.categories[cat.id]?.[subCat.id]?.plan || ''}
+                      onChange={(e) => handleCategoryChange(cat.id, subCat.id, 'plan', e.target.value)}
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    {/* 금주 실적 */}
+                    <textarea
+                      placeholder="금주 실적"
+                      rows="3"
+                      value={formData.categories[cat.id]?.[subCat.id]?.performance || ''}
+                      onChange={(e) => handleCategoryChange(cat.id, subCat.id, 'performance', e.target.value)}
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    {/* 이행 현황 */}
+                    <textarea
+                      placeholder="이행 현황 (또는 차주 계획)"
+                      rows="3"
+                      value={formData.categories[cat.id]?.[subCat.id]?.status || ''}
+                      onChange={(e) => handleCategoryChange(cat.id, subCat.id, 'status', e.target.value)}
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 증빙 자료 링크 */}
+      <div>
+        <label htmlFor="proofLink" className="block text-sm font-medium text-gray-700">
+          증빙 자료 링크 (구글 드라이브 등)
+        </label>
+        <input
+          type="url"
+          id="proofLink"
+          name="proofLink"
+          value={formData.proofLink}
+          onChange={handleInputChange}
+          placeholder="https://docs.google.com/..."
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        />
+      </div>
+
+      {/* 제출 버튼 */}
+      <div className="text-right">
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="inline-flex justify-center py-3 px-8 border border-transparent shadow-lg text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400"
+        >
+          {isLoading ? '제출 중...' : '주간 보고서 제출'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+// 2. 관리자 대시보드
+function AdminDashboard({ submissions, isLoading, deleteReport }) {
+  const [selectedWeek, setSelectedWeek] = useState('');
+  
+  // 사용 가능한 '주차' 목록
+  const availableWeeks = useMemo(() => {
+    const weeks = new Set(submissions.map(s => s.reportingWeek));
+    return Array.from(weeks).sort().reverse();
+  }, [submissions]);
+
+  // 선택된 주차로 데이터 필터링
+  const filteredSubmissions = useMemo(() => {
+    if (!selectedWeek) {
+      return submissions; // 주차를 선택하지 않으면 모두 표시 (혹은 최신 주차)
+    }
+    return submissions.filter(s => s.reportingWeek === selectedWeek);
+  }, [submissions, selectedWeek]);
+
+  // 필터 초기값 설정 (가장 최신 주차)
+  useEffect(() => {
+    if (availableWeeks.length > 0) {
+      setSelectedWeek(availableWeeks[0]);
+    }
+  }, [availableWeeks]);
+
+  // 인쇄 함수
+  const handlePrint = () => {
+    window.print();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 md:p-8 bg-white shadow-xl rounded-2xl border border-gray-100">
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">통합 대시보드</h2>
+      
+      {/* 필터 및 인쇄 버튼 */}
+      <div className="flex flex-wrap justify-between items-center mb-4 gap-4 no-print">
+        <div className="flex items-center space-x-2">
+          <label htmlFor="weekFilter" className="text-sm font-medium text-gray-700">주차 선택:</label>
+          <select
+            id="weekFilter"
+            value={selectedWeek}
+            onChange={(e) => setSelectedWeek(e.target.value)}
+            className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          >
+            <option value="">-- 전체 주차 --</option>
+            {availableWeeks.map(week => (
+              <option key={week} value={week}>{week}</option>
+            ))}
+          </select>
+        </div>
+        <button
+          onClick={handlePrint}
+          className="inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+        >
+          <Icon path="M17 17h-1a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1zm0-10h-1a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1z M7 17H6a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1zm0-10H6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1z" size={5} />
+          <span className="ml-2">현재 뷰 인쇄</span>
+        </button>
+      </div>
+
+      {/* 제출 현황 요약 */}
+      <div className="mb-6 no-print">
+        <p className="text-sm text-gray-600">
+          {selectedWeek ? `${selectedWeek} 주차` : '전체 기간'} 동안 
+          총 <span className="font-bold text-blue-600">{filteredSubmissions.length}개</span>의 현장이 보고서를 제출했습니다.
+          (총 현장: {SITES.length}개)
+        </p>
+      </div>
+
+      {/* 데이터 테이블 */}
+      <div className="overflow-x-auto print-container">
+        <div id="report-table" className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 border">
+            <thead className="bg-gray-100">
+              {/* --- Row 1: Main Categories --- */}
+              <tr>
+                <th scope="col" rowSpan="3" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border align-middle">현장명</th>
+                {CATEGORIES.map(cat => (
+                  <th key={cat.id} colSpan={cat.subCategories.length * 3} className="px-6 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider border">{cat.name}</th>
+                ))}
+                <th scope="col" rowSpan="3" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border align-middle">증빙 링크</th>
+                <th scope="col" rowSpan="3" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border no-print align-middle">제출일시</th>
+                <th scope="col" rowSpan="3" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border no-print align-middle">관리</th>
+              </tr>
+              {/* --- Row 2: Sub Categories --- */}
+              <tr className="bg-gray-50">
+                {CATEGORIES.map(cat => (
+                  <React.Fragment key={cat.id}>
+                    {cat.subCategories.map(subCat => (
+                      <th key={subCat.id} colSpan="3" className="px-2 py-3 text-center text-xs font-medium text-gray-500 border">{subCat.name}</th>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </tr>
+              {/* --- Row 3: Plan, Perf, Status --- */}
+              <tr className="bg-gray-50">
+                {CATEGORIES.map(cat => (
+                  <React.Fragment key={cat.id}>
+                    {cat.subCategories.map(subCat => (
+                      <React.Fragment key={subCat.id}>
+                        <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 border">계획</th>
+                        <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 border">실적</th>
+                        <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 border">현황</th>
+                      </React.Fragment>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredSubmissions.sort((a,b) => a.siteName.localeCompare(b.siteName)).map((sub) => (
+                <tr key={sub.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border">{sub.siteName}</td>
+                  {CATEGORIES.map(cat => (
+                    <React.Fragment key={cat.id}>
+                      {cat.subCategories.map(subCat => (
+                        <React.Fragment key={subCat.id}>
+                          <td className="px-2 py-4 text-sm text-gray-600 border min-w-[100px] whitespace-pre-wrap">{sub.categories[cat.id]?.[subCat.id]?.plan}</td>
+                          <td className="px-2 py-4 text-sm text-gray-600 border min-w-[100px] whitespace-pre-wrap">{sub.categories[cat.id]?.[subCat.id]?.performance}</td>
+                          <td className="px-2 py-4 text-sm text-gray-600 border min-w-[100px] whitespace-pre-wrap">{sub.categories[cat.id]?.[subCat.id]?.status}</td>
+                        </React.Fragment>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 border">
+                    {sub.proofLink && (
+                      <a href={sub.proofLink} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                        링크 열기
+                      </a>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border no-print">
+                    {sub.createdAt ? new Date(sub.createdAt).toLocaleString('ko-KR') : '날짜 없음'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium border no-print">
+                    <button
+                      onClick={() => {
+                        if (confirm(`[${sub.siteName} - ${sub.reportingWeek}] 보고서를 정말 삭제하시겠습니까?`)) {
+                          deleteReport(sub.id);
+                        }
+                      }}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      삭제
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 인쇄 스타일 */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .print-container, .print-container * {
+            visibility: visible;
+          }
+          .print-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+          }
+          .no-print {
+            display: none !important;
+          }
+          table {
+            font-size: 8px !important;
+            border-collapse: collapse !important;
+          }
+          th, td {
+            border: 1px solid #ccc !important;
+            padding: 4px !important;
+            word-break: break-all;
+            white-space: pre-wrap !important;
+          }
+          thead {
+            display: table-header-group !important; /* Ensures header repeats on each page */
+          }
+          tr {
+            page-break-inside: avoid !important;
+          }
+          /* A4 landscape */
+          @page {
+            size: A4 landscape;
+            margin: 1cm;
+          }
+        }
+      `}</style>
+
+    </div>
+  );
+}
+
+
+// --- 메인 App 컴포넌트 ---
+export default function App() {
+  const [activeTab, setActiveTab] = useState('form'); // 'form' or 'dashboard'
+  const [submissions, setSubmissions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [alert, setAlert] = useState(null);
+  
+  // Firebase 인스턴스 (State로 관리)
+  const [currentDb, setCurrentDb] = useState(null);
+  const [currentAuth, setCurrentAuth] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+
+  // 1. Firebase 인증 초기화
+  useEffect(() => {
+    if (!auth) {
+      console.error("Firebase Auth가 초기화되지 않았습니다.");
+      return;
+    }
+    
+    setCurrentDb(db);
+    setCurrentAuth(auth);
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        console.log("인증된 사용자:", user.uid);
+        setUserId(user.uid);
+        setIsAuthReady(true);
+      } else {
+         console.log("사용자 인증 시도 중...");
+         try {
+           // (수정) 캔버스 미리보기 환경의 __initial_auth_token을 사용합니다.
+           if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+             await signInWithCustomToken(auth, __initial_auth_token);
+             console.log("커스텀 토큰으로 로그인 성공");
+           } else {
+             // 캔버스 토큰이 없으면 익명으로 로그인합니다.
+             await signInAnonymously(auth);
+             console.log("익명으로 로그인 성공");
+           }
+         } catch (error) {
+           console.error("Firebase 로그인 오류:", error);
+           setAlert({ type: 'error', message: `인증에 실패했습니다: ${error.message}` });
+         }
+      }
+    });
+
+    return () => unsubscribe();
+  }, []); // 이 useEffect는 마운트 시 한 번만 실행됩니다.
+
+  // 2. 데이터 수신 (인증이 준비된 후에 실행)
+  useEffect(() => {
+    // db가 준비되지 않았거나, 인증이 완료되지 않았으면 구독을 시작하지 않음
+    if (!currentDb || !isAuthReady) {
+      console.log("Firestore 구독 대기 중... (DB 또는 인증 미준비)");
+      setIsLoading(false); // 인증이 안 됐어도 로딩은 멈춤
+      return;
+    }
+    
+    console.log("Firestore 구독 시작...");
+    setIsLoading(true);
+    const dbPath = `artifacts/${appId}/public/data/weeklyReports`;
+    const q = query(collection(currentDb, dbPath));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const reports = [];
+      querySnapshot.forEach((doc) => {
+        reports.push({ id: doc.id, ...doc.data() });
+      });
+      // 최신순 정렬 (createdAt 기준)
+      reports.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setSubmissions(reports);
+      setIsLoading(false);
+      console.log("데이터 수신:", reports.length, "개");
+    }, (error) => {
+      console.error("데이터 수신 오류:", error);
+      setAlert({ type: 'error', message: `데이터 로딩 실패: ${error.message}` });
+      setIsLoading(false);
+    });
+
+    // 클린업 함수
+    return () => unsubscribe();
+
+  }, [currentDb, isAuthReady, appId]); // db, 인증상태, appId가 변경될 때마다 재실행
+
+  // 3. 보고서 삭제 함수
+  const deleteReport = async (id) => {
+    if (!currentDb) {
+      setAlert({ type: 'error', message: '데이터베이스 연결 안 됨' });
+      return;
+    }
+    
+    // (수정) window.confirm 대신 confirm 사용
+    if (!confirm('정말로 이 보고서를 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      const dbPath = `artifacts/${appId}/public/data/weeklyReports`;
+      await deleteDoc(doc(currentDb, dbPath, id));
+      setAlert({ type: 'success', message: '보고서가 삭제되었습니다.' });
+    } catch (error) {
+      console.error("삭제 오류:", error);
+      setAlert({ type: 'error', message: `삭제 실패: ${error.message}` });
+    }
+  };
+
+  // 알림 자동 닫기
+  useEffect(() => {
+    if (alert) {
+      const timer = setTimeout(() => {
+        setAlert(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [alert]);
+
+  // (수정) confirm 경고창 관련:
+  // 브라우저의 confirm은 iframe 환경에서 작동하지 않을 수 있습니다.
+  // 여기서는 간단하게 confirm을 유지하지만,
+  // 실제 환경에서는 모달(Modal) UI로 대체하는 것이 가장 좋습니다.
+  // `deleteReport` 함수의 `window.confirm`을 `confirm`으로 변경합니다.
+  
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {alert && <Alert message={alert.message} type={alert.type} onClose={() => setAlert(null)} />}
+      
+      <header className="bg-white shadow-md">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-5">
+            <div className="flex items-center space-x-3">
+              <span className="p-2 bg-blue-600 rounded-lg">
+                <Icon path="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" size={8} />
+              </span>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                주간 안전보건 점검 시스템
+              </h1>
+            </div>
+          </div>
+          
+          {/* 탭 네비게이션 */}
+          <nav className="flex space-x-1 no-print">
+            <TabButton onClick={() => setActiveTab('form')} isActive={activeTab === 'form'}>
+              보고서 제출
+            </TabButton>
+            <TabButton onClick={() => setActiveTab('dashboard')} isActive={activeTab === 'dashboard'}>
+              통합 대시보드
+            </TabButton>
+          </nav>
+        </div>
+      </header>
+
+      <main className="container mx-auto p-4 sm:p-6 lg:p-8">
+        {!isAuthReady && !currentDb ? (
+          <LoadingSpinner />
+        ) : (
+          <>
+            <div className={activeTab === 'form' ? 'block' : 'hidden'}>
+              <SubmissionForm db={currentDb} userId={userId} appId={appId} setAlert={setAlert} />
+            </div>
+            <div className={activeTab === 'dashboard' ? 'block' : 'hidden'}>
+              <AdminDashboard 
+                submissions={submissions} 
+                isLoading={isLoading} 
+                deleteReport={deleteReport} 
+              />
+            </div>
+          </>
+        )}
+      </main>
+
+       {/* 푸터 */}
+       <footer className="text-center text-gray-500 text-xs mt-8 no-print">
+         <p>UserID: {userId || '연결 안 됨'} | AppID: {appId}</p>
+         <p>© 2025 Construction Safety Management System | 안전보건팀</p>
+       </footer>
+    </div>
+  );
+}
