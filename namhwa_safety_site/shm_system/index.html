@@ -102,9 +102,24 @@
 
         /* Print styles */
         @media print {
-            @page { size: landscape; margin: 1cm; }
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background-color: #fff; font-size: 9pt; }
-            .container { box-shadow: none; border-radius: 0; padding: 0; margin: 0; width: 100%; max-width: 100%; }
+            @page { 
+                size: landscape; 
+                margin: 5mm; /* 여백 최소화 (1cm -> 5mm) */
+            }
+            body { 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact; 
+                background-color: #fff; 
+                font-size: 11pt; /* 폰트 크기 확대 (9pt -> 11pt) */
+            }
+            .container { 
+                box-shadow: none; 
+                border-radius: 0; 
+                padding: 0; 
+                margin: 0; 
+                width: 100%; 
+                max-width: 100%; 
+            }
             thead { display: table-row-group; }
             tfoot { display: table-row-group; }
             th, .results-table th { background-color: #e8eaf6 !important; }
@@ -117,12 +132,27 @@
                 border: 1px solid #ccc !important; 
                 background-color: #fff !important; 
                 padding: 4px; 
+                font-size: inherit; /* 폰트 크기 상속 */
+            }
+
+            /* 테이블 셀 패딩 조정 (폰트가 커진 만큼 여백을 약간 줄여 공간 확보) */
+            th, td {
+                padding: 8px 4px !important;
             }
             
             .input-text, textarea { width: 98%; }
             .signature-section input { border: none; border-bottom: 1px solid #333; }
             table, tr, td, .section-title, .side-by-side-section { page-break-inside: avoid; }
-            .section-title { page-break-before: auto; page-break-after: avoid; }
+            
+            /* 섹션 타이틀 여백 및 크기 조정 */
+            .section-title { 
+                margin-top: 25px; 
+                margin-bottom: 10px; 
+                page-break-before: auto; 
+                page-break-after: avoid;
+                font-size: 1.4em;
+            }
+            
             .criteria-link { color: #000; text-decoration: none; }
             
             /* 인쇄 시 요소 숨기기 */
@@ -344,7 +374,7 @@
             // 3번 항목
             { title: "3. 종사자 의견 청취 절차 (배점: 10)", rows: [ 
                 { criteria: "종사자 의견청취 절차 계획 수립 및 이행 여부", points: 1.5, options: [{v: 1.5, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.5, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조 (근로자의 참여)</strong>" }, 
-                { criteria: "청취 의견 기록 관리 여부", points: 1.0, options: [{v: 1.0, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조</strong>" },
+                { criteria: "청취 의견 기록 관리 여부", points: 1.0, options: [{v: 1.0, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조</strong>" },
                 { criteria: "청취 의견 협의체 안건 상정 및 협의, 의결 여부", points: 1.5, options: [{v: 1.5, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.5, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조</strong> 및 <strong>제75조</strong>" },
                 { criteria: "청취 의견에 대한 개선안 이행 및 공유 여부", points: 1.5, options: [{v: 1.5, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.5, t: '미흡'}], regulation: "청취된 의견은 검토 후 조치하고 그 결과를 근로자에게 알려주어야 합니다." }, 
                 { criteria: "시행 또는 개선안 공유 및 게시 여부", points: 1.0, options: [{v: 1.0, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조</strong>" },
