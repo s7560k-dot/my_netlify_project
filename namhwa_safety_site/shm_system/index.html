@@ -28,9 +28,21 @@
         th { background-color: #e8eaf6; font-weight: bold; }
         .text-left { text-align: left; }
         tfoot th, tfoot td { background-color: #f5f5f5; font-weight: bold; }
-        /* .input-text 클래스를 div에도 적용하기 위해 스타일 유지 */
-        .input-text, textarea, select { width: 98%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; transition: border-color 0.3s; box-sizing: border-box; }
-        .input-text:focus, textarea:focus, select:focus { border-color: #3949ab; outline: none; }
+        
+        /* 공통 Input 스타일 */
+        .input-text, textarea, select, .major-process-input { 
+            width: 98%; 
+            padding: 8px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            transition: border-color 0.3s; 
+            box-sizing: border-box; 
+            font-family: 'Malgun Gothic', sans-serif;
+        }
+        .input-text:focus, textarea:focus, select:focus, .major-process-input:focus { 
+            border-color: #3949ab; 
+            outline: none; 
+        }
         textarea { resize: vertical; min-height: 50px; }
         .input-number { width: 90%; text-align: center; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
         .progress-input { width: 80px; display: inline-block; vertical-align: middle; }
@@ -40,7 +52,7 @@
         .signature-section span { margin-left: 30px; display: inline-block; }
         .section-title { font-size: 1.3em; font-weight: bold; margin-top: 40px; margin-bottom: 15px; border-bottom: 3px solid #3949ab; padding-bottom: 8px; color: #1a237e; }
         .score-input { background-color: #eef; font-weight: bold; }
-        .results-table { margin-top: 30px; } /* Add some space above the results table */
+        .results-table { margin-top: 30px; } 
         .results-table th, .results-table tfoot th { background-color: #c5cae9; }
         .results-table td, .results-table tfoot th { font-size: 1em; }
         .results-table .input-number { width: 80px; }
@@ -54,7 +66,7 @@
         }
         .performance-table .criteria { width: auto; text-align: left;} 
         
-        /* 개선 요구 사항 입력란 자동 확장 스타일 */
+        /* [개선 요구 사항] 입력란 자동 확장 스타일 */
         .auto-expand-input {
             min-height: 30px;
             width: 95%;
@@ -66,17 +78,29 @@
             background-color: #fff;
             cursor: text;
         }
-        /* contenteditable div의 placeholder 느낌을 위한 비어있을 때 처리 (선택사항) */
-        .auto-expand-input:empty:before {
-            content: attr(placeholder);
-            color: #aaa;
-            display: block; /* For Firefox */
+        
+        /* [주요 공정] 입력란 자동 확장 스타일 */
+        .major-process-input {
+            display: block;
+            width: 95%; 
+            min-height: 180px; /* 초기 높이는 유지 */
+            height: auto;      /* 내용에 따라 늘어남 */
+            white-space: pre-wrap; /* 줄바꿈 보존 */
+            word-wrap: break-word; /* 긴 단어 줄바꿈 */
+            overflow-y: visible;   /* 내용이 넘치면 보여줌 */
+            background-color: #fff;
+            cursor: text;
         }
 
+        /* Placeholder 효과 */
+        .auto-expand-input:empty:before, .major-process-input:empty:before {
+            content: attr(placeholder);
+            color: #aaa;
+            display: block; 
+        }
 
         .side-by-side-section { display: flex; gap: 20px; align-items: flex-start; }
         .side-by-side-section > div { flex: 1; }
-        .major-process-textarea { width: 95%; height: 180px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; font-family: 'Malgun Gothic', sans-serif;}
         
         /* Modal and Link Styles */
         .criteria-link {
@@ -104,13 +128,13 @@
         @media print {
             @page { 
                 size: landscape; 
-                margin: 5mm; /* 여백 최소화 (1cm -> 5mm) */
+                margin: 5mm; 
             }
             body { 
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact; 
                 background-color: #fff; 
-                font-size: 11pt; /* 폰트 크기 확대 (9pt -> 11pt) */
+                font-size: 11pt; 
             }
             .container { 
                 box-shadow: none; 
@@ -128,23 +152,33 @@
             tfoot th, tfoot td { background-color: #f5f5f5 !important; }
             
             /* Input 스타일 조정 */
-            input, textarea, select, .input-text { 
+            input, textarea, select, .input-text, .major-process-input { 
                 border: 1px solid #ccc !important; 
                 background-color: #fff !important; 
                 padding: 4px; 
-                font-size: inherit; /* 폰트 크기 상속 */
+                font-size: inherit; 
+                /* 인쇄 시에는 높이 제한 없이 내용만큼 늘어남 */
+                height: auto !important; 
+                overflow: visible !important;
             }
 
-            /* 테이블 셀 패딩 조정 (폰트가 커진 만큼 여백을 약간 줄여 공간 확보) */
-            th, td {
-                padding: 8px 4px !important;
-            }
+            th, td { padding: 8px 4px !important; }
             
             .input-text, textarea { width: 98%; }
             .signature-section input { border: none; border-bottom: 1px solid #333; }
-            table, tr, td, .section-title, .side-by-side-section { page-break-inside: avoid; }
             
-            /* 섹션 타이틀 여백 및 크기 조정 */
+            /* 페이지 넘김 제어 */
+            table, tr, td, .section-title { page-break-inside: avoid; }
+            
+            /* 주요 공정 섹션은 내용이 길면 페이지 나뉨 허용 */
+            .side-by-side-section { 
+                display: block; /* 인쇄 시에는 블록으로 처리하여 내용이 길면 다음장으로 넘김 */
+            }
+            .side-by-side-section > div {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+            
             .section-title { 
                 margin-top: 25px; 
                 margin-bottom: 10px; 
@@ -155,7 +189,6 @@
             
             .criteria-link { color: #000; text-decoration: none; }
             
-            /* 인쇄 시 요소 숨기기 */
             #regulation-modal, #add-supervisor-btn, #print-btn-container { display: none !important; }
         }
     </style>
@@ -216,8 +249,10 @@
             </table>
         </div>
         <div>
-            <div class="section-title">주요 공정</div>
-            <textarea class="major-process-textarea" placeholder="현장의 주요 공정을 입력하세요."></textarea>
+            <!-- 텍스트 변경: 주요 공정 -> 주요 공정/ 개선 요구 사항 -->
+            <div class="section-title">주요 공정/ 개선 요구 사항</div>
+            <!-- 주요 공정 입력란: 자동 확장형 div -->
+            <div class="major-process-input" contenteditable="true" placeholder="현장의 주요 공정 및 개선 요구 사항을 입력하세요. 내용이 길어지면 자동으로 칸이 늘어납니다."></div>
         </div>
     </div>
 
@@ -377,7 +412,7 @@
                 { criteria: "청취 의견 기록 관리 여부", points: 1.0, options: [{v: 1.0, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조</strong>" },
                 { criteria: "청취 의견 협의체 안건 상정 및 협의, 의결 여부", points: 1.5, options: [{v: 1.5, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.5, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조</strong> 및 <strong>제75조</strong>" },
                 { criteria: "청취 의견에 대한 개선안 이행 및 공유 여부", points: 1.5, options: [{v: 1.5, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.5, t: '미흡'}], regulation: "청취된 의견은 검토 후 조치하고 그 결과를 근로자에게 알려주어야 합니다." }, 
-                { criteria: "시행 또는 개선안 공유 및 게시 여부", points: 1.0, options: [{v: 1.0, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조</strong>" },
+                { criteria: "시행 또는 개선안 공유 및 게시 여부", points: 1.0, options: [{v: 1.0, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조</strong>" },
                 { criteria: "아차사고 발굴 및 개선활동", points: 1.5, options: [{v: 1.5, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.5, t: '미흡'}], regulation: "아차사고(Near-miss)는 중대재해의 전조증상이므로 적극적인 발굴 및 개선이 중요합니다." }, 
                 { criteria: "작업중지권에 대한 근로자의 권리 안내 여부", points: 2.0, options: [{v: 2.0, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제52조 (근로자의 작업중지)</strong>" } 
             ] },
