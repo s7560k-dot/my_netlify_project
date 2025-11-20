@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, signOut } from 'firebase/auth';
 import {
   getFirestore,
   collection,
@@ -9,25 +9,38 @@ import {
   query,
   doc,
   setDoc,
-  deleteDoc
+  deleteDoc,
+  setLogLevel
 } from 'firebase/firestore';
-import { setLogLevel } from 'firebase/firestore'; // Firestore 로깅
 
-// --- Firebase 설정 ---
-// (수정) 캔버스 미리보기 환경과 호환되도록 __firebase_config 변수를 사용합니다.
-const firebaseConfig = typeof __firebase_config !== 'undefined'
-  ? JSON.parse(__firebase_config)
-  : {
-    apiKey: "YOUR_PREVIEW_API_KEY", // 이 값은 캔버스 환경에서 자동으로 채워집니다.
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+// --- (중요) Firebase 설정 및 App ID 초기화 ---
+let firebaseConfig;
+let appId = 'safety-check-demo-v1'; // 기본값
+
+const isCanvasEnv = typeof __firebase_config !== 'undefined';
+
+if (isCanvasEnv) {
+  try {
+    firebaseConfig = JSON.parse(__firebase_config);
+  } catch (e) {
+    console.error("Firebase Config 파싱 오류", e);
+  }
+  
+  if (typeof __app_id !== 'undefined') {
+    // Firestore 경로 오류 방지를 위해 특수문자를 밑줄(_)로 치환
+    appId = __app_id.replace(/[^a-zA-Z0-9_-]/g, '_');
+  }
+} else {
+  const env = typeof process !== 'undefined' && process.env ? process.env : {};
+  firebaseConfig = {
+    apiKey: env.VITE_API_KEY || "YOUR_API_KEY",
+    authDomain: env.VITE_AUTH_DOMAIN || "YOUR_AUTH_DOMAIN",
+    projectId: env.VITE_PROJECT_ID || "YOUR_PROJECT_ID",
+    storageBucket: env.VITE_STORAGE_BUCKET || "YOUR_STORAGE_BUCKET",
+    messagingSenderId: env.VITE_MESSAGING_SENDER_ID || "YOUR_MESSAGING_SENDER_ID",
+    appId: env.VITE_APP_ID || "YOUR_APP_ID"
   };
-
-// (수정) 캔버스 미리보기 환경의 __app_id를 사용합니다.
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-preview-app-id';
+}
 
 // --- 앱 초기화 ---
 let app;
@@ -35,13 +48,18 @@ let db;
 let auth;
 
 try {
-  app = initializeApp(firebaseConfig);
-  db = getFirestore(app);
-  auth = getAuth(app);
-  setLogLevel('debug'); // Firestore 로깅 레벨 설정
+  const isConfigValid = firebaseConfig && firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("YOUR_");
+  
+  if (isConfigValid) {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    auth = getAuth(app);
+    setLogLevel('warn'); 
+  } else {
+    console.warn("Firebase 설정이 완료되지 않았습니다.");
+  }
 } catch (error) {
   console.error("Firebase 초기화 오류:", error);
-  // 앱이 죽지 않도록 기본값 할당
   db = null;
   auth = null;
 }
@@ -54,25 +72,25 @@ const SITES = [
 ];
 
 const CATEGORIES = [
-  { 
-    id: 'riskAssessment', 
-    name: '위험성평가', 
+  {
+    id: 'riskAssessment',
+    name: '위험성평가',
     subCategories: [
       { id: 'ra_weekly', name: '1.1 주간 위험성평가 실시' },
       { id: 'ra_measures', name: '1.2 위험성감소대책 이행' },
       { id: 'ra_participation', name: '1.3 근로자 참여' },
     ]
   },
-  { 
-    id: 'tbm', 
+  {
+    id: 'tbm',
     name: 'TBM (Tool Box Meeting)',
     subCategories: [
       { id: 'tbm_inspection', name: '2.1 작업전 안전점검' },
       { id: 'tbm_nearmiss', name: '2.2 안전제안/아차사고' },
     ]
   },
-  { 
-    id: 'training', 
+  {
+    id: 'training',
     name: '안전보건교육',
     subCategories: [
       { id: 'tr_new', name: '3.1 신규채용자교육' },
@@ -82,8 +100,8 @@ const CATEGORIES = [
       { id: 'tr_regular_manager', name: '3.5 정기안전교육(관리감독자)' },
     ]
   },
-  { 
-    id: 'inspection', 
+  {
+    id: 'inspection',
     name: '안전점검',
     subCategories: [
       { id: 'insp_joint', name: '4.1 합동안전점검' },
@@ -93,8 +111,8 @@ const CATEGORIES = [
       { id: 'insp_followup', name: '4.5 점검 후속조치(지적사항)' },
     ]
   },
-  { 
-    id: 'contractor', 
+  {
+    id: 'contractor',
     name: '도급/협력사 관리',
     subCategories: [
       { id: 'cont_council', name: '5.1 안전보건협의체' },
@@ -102,8 +120,8 @@ const CATEGORIES = [
       { id: 'cont_plan', name: '5.3 작업계획수립' },
     ]
   },
-  { 
-    id: 'emergency', 
+  {
+    id: 'emergency',
     name: '비상대응',
     subCategories: [
       { id: 'em_check', name: '6.1 비상자재 재고 점검' },
@@ -114,7 +132,6 @@ const CATEGORIES = [
 
 // --- 헬퍼 컴포넌트 ---
 
-// 0. 로딩 스피너
 function LoadingSpinner() {
   return (
     <div className="flex justify-center items-center h-screen">
@@ -123,18 +140,16 @@ function LoadingSpinner() {
   );
 }
 
-// 0. 알림창
 function Alert({ message, type, onClose }) {
-  const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+  const bgColor = type === 'success' ? 'bg-green-500' : (type === 'warning' ? 'bg-yellow-500' : 'bg-red-500');
   return (
     <div className={`fixed top-5 right-5 ${bgColor} text-white p-4 rounded-lg shadow-lg z-50`}>
-      <span>{message}</span>
+      <span>{String(message)}</span>
       <button onClick={onClose} className="ml-4 font-bold">X</button>
     </div>
   );
 }
 
-// 0. 탭 버튼
 function TabButton({ children, onClick, isActive }) {
   return (
     <button
@@ -151,7 +166,6 @@ function TabButton({ children, onClick, isActive }) {
   );
 }
 
-// 0. 아이콘
 function Icon({ path, size = 6 }) {
   return (
     <svg className={`w-${size} h-${size}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -160,14 +174,46 @@ function Icon({ path, size = 6 }) {
   );
 }
 
+// 디버그 정보 컴포넌트
+function DebugInfo({ userId, appId, permissionError }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (!permissionError && !isOpen) return null;
+
+  if (!isOpen) {
+    return (
+      <button 
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-4 left-4 bg-red-800 text-white text-xs px-3 py-2 rounded shadow-lg opacity-80 hover:opacity-100 no-print animate-bounce z-50"
+      >
+        ⚠️ 연결 상태 확인
+      </button>
+    );
+  }
+
+  return (
+    <div className="fixed bottom-4 left-4 bg-white border border-red-300 p-4 rounded shadow-xl text-xs z-50 max-w-md no-print">
+      <div className="flex justify-between items-center mb-2">
+        <h4 className="font-bold text-red-600">연결 정보</h4>
+        <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-black">닫기</button>
+      </div>
+      <div className="space-y-1 text-gray-700">
+        <p><strong>로그인 상태:</strong> {userId ? '✅ 로그인 됨' : '❌ 로그인 안됨'}</p>
+        <p><strong>App ID:</strong> {appId}</p>
+        <p><strong>저장소:</strong> 개인용 (Private)</p>
+        <p className="text-red-600 font-bold">{permissionError ? '권한 오류 발생' : ''}</p>
+      </div>
+    </div>
+  );
+}
+
 // 1. 보고서 제출 폼
 function SubmissionForm({ db, userId, appId, setAlert }) {
   const getInitialFormState = () => {
     const categoriesState = {};
     CATEGORIES.forEach(cat => {
-      categoriesState[cat.id] = {}; // Create an object for the main category
+      categoriesState[cat.id] = {};
       cat.subCategories.forEach(subCat => {
-        // Create an object for each sub-category
         categoriesState[cat.id][subCat.id] = { plan: '', performance: '', status: '' };
       });
     });
@@ -181,7 +227,7 @@ function SubmissionForm({ db, userId, appId, setAlert }) {
 
   const [formData, setFormData] = useState(getInitialFormState());
   const [isLoading, setIsLoading] = useState(false);
-  const [todayDate, setTodayDate] = useState(''); // For display
+  const [todayDate, setTodayDate] = useState(''); 
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -210,6 +256,10 @@ function SubmissionForm({ db, userId, appId, setAlert }) {
       setAlert({ type: 'error', message: '데이터베이스에 연결되지 않았습니다.' });
       return;
     }
+    if (!userId) {
+      setAlert({ type: 'error', message: '로그인 정보가 없습니다.' });
+      return;
+    }
     if (!formData.reportingWeek) {
       setAlert({ type: 'error', message: '보고 주차를 입력하세요.' });
       return;
@@ -217,31 +267,34 @@ function SubmissionForm({ db, userId, appId, setAlert }) {
 
     setIsLoading(true);
     try {
-      // 데이터베이스 경로
-      const dbPath = `artifacts/${appId}/public/data/weeklyReports`;
-      
+      // [경로 수정] 사용자 전용 경로 사용 (권한 오류 해결)
+      // Path: artifacts/{appId}/users/{userId}/weeklyReports
+      const colRef = collection(db, 'artifacts', appId, 'users', userId, 'weeklyReports');
+
       const docData = {
         ...formData,
         userId: userId,
         createdAt: new Date().toISOString(),
       };
 
-      await addDoc(collection(db, dbPath), docData);
+      await addDoc(colRef, docData);
 
-      setAlert({ type: 'success', message: '보고서가 성공적으로 제출되었습니다.' });
-      setFormData(getInitialFormState()); // 폼 초기화
-      // 폼 초기화 후 주차/날짜 다시 설정
+      setAlert({ type: 'success', message: '보고서가 안전하게 저장되었습니다.' });
+      setFormData(getInitialFormState());
       setDefaultWeekAndDate();
 
     } catch (error) {
       console.error("제출 오류:", error);
-      setAlert({ type: 'error', message: `제출 실패: ${error.message}` });
+      if (error.code === 'permission-denied') {
+        setAlert({ type: 'error', message: '저장 실패: 쓰기 권한이 없습니다.' });
+      } else {
+        setAlert({ type: 'error', message: `저장 실패: ${error.message}` });
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ISO 주차 계산 (월요일 기준)
   const getISOWeek = (date) => {
     const dt = new Date(date.valueOf());
     const dayn = (date.getDay() + 6) % 7;
@@ -255,15 +308,14 @@ function SubmissionForm({ db, userId, appId, setAlert }) {
   };
 
   const setDefaultWeekAndDate = () => {
-     const today = new Date();
-     const year = today.getFullYear();
-     const week = getISOWeek(today);
-     const defaultWeek = `${year}-W${String(week).padStart(2, '0')}`;
-     setFormData(prev => ({ ...prev, reportingWeek: defaultWeek }));
-     setTodayDate(today.toLocaleDateString('ko-KR')); // 오늘 날짜 설정
+    const today = new Date();
+    const year = today.getFullYear();
+    const week = getISOWeek(today);
+    const defaultWeek = `${year}-W${String(week).padStart(2, '0')}`;
+    setFormData(prev => ({ ...prev, reportingWeek: defaultWeek }));
+    setTodayDate(today.toLocaleDateString('ko-KR'));
   };
 
-  // 컴포넌트 마운트 시 기본 주차 및 날짜 설정
   useEffect(() => {
     setDefaultWeekAndDate();
   }, []);
@@ -277,9 +329,7 @@ function SubmissionForm({ db, userId, appId, setAlert }) {
         </div>
       )}
 
-      {/* 헤더: 보고 주차 및 현장 선택 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* 보고 주차 */}
         <div>
           <label htmlFor="reportingWeek" className="block text-sm font-medium text-gray-700">
             보고 주차 (예: 2025-W30)
@@ -294,8 +344,7 @@ function SubmissionForm({ db, userId, appId, setAlert }) {
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
         </div>
-        
-        {/* 현장 이름 */}
+
         <div>
           <label htmlFor="siteName" className="block text-sm font-medium text-gray-700">현장 이름</label>
           <select
@@ -311,7 +360,6 @@ function SubmissionForm({ db, userId, appId, setAlert }) {
           </select>
         </div>
 
-        {/* --- NEW: 제출일자 표시 --- */}
         <div>
           <label htmlFor="submissionDate" className="block text-sm font-medium text-gray-700">제출일자</label>
           <input
@@ -326,7 +374,6 @@ function SubmissionForm({ db, userId, appId, setAlert }) {
         </div>
       </div>
 
-      {/* 점검 항목 */}
       <div className="space-y-6">
         {CATEGORIES.map(cat => (
           <div key={cat.id} className="border border-gray-200 p-4 rounded-lg">
@@ -336,7 +383,6 @@ function SubmissionForm({ db, userId, appId, setAlert }) {
                 <div key={subCat.id} className="border border-gray-100 p-3 rounded-md">
                   <h4 className="text-md font-semibold text-gray-700 mb-3">{subCat.name}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* 금주 계획 */}
                     <textarea
                       placeholder="금주 계획"
                       rows="3"
@@ -344,7 +390,6 @@ function SubmissionForm({ db, userId, appId, setAlert }) {
                       onChange={(e) => handleCategoryChange(cat.id, subCat.id, 'plan', e.target.value)}
                       className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     />
-                    {/* 금주 실적 */}
                     <textarea
                       placeholder="금주 실적"
                       rows="3"
@@ -352,7 +397,6 @@ function SubmissionForm({ db, userId, appId, setAlert }) {
                       onChange={(e) => handleCategoryChange(cat.id, subCat.id, 'performance', e.target.value)}
                       className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     />
-                    {/* 이행 현황 */}
                     <textarea
                       placeholder="이행 현황 (또는 차주 계획)"
                       rows="3"
@@ -368,7 +412,6 @@ function SubmissionForm({ db, userId, appId, setAlert }) {
         ))}
       </div>
 
-      {/* 증빙 자료 링크 */}
       <div>
         <label htmlFor="proofLink" className="block text-sm font-medium text-gray-700">
           증빙 자료 링크 (구글 드라이브 등)
@@ -384,7 +427,6 @@ function SubmissionForm({ db, userId, appId, setAlert }) {
         />
       </div>
 
-      {/* 제출 버튼 */}
       <div className="text-right">
         <button
           type="submit"
@@ -398,32 +440,29 @@ function SubmissionForm({ db, userId, appId, setAlert }) {
   );
 }
 
-// 2. 관리자 대시보드
+// 2. 관리자 대시보드 (개인용으로 변경됨)
 function AdminDashboard({ submissions, isLoading, deleteReport }) {
   const [selectedWeek, setSelectedWeek] = useState('');
-  
-  // 사용 가능한 '주차' 목록
+  const [showConfirmModal, setShowConfirmModal] = useState(null);
+
   const availableWeeks = useMemo(() => {
     const weeks = new Set(submissions.map(s => s.reportingWeek));
     return Array.from(weeks).sort().reverse();
   }, [submissions]);
 
-  // 선택된 주차로 데이터 필터링
   const filteredSubmissions = useMemo(() => {
     if (!selectedWeek) {
-      return submissions; // 주차를 선택하지 않으면 모두 표시 (혹은 최신 주차)
+      return submissions;
     }
     return submissions.filter(s => s.reportingWeek === selectedWeek);
   }, [submissions, selectedWeek]);
 
-  // 필터 초기값 설정 (가장 최신 주차)
   useEffect(() => {
     if (availableWeeks.length > 0) {
       setSelectedWeek(availableWeeks[0]);
     }
   }, [availableWeeks]);
 
-  // 인쇄 함수
   const handlePrint = () => {
     window.print();
   };
@@ -438,9 +477,9 @@ function AdminDashboard({ submissions, isLoading, deleteReport }) {
 
   return (
     <div className="p-4 md:p-8 bg-white shadow-xl rounded-2xl border border-gray-100">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">통합 대시보드</h2>
-      
-      {/* 필터 및 인쇄 버튼 */}
+      <h2 className="text-2xl font-bold text-gray-900 mb-2">내 보고서 관리</h2>
+      <p className="text-sm text-gray-500 mb-6">내가 제출한 보고서만 조회 및 관리할 수 있습니다.</p>
+
       <div className="flex flex-wrap justify-between items-center mb-4 gap-4 no-print">
         <div className="flex items-center space-x-2">
           <label htmlFor="weekFilter" className="text-sm font-medium text-gray-700">주차 선택:</label>
@@ -465,21 +504,17 @@ function AdminDashboard({ submissions, isLoading, deleteReport }) {
         </button>
       </div>
 
-      {/* 제출 현황 요약 */}
       <div className="mb-6 no-print">
         <p className="text-sm text-gray-600">
-          {selectedWeek ? `${selectedWeek} 주차` : '전체 기간'} 동안 
-          총 <span className="font-bold text-blue-600">{filteredSubmissions.length}개</span>의 현장이 보고서를 제출했습니다.
-          (총 현장: {SITES.length}개)
+          {selectedWeek ? `${selectedWeek} 주차` : '전체 기간'} 동안
+          총 <span className="font-bold text-blue-600">{filteredSubmissions.length}개</span>의 보고서가 있습니다.
         </p>
       </div>
 
-      {/* 데이터 테이블 */}
       <div className="overflow-x-auto print-container">
         <div id="report-table" className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 border">
             <thead className="bg-gray-100">
-              {/* --- Row 1: Main Categories --- */}
               <tr>
                 <th scope="col" rowSpan="3" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border align-middle">현장명</th>
                 {CATEGORIES.map(cat => (
@@ -489,7 +524,6 @@ function AdminDashboard({ submissions, isLoading, deleteReport }) {
                 <th scope="col" rowSpan="3" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border no-print align-middle">제출일시</th>
                 <th scope="col" rowSpan="3" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border no-print align-middle">관리</th>
               </tr>
-              {/* --- Row 2: Sub Categories --- */}
               <tr className="bg-gray-50">
                 {CATEGORIES.map(cat => (
                   <React.Fragment key={cat.id}>
@@ -499,7 +533,6 @@ function AdminDashboard({ submissions, isLoading, deleteReport }) {
                   </React.Fragment>
                 ))}
               </tr>
-              {/* --- Row 3: Plan, Perf, Status --- */}
               <tr className="bg-gray-50">
                 {CATEGORIES.map(cat => (
                   <React.Fragment key={cat.id}>
@@ -515,7 +548,7 @@ function AdminDashboard({ submissions, isLoading, deleteReport }) {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredSubmissions.sort((a,b) => a.siteName.localeCompare(b.siteName)).map((sub) => (
+              {filteredSubmissions.sort((a, b) => a.siteName.localeCompare(b.siteName)).map((sub) => (
                 <tr key={sub.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border">{sub.siteName}</td>
                   {CATEGORIES.map(cat => (
@@ -542,9 +575,7 @@ function AdminDashboard({ submissions, isLoading, deleteReport }) {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium border no-print">
                     <button
                       onClick={() => {
-                        if (window.confirm(`[${sub.siteName} - ${sub.reportingWeek}] 보고서를 정말 삭제하시겠습니까?`)) {
-                          deleteReport(sub.id);
-                        }
+                        setShowConfirmModal(sub.id);
                       }}
                       className="text-red-600 hover:text-red-900"
                     >
@@ -558,7 +589,34 @@ function AdminDashboard({ submissions, isLoading, deleteReport }) {
         </div>
       </div>
 
-      {/* 인쇄 스타일 */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 no-print">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">삭제 확인</h3>
+            <p className="text-gray-700 mb-6">
+              이 보고서를 정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowConfirmModal(null)}
+                className="py-2 px-4 rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 focus:outline-none"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => {
+                  deleteReport(showConfirmModal);
+                  setShowConfirmModal(null);
+                }}
+                className="py-2 px-4 rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @media print {
           body * {
@@ -587,12 +645,11 @@ function AdminDashboard({ submissions, isLoading, deleteReport }) {
             white-space: pre-wrap !important;
           }
           thead {
-            display: table-header-group !important; /* Ensures header repeats on each page */
+            display: table-header-group !important;
           }
           tr {
             page-break-inside: avoid !important;
           }
-          /* A4 landscape */
           @page {
             size: A4 landscape;
             margin: 1cm;
@@ -604,102 +661,152 @@ function AdminDashboard({ submissions, isLoading, deleteReport }) {
   );
 }
 
-
 // --- 메인 App 컴포넌트 ---
 export default function App() {
-  const [activeTab, setActiveTab] = useState('form'); // 'form' or 'dashboard'
+  const [activeTab, setActiveTab] = useState('form'); 
   const [submissions, setSubmissions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [alert, setAlert] = useState(null);
   
-  // Firebase 인스턴스 (State로 관리)
+  const [permissionError, setPermissionError] = useState(false);
+  const [rateLimitError, setRateLimitError] = useState(false);
+
   const [currentDb, setCurrentDb] = useState(null);
   const [currentAuth, setCurrentAuth] = useState(null);
   const [userId, setUserId] = useState(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
-  // 1. Firebase 인증 초기화
   useEffect(() => {
-    if (!auth) {
-      console.error("Firebase Auth가 초기화되지 않았습니다.");
+    if (!auth || !db) {
+      if (!firebaseConfig || !firebaseConfig.apiKey || (firebaseConfig.apiKey.startsWith("YOUR_") && typeof __firebase_config === 'undefined')) {
+        console.error("Firebase 설정이 없습니다.");
+        setAlert({ type: 'error', message: 'Firebase 설정(API KEY)이 유효하지 않습니다.' });
+      } else {
+        console.error("Firebase SDK 초기화 실패");
+        setAlert({ type: 'error', message: 'Firebase 초기화 오류' });
+      }
+      setIsLoading(false);
       return;
     }
-    
+
     setCurrentDb(db);
     setCurrentAuth(auth);
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        console.log("인증된 사용자:", user.uid);
-        setUserId(user.uid);
-        setIsAuthReady(true);
-      } else {
-         console.log("사용자 인증 시도 중...");
-         try {
-           // (수정) 캔버스 미리보기 환경의 __initial_auth_token을 사용합니다.
-           if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-             await signInWithCustomToken(auth, __initial_auth_token);
-             console.log("커스텀 토큰으로 로그인 성공");
-           } else {
-             // 캔버스 토큰이 없으면 익명으로 로그인합니다.
-             await signInAnonymously(auth);
-             console.log("익명으로 로그인 성공");
-           }
-         } catch (error) {
-           console.error("Firebase 로그인 오류:", error);
-           setAlert({ type: 'error', message: `인증에 실패했습니다: ${error.message}` });
-         }
+    const initAuth = async () => {
+      // 기존 세션이 있으면 그대로 사용 (불필요한 재로그인 방지)
+      if (auth.currentUser) {
+          console.log("기존 세션 유지:", auth.currentUser.uid);
+          setUserId(auth.currentUser.uid);
+          setIsAuthReady(true);
+          return;
       }
+
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+          console.log("커스텀 토큰 로그인 성공");
+        } else {
+          await signInAnonymously(auth);
+          console.log("익명 로그인 성공");
+        }
+      } catch (error) {
+        console.error("로그인 실패:", error);
+        if (error.code === 'auth/too-many-requests') {
+             setRateLimitError(true);
+        }
+        // 로그인 실패해도 UI 렌더링을 위해 ready 상태로 변경
+        setIsAuthReady(true);
+      }
+    };
+
+    initAuth();
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log("인증됨:", user.uid);
+        setUserId(user.uid);
+        setRateLimitError(false); 
+      } else {
+        console.log("로그아웃됨");
+        setUserId(null);
+      }
+      setIsAuthReady(true); 
     });
 
     return () => unsubscribe();
-  }, []); // 이 useEffect는 마운트 시 한 번만 실행됩니다.
+  }, []); 
 
-  // 2. 데이터 수신 (인증이 준비된 후에 실행)
   useEffect(() => {
-    // db가 준비되지 않았거나, 인증이 완료되지 않았으면 구독을 시작하지 않음
-    if (!currentDb || !isAuthReady) {
-      console.log("Firestore 구독 대기 중... (DB 또는 인증 미준비)");
-      setIsLoading(false); // 인증이 안 됐어도 로딩은 멈춤
+    if (permissionError || rateLimitError) return;
+
+    if (!currentDb || !isAuthReady || !userId) {
+      if (isLoading && isAuthReady && !userId) {
+         setIsLoading(false);
+      }
       return;
     }
+
+    // [경로 수정] 사용자 개인 공간 사용 (권한 오류 회피)
+    // Path: artifacts/{appId}/users/{userId}/weeklyReports
+    const dbPath = `artifacts/${appId}/users/${userId}/weeklyReports`;
+    console.log("Firestore 구독:", dbPath);
     
-    console.log("Firestore 구독 시작...");
     setIsLoading(true);
-    const dbPath = `artifacts/${appId}/public/data/weeklyReports`;
-    const q = query(collection(currentDb, dbPath));
+    const q = query(collection(currentDb, 'artifacts', appId, 'users', userId, 'weeklyReports'));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const reports = [];
       querySnapshot.forEach((doc) => {
         reports.push({ id: doc.id, ...doc.data() });
       });
-      // 최신순 정렬 (createdAt 기준)
       reports.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setSubmissions(reports);
       setIsLoading(false);
-      console.log("데이터 수신:", reports.length, "개");
+      setPermissionError(false);
     }, (error) => {
       console.error("데이터 수신 오류:", error);
-      setAlert({ type: 'error', message: `데이터 로딩 실패: ${error.message}` });
+      
+      if (error.code === 'permission-denied') {
+         setPermissionError(true);
+      } else {
+         setAlert({ type: 'error', message: `데이터 로딩 실패: ${error.message}` });
+      }
       setIsLoading(false);
     });
 
-    // 클린업 함수
     return () => unsubscribe();
 
-  }, [currentDb, isAuthReady, appId]); // db, 인증상태, appId가 변경될 때마다 재실행
+  }, [currentDb, isAuthReady, userId, permissionError, rateLimitError]); 
 
-  // 3. 보고서 삭제 함수
+  const handleRetry = async () => {
+      setPermissionError(false);
+      setRateLimitError(false);
+      setIsLoading(true);
+      
+      try {
+          await signOut(auth);
+          await signInAnonymously(auth);
+      } catch (e) {
+          console.error("재시도 로그인 실패", e);
+          if (e.code === 'auth/too-many-requests') {
+              setRateLimitError(true);
+          } else {
+              setAlert({ type: 'error', message: "재로그인 실패: " + e.message });
+          }
+          setIsLoading(false);
+      }
+  };
+
   const deleteReport = async (id) => {
-    if (!currentDb) {
-      setAlert({ type: 'error', message: '데이터베이스 연결 안 됨' });
+    if (!currentDb || !userId) {
+      setAlert({ type: 'error', message: '연결 안 됨' });
       return;
     }
-    
+
     try {
-      const dbPath = `artifacts/${appId}/public/data/weeklyReports`;
-      await deleteDoc(doc(currentDb, dbPath, id));
+      // [경로 수정] 삭제 시에도 동일한 개인 경로 사용
+      const colRef = collection(currentDb, 'artifacts', appId, 'users', userId, 'weeklyReports');
+      await deleteDoc(doc(colRef, id));
       setAlert({ type: 'success', message: '보고서가 삭제되었습니다.' });
     } catch (error) {
       console.error("삭제 오류:", error);
@@ -707,7 +814,6 @@ export default function App() {
     }
   };
 
-  // 알림 자동 닫기
   useEffect(() => {
     if (alert) {
       const timer = setTimeout(() => {
@@ -717,59 +823,93 @@ export default function App() {
     }
   }, [alert]);
 
+  const renderContent = () => {
+    if (rateLimitError) {
+        return (
+            <div className="text-center p-10 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="text-yellow-600 mb-4">
+                    <Icon path="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" size={12} />
+                </div>
+                <h2 className="text-xl font-bold text-yellow-800">로그인 요청 과다</h2>
+                <p className="text-yellow-700 mt-2 mb-6">잠시 후 다시 시도해주세요.</p>
+                <button onClick={handleRetry} className="px-6 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors">재시도</button>
+            </div>
+        );
+    }
+
+    if (permissionError) {
+        return (
+            <div className="text-center p-10 bg-red-50 border border-red-200 rounded-lg">
+                <h2 className="text-xl font-bold text-red-800">데이터 접근 권한 오류</h2>
+                <p className="text-red-700 mt-2 mb-6">
+                    개인 데이터 공간에 접근할 수 없습니다.<br/>아래 버튼으로 세션 복구를 시도하세요.
+                </p>
+                <button onClick={handleRetry} className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">세션 복구 및 재시도</button>
+            </div>
+        );
+    }
+
+    if (typeof __firebase_config === 'undefined' && firebaseConfig.apiKey.startsWith("YOUR_")) {
+        return (
+            <div className="text-center p-10 bg-red-100 border border-red-400 rounded-lg">
+                <h2 className="text-xl font-bold text-red-800">설정값 입력 필요</h2>
+                <p className="text-red-700 mt-2">코드 상단의 <code>firebaseConfig</code> 값을 설정해주세요.</p>
+            </div>
+        );
+    }
+
+    if (isLoading && !isAuthReady) {
+        return <LoadingSpinner />;
+    }
+
+    return (
+        <>
+            <div className={activeTab === 'form' ? 'block' : 'hidden'}>
+                <SubmissionForm db={currentDb} userId={userId} appId={appId} setAlert={setAlert} />
+            </div>
+            <div className={activeTab === 'dashboard' ? 'block' : 'hidden'}>
+                <AdminDashboard submissions={submissions} isLoading={isLoading} deleteReport={deleteReport} />
+            </div>
+        </>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {alert && <Alert message={alert.message} type={alert.type} onClose={() => setAlert(null)} />}
       
+      <DebugInfo 
+        userId={userId} 
+        appId={appId} 
+        dbPath={`artifacts/${appId}/users/...`} 
+        permissionError={permissionError} 
+      />
+
       <header className="bg-white shadow-md">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-5">
             <div className="flex items-center space-x-3">
-              <span className="p-2 bg-blue-600 rounded-lg">
+              <span className="p-2 bg-blue-600 rounded-lg text-white">
                 <Icon path="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" size={8} />
               </span>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                주간 안전보건 점검 시스템
-              </h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">주간 안전보건 점검 시스템</h1>
             </div>
           </div>
-          
-          {/* 탭 네비게이션 */}
           <nav className="flex space-x-1 no-print">
-            <TabButton onClick={() => setActiveTab('form')} isActive={activeTab === 'form'}>
-              보고서 제출
-            </TabButton>
-            <TabButton onClick={() => setActiveTab('dashboard')} isActive={activeTab === 'dashboard'}>
-              통합 대시보드
-            </TabButton>
+            <TabButton onClick={() => setActiveTab('form')} isActive={activeTab === 'form'}>보고서 제출</TabButton>
+            <TabButton onClick={() => setActiveTab('dashboard')} isActive={activeTab === 'dashboard'}>내 보고서 관리</TabButton>
           </nav>
         </div>
       </header>
 
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
-        {!isAuthReady && !currentDb ? (
-          <LoadingSpinner />
-        ) : (
-          <>
-            <div className={activeTab === 'form' ? 'block' : 'hidden'}>
-              <SubmissionForm db={currentDb} userId={userId} appId={appId} setAlert={setAlert} />
-            </div>
-            <div className={activeTab === 'dashboard' ? 'block' : 'hidden'}>
-              <AdminDashboard 
-                submissions={submissions} 
-                isLoading={isLoading} 
-                deleteReport={deleteReport} 
-              />
-            </div>
-          </>
-        )}
+        {renderContent()}
       </main>
 
-       {/* 푸터 */}
-       <footer className="text-center text-gray-500 text-xs mt-8 no-print">
-         <p>UserID: {userId || '연결 안 됨'} | AppID: {appId}</p>
-         <p>© 2025 Construction Safety Management System | 안전보건팀</p>
-       </footer>
+      <footer className="text-center text-gray-500 text-xs mt-8 no-print">
+        <p>UserID: {userId || '연결 안 됨'} | AppID: {appId}</p>
+        <p>© 2025 Construction Safety Management System | 안전보건팀</p>
+      </footer>
     </div>
   );
 }
