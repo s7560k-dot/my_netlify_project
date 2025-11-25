@@ -56,53 +56,62 @@
         .results-table th, .results-table tfoot th { background-color: #c5cae9; }
         .results-table td, .results-table tfoot th { font-size: 1em; }
         .results-table .input-number { width: 80px; }
-        #final-grade-display.excellent { color: #2e7d32; }
-        #final-grade-display.good { color: #f57c00; }
-        #final-grade-display.poor { color: #d32f2f; }
         
-        .performance-table .eval-target {
-            width: 60px; 
-            word-break: break-all; 
-        }
+        /* === 등급별 색상 지정 (수정됨) === */
+        #final-grade-display.excellent { color: #0044CC; } /* 파란색 (우수) */
+        #final-grade-display.good { color: #008000; }      /* 녹색 (보통) */
+        #final-grade-display.poor { color: #CC0000; }      /* 빨간색 (미흡) */
+        
+        .performance-table .eval-target { width: 60px; word-break: break-all; }
         .performance-table .criteria { width: auto; text-align: left;} 
         
-        /* [개선 요구 사항] 입력란 자동 확장 스타일 */
         .auto-expand-input {
             min-height: 30px;
             width: 95%;
             text-align: left;
-            white-space: pre-wrap; /* 줄바꿈 보존 */
-            overflow-y: hidden; /* 스크롤바 숨김 */
+            white-space: pre-wrap;
+            overflow-y: hidden;
             display: inline-block; 
             vertical-align: middle;
             background-color: #fff;
             cursor: text;
         }
         
-        /* [주요 공정] 입력란 자동 확장 스타일 */
         .major-process-input {
             display: block;
             width: 95%; 
-            min-height: 180px; /* 초기 높이는 유지 */
-            height: auto;      /* 내용에 따라 늘어남 */
-            white-space: pre-wrap; /* 줄바꿈 보존 */
-            word-wrap: break-word; /* 긴 단어 줄바꿈 */
-            overflow-y: visible;   /* 내용이 넘치면 보여줌 */
+            min-height: 180px;
+            height: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-y: visible;
             background-color: #fff;
             cursor: text;
         }
 
-        /* Placeholder 효과 */
         .auto-expand-input:empty:before, .major-process-input:empty:before {
             content: attr(placeholder);
             color: #aaa;
             display: block; 
         }
 
+        #evaluation-phase-badge {
+            display: inline-block;
+            margin-left: 10px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #fff;
+            background-color: #757575; 
+        }
+        .phase-early { background-color: #009688 !important; }
+        .phase-middle { background-color: #3f51b5 !important; }
+        .phase-late { background-color: #673ab7 !important; }
+
         .side-by-side-section { display: flex; gap: 20px; align-items: flex-start; }
         .side-by-side-section > div { flex: 1; }
         
-        /* Modal and Link Styles */
         .criteria-link {
             cursor: pointer;
             color: #3f51b5;
@@ -124,26 +133,10 @@
         #close-modal-btn { font-size: 2rem; line-height: 1; border: none; background: none; cursor: pointer; }
         #modal-content { max-height: 60vh; overflow-y: auto; }
 
-        /* Print styles */
         @media print {
-            @page { 
-                size: landscape; 
-                margin: 5mm; 
-            }
-            body { 
-                -webkit-print-color-adjust: exact; 
-                print-color-adjust: exact; 
-                background-color: #fff; 
-                font-size: 11pt; 
-            }
-            .container { 
-                box-shadow: none; 
-                border-radius: 0; 
-                padding: 0; 
-                margin: 0; 
-                width: 100%; 
-                max-width: 100%; 
-            }
+            @page { size: landscape; margin: 5mm; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background-color: #fff; font-size: 11pt; }
+            .container { box-shadow: none; border-radius: 0; padding: 0; margin: 0; width: 100%; max-width: 100%; }
             thead { display: table-row-group; }
             tfoot { display: table-row-group; }
             th, .results-table th { background-color: #e8eaf6 !important; }
@@ -151,45 +144,28 @@
             .score-input { background-color: #eef !important; }
             tfoot th, tfoot td { background-color: #f5f5f5 !important; }
             
-            /* Input 스타일 조정 */
             input, textarea, select, .input-text, .major-process-input { 
                 border: 1px solid #ccc !important; 
                 background-color: #fff !important; 
                 padding: 4px; 
                 font-size: inherit; 
-                /* 인쇄 시에는 높이 제한 없이 내용만큼 늘어남 */
                 height: auto !important; 
                 overflow: visible !important;
             }
 
             th, td { padding: 8px 4px !important; }
-            
             .input-text, textarea { width: 98%; }
             .signature-section input { border: none; border-bottom: 1px solid #333; }
-            
-            /* 페이지 넘김 제어 */
             table, tr, td, .section-title { page-break-inside: avoid; }
             
-            /* 주요 공정 섹션은 내용이 길면 페이지 나뉨 허용 */
-            .side-by-side-section { 
-                display: block; /* 인쇄 시에는 블록으로 처리하여 내용이 길면 다음장으로 넘김 */
-            }
-            .side-by-side-section > div {
-                width: 100%;
-                margin-bottom: 20px;
-            }
+            .side-by-side-section { display: block; }
+            .side-by-side-section > div { width: 100%; margin-bottom: 20px; }
             
-            .section-title { 
-                margin-top: 25px; 
-                margin-bottom: 10px; 
-                page-break-before: auto; 
-                page-break-after: avoid;
-                font-size: 1.4em;
-            }
-            
+            .section-title { margin-top: 25px; margin-bottom: 10px; page-break-before: auto; page-break-after: avoid; font-size: 1.4em; }
             .criteria-link { color: #000; text-decoration: none; }
             
             #regulation-modal, #add-supervisor-btn, #print-btn-container { display: none !important; }
+            #evaluation-phase-badge { border: 1px solid #333; color: #000; background-color: #fff !important; }
         }
     </style>
 </head>
@@ -197,13 +173,11 @@
 
 <div class="container">
     
-    <!-- === 인쇄 버튼 === -->
     <div id="print-btn-container" style="text-align: right; margin-bottom: 20px;">
         <button id="print-btn" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #1a237e; color: white; border: none; border-radius: 5px; transition: background-color 0.3s;">
             &#128424; 인쇄하기
         </button>
     </div>
-    <!-- === /인쇄 버튼 === -->
 
     <h1>(<input type="text" value="1분기">) 현장 안전보건경영시스템 점검 결과표</h1>
     
@@ -216,14 +190,16 @@
         </colgroup>
         <tr>
             <th>현장명</th>
-            <!-- 현장명 텍스트 삭제 -->
             <td><div class="input-text auto-expand-input" contenteditable="true"></div></td>
             <th>점검일</th>
             <td><input type="date" class="input-text" value="2025-10-01"></td>
         </tr>
         <tr>
             <th>공정율</th>
-            <td><input type="number" step="0.1" class="input-number progress-input" value="0.0"> %</td>
+            <td>
+                <input type="number" step="0.1" class="input-number progress-input" value="0.0"> %
+                <span id="evaluation-phase-badge">초기 단계</span>
+            </td>
             <th>작성부서</th>
             <td><input type="text" class="input-text" value="안전보건팀"></td>
         </tr>
@@ -249,9 +225,7 @@
             </table>
         </div>
         <div>
-            <!-- 텍스트 변경: 주요 공정 -> 주요 공정/ 개선 요구 사항 -->
             <div class="section-title">주요 공정/ 개선 요구 사항</div>
-            <!-- 주요 공정 입력란: 자동 확장형 div -->
             <div class="major-process-input" contenteditable="true" placeholder="현장의 주요 공정 및 개선 요구 사항을 입력하세요. 내용이 길어지면 자동으로 칸이 늘어납니다."></div>
         </div>
     </div>
@@ -320,18 +294,21 @@
             <tr>
                 <td rowspan="1">현장<br>안전관리</td>
                 <td class="text-left">현장 안전관리 평가 점수</td>
-                <td>40</td>
+                <!-- Field Score Base Display: Updated dynamically -->
+                <td><span id="field-base-score-display">40</span></td>
                 <td><input type="number" id="field-score-input" class="input-number" value="40" step="0.1" max="40" min="0"></td>
                 <td id="field-score-display" style="font-weight: bold; font-size: 1.2em;">40.0</td>
             </tr>
         </tbody>
         <tfoot>
             <tr>
-                <th colspan="4">환산점수 (안전보건경영시스템: 60점 만점)</th>
+                <!-- Dynamic System Max Score -->
+                <th colspan="4">환산점수 (안전보건경영시스템: <span id="sys-max-display">60</span>점 만점)</th>
                 <th id="system-converted-score" style="font-size: 1.1em;">0.0</th>
             </tr>
             <tr>
-                <th colspan="4">환산점수 (현장 안전관리: 40점 만점)</th>
+                <!-- Dynamic Field Max Score -->
+                <th colspan="4">환산점수 (현장 안전관리: <span id="field-max-display">40</span>점 만점)</th>
                 <th id="field-converted-score" style="font-size: 1.1em;">40.0</th>
             </tr>
             <tr>
@@ -511,6 +488,8 @@
         const modal = document.getElementById('regulation-modal');
         const modalContent = document.getElementById('modal-content');
         const closeModalBtn = document.getElementById('close-modal-btn');
+        
+        const phaseBadge = document.getElementById('evaluation-phase-badge');
 
         // === 인쇄 버튼 이벤트 리스너 추가 ===
         const printBtn = document.getElementById('print-btn');
@@ -541,15 +520,88 @@
         });
 
         function updateComprehensiveResults() {
-            let systemBaseScore = 0;
-            for (let i = 1; i <= 7; i++) {
-                const scoreInput = document.getElementById(`comp-score-${i}`);
-                if (scoreInput) {
-                    systemBaseScore += parseFloat(scoreInput.value) || 0;
-                }
-            }
-            document.getElementById('system-score-sum').textContent = systemBaseScore.toFixed(1);
+            const progress = parseFloat(document.querySelector('.progress-input').value) || 0;
+            
+            // --- Dynamic Max Score Setting based on Progress ---
+            // 기본: Late Stage
+            let maxSystemScore = 60;
+            let maxFieldScore = 40;
+            let phaseText = "마무리 단계";
+            let phaseClass = "phase-late";
+            let weights = {1:1, 2:1, 3:1, 4:1, 5:1, 6:1, 7:1.5}; // Keep weight system internally for system score balance if needed, or just use dynamic max
 
+            if (progress < 30) {
+                // 초기: System heavy
+                maxSystemScore = 70;
+                maxFieldScore = 30;
+                phaseText = "초기 단계";
+                phaseClass = "phase-early";
+                weights = {1:1.2, 2:1, 3:1.2, 4:1, 5:1, 6:1.2, 7:1}; // System emphasis
+            } else if (progress < 80) {
+                // 본 공사: Field heavy
+                maxSystemScore = 50;
+                maxFieldScore = 50;
+                phaseText = "본 공사 단계";
+                phaseClass = "phase-middle";
+                weights = {1:1, 2:1.2, 3:1, 4:1.2, 5:1.2, 6:1, 7:1}; // Execution emphasis
+            }
+
+            // Update UI for Max Scores
+            document.getElementById('sys-max-display').textContent = maxSystemScore;
+            document.getElementById('field-max-display').textContent = maxFieldScore;
+            document.getElementById('field-base-score-display').textContent = maxFieldScore;
+            
+            // Update Field Input attributes
+            const fInput = document.getElementById('field-score-input');
+            fInput.max = maxFieldScore;
+            if(parseFloat(fInput.value) > maxFieldScore) fInput.value = maxFieldScore; // Clamp current value if needed
+
+            // Update Badge
+            phaseBadge.textContent = phaseText;
+            phaseBadge.className = phaseClass;
+
+
+            // --- Calculate System Score ---
+            let weightedObtainedSum = 0;
+            let weightedPossibleSum = 0;
+
+            const tables = document.querySelectorAll('.main-table');
+            tables.forEach((table, index) => {
+                const sectionIndex = index + 1;
+                const weight = weights[sectionIndex] || 1.0;
+                
+                let sectionObtained = 0;
+                let sectionPossible = 0;
+
+                table.querySelectorAll('.eval-select').forEach(select => {
+                    if (select.value !== 'na') {
+                        const maxPoint = parseFloat(select.dataset.basePoints) || 0;
+                        const val = parseFloat(select.value) || 0;
+                        sectionPossible += maxPoint;
+                        sectionObtained += val;
+                    }
+                });
+
+                weightedObtainedSum += sectionObtained * weight;
+                weightedPossibleSum += sectionPossible * weight;
+            });
+
+            weightedPossibleSum = Math.max(1, weightedPossibleSum);
+            
+            // Convert to dynamic maxSystemScore
+            let systemConvertedScore = (weightedObtainedSum / weightedPossibleSum) * maxSystemScore;
+            systemConvertedScore = Math.max(0, systemConvertedScore);
+            document.getElementById('system-converted-score').textContent = systemConvertedScore.toFixed(1);
+
+            let systemSimpleSum = 0;
+            for (let i = 1; i <= 7; i++) {
+                const input = document.getElementById(`comp-score-${i}`);
+                if(input) systemSimpleSum += parseFloat(input.value) || 0;
+            }
+            document.getElementById('system-score-sum').textContent = systemSimpleSum.toFixed(1);
+
+
+            // --- Deductions ---
             const majorAccidents = parseInt(majorAccidentInput.value) || 0;
             const majorDeduction = majorAccidents * -30;
             document.getElementById('major-accident-deduction').textContent = majorDeduction;
@@ -558,47 +610,38 @@
             const workDeduction = workAccidents * -5;
             document.getElementById('work-accident-deduction').textContent = workDeduction;
 
-            const systemFinalScore = systemBaseScore + majorDeduction + workDeduction;
-            
-            // === '해당없음' 처리를 위한 총 배점 계산 ===
-            let totalPossiblePoints = 100; // 기본 총점
-            document.querySelectorAll('#evaluation-sections .eval-select').forEach(select => {
-                if (select.value === 'na') {
-                    totalPossiblePoints -= parseFloat(select.dataset.basePoints) || 0;
-                }
-            });
-            // 0으로 나누는 것을 방지
-            totalPossiblePoints = Math.max(1, totalPossiblePoints); 
-            // === /계산 완료 ===
-            
-            let systemConvertedScore = (systemFinalScore / totalPossiblePoints) * 60;
-            systemConvertedScore = Math.max(0, systemConvertedScore); // 점수가 음수가 되지 않도록
-            document.getElementById('system-converted-score').textContent = systemConvertedScore.toFixed(1);
 
+            // --- Field Score ---
             const fieldScore = parseFloat(fieldScoreInput.value) || 0;
-            const clampedFieldScore = Math.min(40, Math.max(0, fieldScore));
+            const clampedFieldScore = Math.min(maxFieldScore, Math.max(0, fieldScore)); // Clamp to dynamic max
             if (fieldScore !== clampedFieldScore) {
                 fieldScoreInput.value = clampedFieldScore;
             }
             document.getElementById('field-score-display').textContent = clampedFieldScore.toFixed(1);
             document.getElementById('field-converted-score').textContent = clampedFieldScore.toFixed(1);
 
-            const finalTotalScore = systemConvertedScore + clampedFieldScore;
+
+            // --- Final Total ---
+            let finalTotalScore = systemConvertedScore + clampedFieldScore + majorDeduction + workDeduction;
+            finalTotalScore = Math.max(0, finalTotalScore);
             document.getElementById('final-total-score').textContent = finalTotalScore.toFixed(1);
 
+
+            // --- Grade ---
             const finalGradeEl = document.getElementById('final-grade-display');
             let grade = '-';
             let gradeClass = '';
 
-            // === 평가등급 표시 로직 수정 ===
-            // 안전보건경영시스템 점수가 0점이고 감점사항이 없으면(즉, 아직 평가가 시작되지 않았으면) 등급을 '-'로 표시
-            if (systemBaseScore === 0 && majorDeduction === 0 && workDeduction === 0) {
-                grade = '-';
-                gradeClass = '';
-            } else {
+            if (systemSimpleSum === 0 && majorDeduction === 0 && workDeduction === 0 && fieldScore === maxFieldScore) {
+                 // Approximation of "Not started"
+            }
+            
+            if (systemSimpleSum > 0 || majorDeduction < 0 || workDeduction < 0 || fieldScore < maxFieldScore) {
                 if (finalTotalScore >= 90) { grade = '우수'; gradeClass = 'excellent'; }
                 else if (finalTotalScore >= 60) { grade = '보통'; gradeClass = 'good'; } 
                 else { grade = '미흡'; gradeClass = 'poor'; } 
+            } else {
+                 grade = '-';
             }
             
             finalGradeEl.textContent = grade;
@@ -627,16 +670,17 @@
                 const row = event.target.closest('tr');
                 const scoreInput = row.querySelector('.score-input');
                 if (scoreInput) {
-                    // '해당없음'을 선택하면 0점 처리
                     if (event.target.value === 'na') {
                         scoreInput.value = 0;
                     } else {
                         scoreInput.value = event.target.value;
                     }
-                    updateAllScores(); // This will trigger updateComprehensiveResults
+                    updateAllScores(); 
                 }
             }
         });
+        
+        document.querySelector('.progress-input').addEventListener('input', updateComprehensiveResults);
 
         majorAccidentInput.addEventListener('input', updateComprehensiveResults);
         workAccidentInput.addEventListener('input', updateComprehensiveResults);
@@ -663,7 +707,6 @@
                 removeBtn.textContent = '-';
                 removeBtn.style.cssText = 'margin-left:10px; padding:5px 10px; cursor:pointer;';
                 
-                // === 오타 수정 완료: removsBtn -> removeBtn ===
                 removeBtn.addEventListener('click', () => { entryDiv.remove(); updateSupervisorButtonState(); });
 
                 entryDiv.appendChild(input);
@@ -678,8 +721,6 @@
             if (row) {
                 const scoreInput = row.querySelector('.score-input');
                 if (scoreInput) {
-                    // '해당없음' 선택 시 0점, 그 외에는 선택된 값으로 초기화
-                    // (기본값이 'na'가 되었으므로, 페이지 로드 시 모든 scoreInput이 0이 됨)
                     if (select.value === 'na') {
                         scoreInput.value = 0;
                     } else {
@@ -689,16 +730,13 @@
             }
         });
         
-        // === 인쇄 버튼 이벤트 리스너 추가 ===
         printBtn.addEventListener('click', function() {
             window.print();
         });
 
-        // 버튼 호버 효과 (선택 사항)
         printBtn.addEventListener('mouseenter', () => printBtn.style.backgroundColor = '#3949ab');
         printBtn.addEventListener('mouseleave', () => printBtn.style.backgroundColor = '#1a237e');
         
-        // 초기화
         updateSupervisorButtonState();
         updateAllScores();
     });
