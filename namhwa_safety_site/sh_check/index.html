@@ -3,811 +3,746 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>현장 안전보건 관리 점검표</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>현장 안전보건경영시스템 점검 결과표</title>
     <style>
-        /* 기본 스타일 */
-        body {
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        .responsive-table-container {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        .responsive-table {
-            min-width: 1400px; /* 사진 컬럼 추가로 너비 확장 */
-        }
-        
-        .photo-thumbnail-container {
-            position: relative;
-            display: inline-block; /* 컨테이너 크기를 이미지에 맞춤 */
-        }
-
-        .photo-thumbnail {
-            max-width: 100px;
-            max-height: 100px;
-            border-radius: 0.375rem;
-            margin-top: 0.5rem;
-            border: 1px solid #e5e7eb;
-            cursor: pointer;
-        }
-
-        .delete-photo-btn {
-            position: absolute;
-            top: 0;
-            right: -5px;
-            background-color: rgba(239, 68, 68, 0.8);
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 12px;
-            line-height: 20px;
-            text-align: center;
-            border: 1px solid white;
-            cursor: pointer;
+        body { font-family: 'Malgun Gothic', sans-serif; margin: 20px; background-color: #f7f7f7; color: #333; }
+        .container { max-width: 1000px; margin: auto; background-color: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1, h2 { text-align: center; color: #1a237e; }
+        h1 input {
+            font-size: inherit; /* Match h1 font size */
             font-weight: bold;
+            color: #1a237e;
+            border: none;
+            border-bottom: 2px solid #ddd;
+            background-color: transparent;
+            width: 100px; /* Adjust width as needed */
+            text-align: center;
+            font-family: inherit;
+        }
+        h1 input:focus {
+            outline: none;
+            border-bottom-color: #3949ab;
+        }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; table-layout: fixed; }
+        th, td { border: 1px solid #ddd; padding: 12px; vertical-align: middle; text-align: center; }
+        th { background-color: #e8eaf6; font-weight: bold; }
+        .text-left { text-align: left; }
+        tfoot th, tfoot td { background-color: #f5f5f5; font-weight: bold; }
+        
+        /* 공통 Input 스타일 */
+        .input-text, textarea, select, .major-process-input { 
+            width: 98%; 
+            padding: 8px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            transition: border-color 0.3s; 
+            box-sizing: border-box; 
+            font-family: 'Malgun Gothic', sans-serif;
+        }
+        .input-text:focus, textarea:focus, select:focus, .major-process-input:focus { 
+            border-color: #3949ab; 
+            outline: none; 
+        }
+        textarea { resize: vertical; min-height: 50px; }
+        .input-number { width: 90%; text-align: center; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .progress-input { width: 80px; display: inline-block; vertical-align: middle; }
+        .header-table, .main-table { margin-bottom: 30px; }
+        .header-table td { background-color: #f9f9f9; }
+        .signature-section { margin-top: 40px; text-align: right; }
+        .signature-section span { margin-left: 30px; display: inline-block; }
+        .section-title { font-size: 1.3em; font-weight: bold; margin-top: 40px; margin-bottom: 15px; border-bottom: 3px solid #3949ab; padding-bottom: 8px; color: #1a237e; }
+        .score-input { background-color: #eef; font-weight: bold; }
+        .results-table { margin-top: 30px; } 
+        .results-table th, .results-table tfoot th { background-color: #c5cae9; }
+        .results-table td, .results-table tfoot th { font-size: 1em; }
+        .results-table .input-number { width: 80px; }
+        
+        /* === 등급별 색상 지정 === */
+        #final-grade-display.excellent { color: #0044CC; } /* 파란색 (우수) */
+        #final-grade-display.good { color: #008000; }      /* 녹색 (보통) */
+        #final-grade-display.poor { color: #CC0000; }      /* 빨간색 (미흡) */
+        
+        .performance-table .eval-target { width: 60px; word-break: break-all; }
+        .performance-table .criteria { width: auto; text-align: left;} 
+        
+        .auto-expand-input {
+            min-height: 30px;
+            width: 95%;
+            text-align: left;
+            white-space: pre-wrap;
+            overflow-y: hidden;
+            display: inline-block; 
+            vertical-align: middle;
+            background-color: #fff;
+            cursor: text;
+        }
+        
+        .major-process-input {
+            display: block;
+            width: 95%; 
+            min-height: 180px;
+            height: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-y: visible;
+            background-color: #fff;
+            cursor: text;
         }
 
-        /* Modal 스타일 */
-        .modal-overlay {
-            transition: opacity 0.3s ease;
-        }
-        .modal-container {
-            transition: transform 0.3s ease;
+        .auto-expand-input:empty:before, .major-process-input:empty:before {
+            content: attr(placeholder);
+            color: #aaa;
+            display: block; 
         }
 
-        /* 사진 대지 이미지 컨테이너 (안정적인 비율 고정 방식) */
-        .report-photo-container {
-            position: relative;
-            width: 100%;
-            padding-top: 75%; /* 4:3 비율 (3 / 4 * 100) */
-            overflow: hidden;
-            border-radius: 0.5rem;
-            background-color: #f3f4f6;
+        /* 평가 단계 배지 및 비율 표시 */
+        #evaluation-phase-badge {
+            display: inline-block;
+            margin-left: 10px;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #fff;
+            background-color: #757575; 
+            vertical-align: middle;
         }
-        .report-photo {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* 이미지를 컨테이너에 맞춰 채움 */
-        }
+        .phase-early { background-color: #009688 !important; }
+        .phase-middle { background-color: #3f51b5 !important; }
+        .phase-late { background-color: #673ab7 !important; }
 
-        /* [수정] 인쇄용 스타일 */
+        .side-by-side-section { display: flex; gap: 20px; align-items: flex-start; }
+        .side-by-side-section > div { flex: 1; }
+        
+        .criteria-link {
+            cursor: pointer;
+            color: #3f51b5;
+            text-decoration: none;
+            transition: text-decoration 0.2s;
+        }
+        .criteria-link:hover { text-decoration: underline; }
+
+        #regulation-modal { 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background-color: rgba(0,0,0,0.5);
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+        }
+        #regulation-modal.visible { display: flex; }
+        #close-modal-btn { font-size: 2rem; line-height: 1; border: none; background: none; cursor: pointer; }
+        #modal-content { max-height: 60vh; overflow-y: auto; }
+
         @media print {
-            /* --- 기본 페이지 및 요소 설정 --- */
-            @page {
-                size: A4 landscape; /* 용지 및 가로 방향 명시 */
-                margin: 0.7cm; /* 여백 최소화 */
-            }
-
-            body {
-                -webkit-print-color-adjust: exact !important;
-                color-adjust: exact !important;
-                background: #fff;
-            }
-
-            /* 인쇄 시 불필요한 UI 요소 숨기기 */
-            .no-print, 
-            .sticky.bottom-0, 
-            #photo-modal, 
-            .delete-photo-btn {
-                display: none !important;
-            }
+            @page { size: landscape; margin: 5mm; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background-color: #fff; font-size: 11pt; }
+            .container { box-shadow: none; border-radius: 0; padding: 0; margin: 0; width: 100%; max-width: 100%; }
+            thead { display: table-row-group; }
+            tfoot { display: table-row-group; }
+            th, .results-table th { background-color: #e8eaf6 !important; }
+            .header-table td { background-color: #f9f9f9 !important; }
+            .score-input { background-color: #eef !important; }
+            tfoot th, tfoot td { background-color: #f5f5f5 !important; }
             
-            /* --- 시나리오 1: 메인 점검표 인쇄 --- */
-            body:not(.printing-report) {
-                font-size: 9pt; /* 가독성 좋은 기본 폰트 크기 */
+            input, textarea, select, .input-text, .major-process-input { 
+                border: 1px solid #ccc !important; 
+                background-color: #fff !important; 
+                padding: 4px; 
+                font-size: inherit; 
+                height: auto !important; 
+                overflow: visible !important;
             }
 
-            body:not(.printing-report) .container.mx-auto {
-                padding: 0;
-                margin: 0;
-                width: 100%;
-                max-width: 100%;
-            }
-
-            body:not(.printing-report) .bg-white.p-6 {
-                box-shadow: none;
-                border: none;
-                padding: 0;
-            }
-
-            body:not(.printing-report) .responsive-table-container {
-                overflow: visible;
-            }
+            th, td { padding: 8px 4px !important; }
+            .input-text, textarea { width: 98%; }
+            .signature-section input { border: none; border-bottom: 1px solid #333; }
+            table, tr, td, .section-title { page-break-inside: avoid; }
             
-            body:not(.printing-report) .responsive-table {
-                width: 100%;
-                min-width: 0;
-                table-layout: fixed; /* 고정 레이아웃 사용 */
-                border-collapse: collapse;
-                font-size: 7.5pt;
-            }
-
-            body:not(.printing-report) .responsive-table th,
-            body:not(.printing-report) .responsive-table td {
-                padding: 4px !important;
-                border: 1px solid #ccc !important;
-                word-break: break-all;
-            }
+            .side-by-side-section { display: block; }
+            .side-by-side-section > div { width: 100%; margin-bottom: 20px; }
             
-            body:not(.printing-report) .responsive-table thead,
-            body:not(.printing-report) .responsive-table tfoot {
-                background-color: #f0f0f0 !important;
-            }
-            body:not(.printing-report) tfoot {
-                display: table-row-group;
-            }
+            .section-title { margin-top: 25px; margin-bottom: 10px; page-break-before: auto; page-break-after: avoid; font-size: 1.4em; }
+            .criteria-link { color: #000; text-decoration: none; }
             
-            /* [수정] 인쇄 시 사진 컬럼 숨기기 */
-            body:not(.printing-report) .photo-col {
-                display: none;
-            }
-            
-            /* [수정] 인쇄 시 평가자 의견 너비 자동 확장 */
-             body:not(.printing-report) .comment-col {
-                width: 29%; /* 19% (기존) + 10% (사진란) */
-            }
-
-            textarea, input[type="text"], input[type="number"] {
-                border: none !important;
-                background-color: transparent !important;
-                resize: none;
-                width: 100%;
-                height: auto;
-                padding: 1px;
-                box-shadow: none !important;
-                outline: none !important;
-            }
-
-            input[type="radio"] {
-                -webkit-appearance: none; appearance: none;
-                border: 1px solid #000;
-                border-radius: 50%;
-                width: 8px;
-                height: 8px;
-                margin: 0 auto;
-                vertical-align: middle;
-            }
-            input[type="radio"]:checked {
-                background-color: #000;
-                border: 1px solid white;
-                box-shadow: 0 0 0 1px #000;
-            }
-            
-            body:not(.printing-report) #checklist-body .photo-thumbnail-container {
-                display: none;
-            }
-
-
-            /* --- 시나리오 2: 사진 대지 인쇄 (3x2 그리드) --- */
-            body.printing-report .no-print-report {
-                display: none !important;
-            }
-            body:not(.printing-report) .print-only-report {
-                display: none !important;
-            }
-
-            body.printing-report #photo-report-modal {
-                position: static;
-                display: block;
-                height: auto;
-                overflow: visible;
-            }
-            
-            body.printing-report #photo-report-modal-content {
-                 max-width: 100%;
-                 padding: 0;
-                 margin: 0;
-            }
-            
-            body.printing-report #report-container {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 0.7cm;
-            }
-
-            body.printing-report .photo-entry {
-                page-break-inside: avoid;
-                border: 1px solid #ccc;
-                box-shadow: none;
-                border-radius: 0;
-                display: flex;
-                flex-direction: column;
-            }
-
-            body.printing-report .photo-entry:nth-child(6n) {
-                page-break-after: always;
-            }
-            
-            body.printing-report .photo-entry-header{
-                padding: 0.2cm;
-            }
-            body.printing-report .photo-entry-body {
-                padding: 0.2cm;
-                padding-top: 0;
-                flex-grow: 1;
-                display: flex;
-                flex-direction: column;
-            }
-
-            body.printing-report .photo-entry h3 {
-                font-size: 8.5pt;
-                font-weight: bold;
-            }
-            
-            body.printing-report .report-photo-container {
-                padding-top: 75%;
-                margin-bottom: 0.2cm;
-            }
-            
-            body.printing-report .photo-entry textarea {
-                flex-grow: 1;
-                font-size: 8pt;
-                height: auto !important;
-            }
+            #regulation-modal, #add-supervisor-btn, #print-btn-container { display: none !important; }
+            #evaluation-phase-badge { border: 1px solid #333; color: #000; background-color: #fff !important; padding: 2px 8px; font-size: 0.8em;}
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body>
 
-    <div class="container mx-auto p-4 sm:p-6 lg:p-8 no-print-report">
-        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-            <div class="flex justify-between items-end mb-8 border-b pb-1">
-                <div>
-                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">현장 안전보건 관리 점검표</h1>
-                    <div class="flex items-center mt-2 text-gray-600">
-                        <p class="text-gray-500 mr-px">안전보건팀</p>
-                        <div class="flex items-center text-sm">
-                           <input type="text" id="year" class="w-16 p-1 border-b-2 text-center focus:outline-none focus:border-blue-500" placeholder="YYYY">
-                           <span class="ml-px">년</span>
-                           <input type="text" id="month" class="w-12 p-1 border-b-2 text-center focus:outline-none focus:border-blue-500" placeholder="MM">
-                           <span class="ml-px">월</span>
-                           <input type="text" id="day" class="w-12 p-1 border-b-2 text-center focus:outline-none focus:border-blue-500" placeholder="DD">
-                           <span class="ml-px">일</span>
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <img src="https://github.com/s7560k-dot/my-image/blob/main/remove_background.webp?raw=true" 
-                         alt="회사 로고" 
-                         class="h-6 header-logo"
-                         onerror="this.style.display='none'">
-                </div>
-            </div>
+<div class="container">
+    
+    <div id="print-btn-container" style="text-align: right; margin-bottom: 20px;">
+        <button id="print-btn" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #1a237e; color: white; border: none; border-radius: 5px; transition: background-color 0.3s;">
+            &#128424; 인쇄하기
+        </button>
+    </div>
 
-            <div class="responsive-table-container">
-                <table class="w-full table-fixed border-collapse border border-gray-300 text-sm sm:text-base responsive-table">
-                    <colgroup>
-                        <col class="w-[7%]">
-                        <col class="w-[10%]">
-                        <col class="w-[3%]">
-                        <col class="w-[3%]">
-                        <col class="w-auto">
-                        <col class="w-[4%]">
-                        <col class="w-[4%]">
-                        <col class="w-[4%]">
-                        <col class="w-[4%]">
-                        <col class="w-[4%]">
-                        <col class="w-[19%] comment-col">
-                        <col class="w-[10%] photo-col">
-                    </colgroup>
-                    <thead class="bg-gray-100 text-center font-semibold">
+    <h1>(<input type="text" value="1분기">) 현장 안전보건경영시스템 점검 결과표</h1>
+    
+    <table class="header-table">
+        <colgroup>
+            <col style="width: 15%;">
+            <col style="width: 35%;">
+            <col style="width: 15%;">
+            <col style="width: 35%;">
+        </colgroup>
+        <tr>
+            <th>현장명</th>
+            <td><div class="input-text auto-expand-input" contenteditable="true"></div></td>
+            <th>점검일</th>
+            <td><input type="date" class="input-text" value="2025-10-01"></td>
+        </tr>
+        <tr>
+            <th>공정율</th>
+            <td>
+                <input type="number" step="0.1" class="input-number progress-input" value="0.0"> %
+                <span id="evaluation-phase-badge">초기 단계 (시스템70:현장30)</span>
+            </td>
+            <th>작성부서</th>
+            <td><input type="text" class="input-text" value="안전보건팀"></td>
+        </tr>
+    </table>
+
+    <div class="side-by-side-section">
+        <div>
+            <div class="section-title">평가 대상자</div>
+            <table class="header-table">
+                <tr>
+                    <th>현장소장</th>
+                    <td><input type="text" class="input-text" placeholder="현장소장 성명을 입력하세요"></td>
+                </tr>
+                <tr>
+                    <th>안전관리자</th>
+                    <td><input type="text" class="input-text" placeholder="안전관리자 성명을 입력하세요"></td>
+                </tr>
+                <tr>
+                    <th>관리감독자 <button type="button" id="add-supervisor-btn" style="margin-left: 10px; padding: 5px 10px; cursor: pointer;">+</button></th>
+                    <td id="supervisor-list">
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div>
+            <div class="section-title">주요 공정/ 개선 요구 사항</div>
+            <div class="major-process-input" contenteditable="true" placeholder="현장의 주요 공정 및 개선 요구 사항을 입력하세요. 내용이 길어지면 자동으로 칸이 늘어납니다."></div>
+        </div>
+    </div>
+
+    <div class="section-title">종합 결과</div>
+    <table class="results-table">
+        <thead>
+            <tr>
+                <th style="width: 5%;">구분</th>
+                <th>항목</th>
+                <th style="width: 10%;">배점</th>
+                <th style="width: 15%;">평점 / 건수</th>
+                <th style="width: 15%;">결과</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td rowspan="9" style="writing-mode: vertical-rl; text-orientation: mixed;">안전보건경영시스템</td>
+                <td class="text-left">1. 안전보건경영 방침 및 목표관리 절차</td>
+                <td>5</td>
+                <td><input type="number" id="comp-score-1" class="input-number score-input" readonly></td>
+                <td rowspan="7" id="system-score-sum" style="font-weight: bold; font-size: 1.2em;">0</td>
+            </tr>
+            <tr>
+                <td class="text-left">2. 안전보건관리책임자 등 업무수행 평가 절차</td>
+                <td>30</td>
+                <td><input type="number" id="comp-score-2" class="input-number score-input" readonly></td>
+            </tr>
+            <tr>
+                <td class="text-left">3. 종사자 의견 청취 절차</td>
+                <td>10</td>
+                <td><input type="number" id="comp-score-3" class="input-number score-input" readonly></td>
+            </tr>
+            <tr>
+                <td class="text-left">4. 비상사태 대비·대응 절차</td>
+                <td>20</td>
+                <td><input type="number" id="comp-score-4" class="input-number score-input" readonly></td>
+            </tr>
+            <tr>
+                <td class="text-left">5. 협력사 수준관리 절차</td>
+                <td>10</td>
+                <td><input type="number" id="comp-score-5" class="input-number score-input" readonly></td>
+            </tr>
+            <tr>
+                <td class="text-left">6. 안전보건관계 법령 등 이행관리 절차</td>
+                <td>20</td>
+                <td><input type="number" id="comp-score-6" class="input-number score-input" readonly></td>
+            </tr>
+            <tr>
+                <td class="text-left">7. 시스템 평가 및 개선 절차</td>
+                <td>5</td>
+                <td><input type="number" id="comp-score-7" class="input-number score-input" readonly></td>
+            </tr>
+            <tr>
+                <td class="text-left">중대재해 발생 여부 (1건당 -30점)</td>
+                <td>-30</td>
+                <td><input type="number" id="major-accident-count" class="input-number" value="0" min="0"></td>
+                <td id="major-accident-deduction" style="color: red; font-weight: bold;">0</td>
+            </tr>
+            <tr>
+                <td class="text-left">산재 발생 여부 (1건당 -5점)</td>
+                <td>-5</td>
+                <td><input type="number" id="work-accident-count" class="input-number" value="0" min="0"></td>
+                <td id="work-accident-deduction" style="color: red; font-weight: bold;">0</td>
+            </tr>
+            <tr>
+                <td rowspan="1">현장<br>안전관리</td>
+                <td class="text-left">현장 안전관리 평가 점수</td>
+                <!-- Field Score Base Display: Updated dynamically -->
+                <td><span id="field-base-score-display">40</span></td>
+                <td><input type="number" id="field-score-input" class="input-number" value="40" step="0.1" max="40" min="0"></td>
+                <td id="field-score-display" style="font-weight: bold; font-size: 1.2em;">40.0</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <!-- Dynamic System Max Score -->
+                <th colspan="4">환산점수 (안전보건경영시스템: <span id="sys-max-display">60</span>점 만점)</th>
+                <th id="system-converted-score" style="font-size: 1.1em;">0.0</th>
+            </tr>
+            <tr>
+                <!-- Dynamic Field Max Score -->
+                <th colspan="4">환산점수 (현장 안전관리: <span id="field-max-display">40</span>점 만점)</th>
+                <th id="field-converted-score" style="font-size: 1.1em;">40.0</th>
+            </tr>
+            <tr>
+                <th colspan="4">총점</th>
+                <th id="final-total-score" style="font-size: 1.2em;">0.0</th>
+            </tr>
+            <tr>
+                <th colspan="4">평가등급</th>
+                <th id="final-grade-display" style="font-size: 1.2em; font-weight: bold;">-</th>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div id="evaluation-sections">
+        <!-- Sections 1-7 will be generated here -->
+    </div>
+
+    <div class="signature-section">
+        <span>수검 참여자: <input type="text" style="width: 350px;" class="input-text"> (서명)</span>
+        <span>수검 현장 대표: <input type="text" style="width: 100px;" class="input-text"> (서명)</span>
+        <span>점검자: <input type="text" style="width: 100px;" class="input-text"> (서명)</span>
+    </div>
+
+</div>
+
+<!-- Regulation Modal -->
+<div id="regulation-modal">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-2xl">
+        <div class="flex justify-between items-center border-b pb-3 mb-4">
+            <h2 class="text-xl font-bold text-gray-900">관련 법규 및 기준</h2>
+            <button id="close-modal-btn">&times;</button>
+        </div>
+        <div id="modal-content">
+            <!-- Regulation text will be injected here -->
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        
+        const sectionsData = [
+            // 1번 항목
+            { title: "1. 안전보건경영 방침 및 목표관리 절차 (배점: 5)", rows: [ { criteria: "방침 및 목표의 적정 수립 여부", points: 1.0, options: [{v: 1.0, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "<strong>산업안전보건법 제5조 (사업주의 의무)</strong><br>① 사업주는 이 법과 이 법에 따른 명령으로 정하는 산업재해 예방을 위한 기준을 지키고...안전 및 보건을 확보할 의무가 있다." }, { criteria: "법규 및 기타 요구사항의 반영 여부", points: 0.5, options: [{v: 0.5, t: '우수'}, {v: 0.3, t: '보통'}, {v: 0.1, t: '미흡'}], regulation: "<strong>산업안전보건기준에 관한 규칙 제33조 (안전보건관리규정의 작성)</strong><br>사업주는 법 제25조제1항에 따라 안전보건관리규정을 작성할 때에는 법규 및 기타 요구사항을 반영해야 한다." }, { criteria: "방침/목표 수립시 전구성원 참여", points: 0.5, options: [{v: 0.5, t: '우수'}, {v: 0.3, t: '보통'}, {v: 0.1, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조 (근로자의 참여)</strong><br>사업주는 산업재해 예방에 관한 중요 사항에 대하여 근로자의 의견을 들어야 한다." }, { criteria: "안전보건 목표의 구체성 및 측정 가능성", points: 0.5, options: [{v: 0.5, t: '우수'}, {v: 0.3, t: '보통'}, {v: 0.1, t: '미흡'}], regulation: "안전보건경영시스템(KOSHA-MS) 인증 기준에 따라 목표는 구체적이고 측정 가능해야 합니다." }, { criteria: "년, 월간 안전보건활동 계획 수립 여부", points: 0.5, options: [{v: 0.5, t: '우수'}, {v: 0.3, t: '보통'}, {v: 0.1, t: '미흡'}], regulation: "<strong>산업안전보건법 제15조 (안전보건관리책임자)</strong><br>안전보건관리책임자는 안전보건관리규정의 시행 및 그 업무 수행에 필요한 예산을 편성하고 집행하여야 한다." }, { criteria: "방침/목표에 대한 경영자 검토 및 승인", points: 0.5, options: [{v: 0.5, t: '우수'}, {v: 0.3, t: '보통'}, {v: 0.1, t: '미흡'}], regulation: "안전보건경영시스템(KOSHA-MS)은 최고경영자의 검토 및 승인을 요구합니다." }, { criteria: "안전보건계획 전구성원 공유 및 게시", points: 0.5, options: [{v: 0.5, t: '우수'}, {v: 0.3, t: '보통'}, {v: 0.1, t: '미흡'}], regulation: "<strong>산업안전보건법 시행규칙 제26조 (안전보건관리규정의 게시 등)</strong><br>사업주는 안전보건관리규정을 근로자가 쉽게 볼 수 있는 장소에 게시하거나 갖추어 두어야 한다." }, { criteria: "목표(과제) 성과 측정 실시 여부", points: 0.5, options: [{v: 0.5, t: '우수'}, {v: 0.3, t: '보통'}, {v: 0.1, t: '미흡'}], regulation: "성과측정은 안전보건경영시스템의 핵심 요소입니다." }, { criteria: "목표 미달성시 개선대책 수립 여부", points: 0.5, options: [{v: 0.5, t: '우수'}, {v: 0.3, t: '보통'}, {v: 0.1, t: '미흡'}], regulation: "지속적 개선 원칙에 따라 미달성 목표에 대한 시정조치가 필요합니다." } ] },
+            
+            // 2번 항목
+            { title: "2. 안전보건관리책임자 등 업무수행 평가 절차 (배점: 30)", isPerformance: true, rows: [ 
+                { target: "안전보건총괄책임자", criteria: "위험성평가 체계 구축 및 실행 총괄", points: 2.5, options: [{v: 2.5, t: '우수'}, {v: 1.5, t: '보통'}, {v: 0.7, t: '미흡'}], regulation: "<strong>산업안전보건법 제62조 (안전보건총괄책임자)</strong>", rowspan: 2 }, 
+                { criteria: "도급·용역·위탁 시 산재예방 조치", points: 2.5, options: [{v: 2.5, t: '우수'}, {v: 1.5, t: '보통'}, {v: 0.7, t: '미흡'}], regulation: "<strong>산업안전보건법 제63조 (도급인의 안전조치 및 보건조치)</strong>" }, 
+                
+                { target: "안전관리책임자", criteria: "산재 예방계획 수립 및 이행 여부", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제15조 (안전보건관리책임자)</strong><br>안전보건관리책임자는 산업재해 예방계획의 수립에 관한 사항을 총괄·관리하여야 한다.", rowspan: 8 }, 
+                { criteria: "위험성평가 실시 여부", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제36조 (위험성평가의 실시)</strong>" }, 
+                { criteria: "안전보건 협의체 회의 주관 및 결과 관리", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제75조 (안전 및 보건에 관한 협의체 등의 구성·운영)</strong>" }, 
+                { criteria: "도급시 산업재해 예방조치(협의체 운영 등) 여부", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제64조 (도급에 따른 산업재해 예방조치)</strong>" },
+                { criteria: "작업환경의 점검 및 개선 여부", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제15조 (안전보건관리책임자)</strong><br>작업환경의 점검 및 개선에 관한 사항" },
+                { criteria: "법령요지, 안전보건관리규정 게시 등", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제34조 (법령 요지 등의 게시 등)</strong>" },
+                { criteria: "안전조치(기계기구,설비,폭발,전기,굴착,하역,해체,중량물취급, 추락, 낙하, 천재지변 등)", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제38조 (안전조치)</strong>" },
+                { criteria: "산업재해 발생 위험시 작업중지 및 근로자 대피 등 안전보건에 관한 필요한 조치", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제51조 (사업주의 작업중지)</strong>" },
+                
+                { target: "관리감독자", criteria: "작업복·보호구 착용 교육지도 여부", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제16조 (관리감독자)</strong><br>관리감독자는 소속된 근로자의 작업복·보호구 및 방호장치의 점검과 그 착용·사용에 관한 교육·지도를 하여야 한다.", rowspan: 5 }, 
+                { criteria: "위험성평가 참여 및 개선조치 실행확인", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 시행규칙 제37조 (위험성평가 실시내용 및 결과의 기록·보존)</strong><br>관리감독자는 위험성평가에 참여하여야 한다." }, 
+                { criteria: "작업 시작 전 안전점검 실시 여부", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건기준에 관한 규칙 제35조 (작업시작 전 점검)</strong>" }, 
+                { criteria: "소속 근로자 의견 청취 및 개선 요구", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "관리감독자는 근로자와의 소통을 통해 현장의 유해·위험요인을 파악하고 개선해야 합니다." },
+                { criteria: "작업장 정리정돈 및 통로 확보에 대한 확인, 감독 여부", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건기준에 관한 규칙 제3조 (작업장의 청결)</strong> 및 <strong>제8조 (통로의 설치)</strong>" },
+                
+                { target: "안전,보건<br>관리자", criteria: "위험성평가에 관한 보좌 및 지도, 조언", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 시행령 제18조 (안전관리자의 직무)</strong>", rowspan: 7 }, 
+                { criteria: "사업장 순회점검에 따른 지도 및 조치 건의", points: 1, options: [{v: 1, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "<strong>산업안전보건법 시행령 제18조 (안전관리자의 직무)</strong><br>안전관리자는 사업장을 순회점검·지도 및 조치 건의를 하여야 한다." }, 
+                { criteria: "작업환경측정 및 개선 지도·조언", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 시행령 제22조 (보건관리자의 직무)</strong>" }, 
+                { criteria: "건강진단 실시 준비 및 결과에 따른 사후관리 지도", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 시행령 제22조 (보건관리자의 직무)</strong>" }, 
+                { criteria: "현장 안전교육계획의 수립 및 안전교육 실시에 관한 보좌 및 지도, 조언", points: 1, options: [{v: 1, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "<strong>산업안전보건법 시행령 제18조 (안전관리자의 직무)</strong>" },
+                { criteria: "산업재해 발생 원인조사, 분석 및 재발 방지를 위한 기술적 지도, 조언", points: 1.5, options: [{v: 1.5, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.5, t: '미흡'}], regulation: "<strong>산업안전보건법 시행령 제18조 (안전관리자의 직무)</strong>" },
+                { criteria: "법 또는 법에 따른 명령으로 정한 안전에 관한 사항의 이행에 관한 보좌 및 지도, 조언", points: 1.5, options: [{v: 1.5, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.5, t: '미흡'}], regulation: "<strong>산업안전보건법 시행령 제18조 (안전관리자의 직무)</strong>" }
+            ] },
+
+            // 3번 항목
+            { title: "3. 종사자 의견 청취 절차 (배점: 10)", rows: [ 
+                { criteria: "종사자 의견청취 절차 계획 수립 및 이행 여부", points: 1.5, options: [{v: 1.5, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.5, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조 (근로자의 참여)</strong>" }, 
+                { criteria: "청취 의견 기록 관리 여부", points: 1.0, options: [{v: 1.0, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조</strong>" },
+                { criteria: "청취 의견 협의체 안건 상정 및 협의, 의결 여부", points: 1.5, options: [{v: 1.5, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.5, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조</strong> 및 <strong>제75조</strong>" },
+                { criteria: "청취 의견에 대한 개선안 이행 및 공유 여부", points: 1.5, options: [{v: 1.5, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.5, t: '미흡'}], regulation: "청취된 의견은 검토 후 조치하고 그 결과를 근로자에게 알려주어야 합니다." }, 
+                { criteria: "시행 또는 개선안 공유 및 게시 여부", points: 1.0, options: [{v: 1.0, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조</strong>" },
+                { criteria: "아차사고 발굴 및 개선활동", points: 1.5, options: [{v: 1.5, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.5, t: '미흡'}], regulation: "아차사고(Near-miss)는 중대재해의 전조증상이므로 적극적인 발굴 및 개선이 중요합니다." }, 
+                { criteria: "작업중지권에 대한 근로자의 권리 안내 여부", points: 2.0, options: [{v: 2.0, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제52조 (근로자의 작업중지)</strong>" } 
+            ] },
+            
+            // 4번 항목
+            { title: "4. 비상사태 대비·대응 절차 (배점: 20)", rows: [ { criteria: "비상 연락 체계의 구성 및 교육 실시 여부", points: 7, options: [{v: 7, t: '우수'}, {v: 5, t: '보통'}, {v: 2, t: '미흡'}], regulation: "<strong>산업안전보건기준에 관한 규칙 제26조 (비상 연락체계)</strong>" }, { criteria: "시나리오별 모의 훈련 실시 여부", points: 7, options: [{v: 7, t: '우수'}, {v: 5, t: '보통'}, {v: 2, t: '미흡'}], regulation: "<strong>산업안전보건기준에 관한 규칙 제27조 (비상훈련)</strong>" }, { criteria: "비상시 대응 계획 수립 및 작성 여부", points: 3, options: [{v: 3, t: '우수'}, {v: 2, t: '보통'}, {v: 1, t: '미흡'}], regulation: "화재, 폭발, 붕괴 등 비상사태에 대비한 구체적인 대응 계획이 수립되어야 합니다." }, { criteria: "비상대응 장비/자재 확보 및 관리 상태", points: 3, options: [{v: 3, t: '우수'}, {v: 2, t: '보통'}, {v: 1, t: '미흡'}], regulation: "소화기, 방독면, 구급용구 등 비상 대응 장비는 즉시 사용 가능하도록 관리되어야 합니다." } ] },
+            
+            // 5번 항목
+            { title: "5. 협력사 수준관리 절차 (배점: 10)", rows: [ 
+                { criteria: "안전보건에 관한 정보 제공 및 공유 여부", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제64조 (도급에 따른 산업재해 예방조치)</strong>" }, 
+                { criteria: "정기 협력사 안전보건 점검 및 평가 실시", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제64조 제1항 제2호</strong><br>수급인의 작업장 순회점검 등 안전 및 보건에 관한 점검을 하여야 한다." }, 
+                { criteria: "위험성평가 관련 교육 및 자료 제공 여부", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "도급인은 수급인에게 작업장의 유해·위험 정보를 제공해야 합니다." }, 
+                { criteria: "협력사 산업안전보건관리비 집행 내역 확인 여부", points: 1, options: [{v: 1, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "<strong>건설업 산업안전보건관리비 계상 및 사용기준</strong>" },
+                { criteria: "최초 위험성평가 자료 협력사 배포 여부", points: 1, options: [{v: 1, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "<strong>산업안전보건법 제36조</strong> 및 <strong>제63조</strong>" },
+                { criteria: "근로자 교육 실시 장소 제공, 자료 제공 여부", points: 1, options: [{v: 1, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "<strong>산업안전보건법 제64조 (도급에 따른 산업재해 예방조치)</strong>" },
+                { criteria: "안전보건을 위한 공사 기간 검토 여부(공기단축, 원가절감 요구)", points: 1, options: [{v: 1, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "<strong>산업안전보건법 제69조 (공사기간 단축 및 공법변경 금지)</strong>" }
+            ] },
+            
+            // 6번 항목
+            { title: "6. 안전보건관계 법령 등 이행관리 절차 (배점: 20)", rows: [ 
+                { criteria: "안전보건관리책임자 등 지정 및 교육 이수 여부", points: 3, options: [{v: 3, t: '우수'}, {v: 2, t: '보통'}, {v: 1, t: '미흡'}], regulation: "<strong>산업안전보건법 제15조~제19조</strong> 및 <strong>제29조~제32조</strong>" }, 
+                { criteria: "보호구 지급 및 관리, 장비 반입 시 점검 등", points: 3, options: [{v: 3, t: '우수'}, {v: 2, t: '보통'}, {v: 1, t: '미흡'}], regulation: "<strong>산업안전보건법 제38조 (안전조치)</strong> 및 <strong>산업안전보건기준에 관한 규칙 제32조 (보호구의 지급 등)</strong>" }, 
+                { criteria: "유해위험작업 작업계획서 작성 및 이행 여부", points: 3, options: [{v: 3, t: '우수'}, {v: 2, t: '보통'}, {v: 1, t: '미흡'}], regulation: "<strong>산업안전보건기준에 관한 규칙 제38조 (사전조사 및 작업계획서의 작성 등)</strong>" }, 
+                { criteria: "위험성평가 실시 및 결과의 기록·보존", points: 4, options: [{v: 4, t: '우수'}, {v: 2.5, t: '보통'}, {v: 1, t: '미흡'}], regulation: "<strong>산업안전보건법 제36조 (위험성평가의 실시)</strong>" }, 
+                { criteria: "물질안전보건자료(MSDS) 게시 및 교육", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제110조~제116조</strong>" }, 
+                { criteria: "산업안전보건위원회 설치 및 운영", points: 2, options: [{v: 2, t: '우수'}, {v: 1.2, t: '보통'}, {v: 0.6, t: '미흡'}], regulation: "<strong>산업안전보건법 제24조 (산업안전보건위원회)</strong>" }, 
+                { criteria: "안전보건교육 실시 및 기록 관리", points: 3, options: [{v: 3, t: '우수'}, {v: 2, t: '보통'}, {v: 1, t: '미흡'}], regulation: "<strong>산업안전보건법 제29조 (근로자에 대한 안전보건교육)</strong>" },
+                { criteria: "안전보건 표지의 설치 및 부착 여부", points: 1.0, options: [{v: 1.0, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "<strong>산업안전보건법 제37조 (안전보건표지의 설치·부착)</strong>" },
+                { criteria: "산업재해 발생 보고 의무 이행", points: 1.5, options: [{v: 1.5, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.5, t: '미흡'}], regulation: "<strong>산업안전보건법 제57조 (산업재해 발생 은폐 금지 및 보고 등)</strong>" },
+                { criteria: "재발방지대책 수립 및 공유, 교육 실시 여부", points: 1.5, options: [{v: 1.5, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.5, t: '미흡'}], regulation: "<strong>산업안전보건법 제57조</strong>" },
+                { criteria: "공사안전보건대장 작성 및 준수 여부", points: 1.5, options: [{v: 1.5, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.5, t: '미흡'}], regulation: "<strong>산업안전보건법 제67조 (건설공사발주자의 산업재해 예방 조치)</strong>" }
+            ] },
+            
+            // 7번 항목
+            { title: "7. 시스템 평가 및 개선 절차 (배점: 5)", rows: [ 
+                { criteria: "주/월간 업무보고 자료 제출 및 기한 준수 여부", points: 1.0, options: [{v: 1.0, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "내부 성과측정 및 보고체계는 시스템 운영의 기본입니다." }, 
+                { criteria: "안전보건팀 권고사항 회람 또는 교육 실시 여부", points: 1.0, options: [{v: 1.0, t: '우수'}, {v: 0.6, t: '보통'}, {v: 0.3, t: '미흡'}], regulation: "내부 심사 또는 점검 결과는 관련 부서 및 근로자에게 공유되어야 합니다." }, 
+                { criteria: "성과측정 결과 환류 및 개선방안 검토 여부", points: 1.5, options: [{v: 1.5, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.5, t: '미흡'}], regulation: "Plan-Do-Check-Act (PDCA) 사이클에 따른 지속적 개선 활동입니다." }, 
+                { criteria: "월간 계획 제출시 성과측정 결과에 대한 환류활동 여부", points: 1.5, options: [{v: 1.5, t: '우수'}, {v: 1.0, t: '보통'}, {v: 0.5, t: '미흡'}], regulation: "성과 측정 및 모니터링 결과를 차기 계획 수립에 반영하여야 합니다." }
+            ] }
+        ];
+
+        const sectionsContainer = document.getElementById('evaluation-sections');
+        sectionsData.forEach((section, sectionIndex) => {
+            const isPerformanceTable = section.isPerformance;
+            const tableHTML = `
+                <div class="section-title">${section.title}</div>
+                <table class="main-table ${isPerformanceTable ? 'performance-table' : ''}">
+                    <thead>
                         <tr>
-                            <th class="border border-gray-300 p-2" rowspan="2">대분류</th>
-                            <th class="border border-gray-300 p-2" rowspan="2">중분류</th>
-                            <th class="border border-gray-300 p-2" rowspan="2">번호</th>
-                            <th class="border border-gray-300 p-2" rowspan="2">지적<br>건수</th>
-                            <th class="border border-gray-300 p-2" rowspan="2">평가기준</th>
-                            <th class="border border-gray-300 p-2" colspan="5">평점</th>
-                            <th class="border border-gray-300 p-2 comment-col" rowspan="2">평가자 의견</th>
-                            <th class="border border-gray-300 p-2 photo-col" rowspan="2">사진</th>
-                        </tr>
-                         <tr>
-                            <th class="border border-gray-300 p-1 text-xs font-medium">상<br>(0.5)</th>
-                            <th class="border border-gray-300 p-1 text-xs font-medium">상중<br>(0.3)</th>
-                            <th class="border border-gray-300 p-1 text-xs font-medium">중<br>(0.0)</th>
-                            <th class="border border-gray-300 p-1 text-xs font-medium">중하<br>(-0.1)</th>
-                            <th class="border border-gray-300 p-1 text-xs font-medium">하<br>(-0.3)</th>
+                            ${isPerformanceTable ? '<th style="width: 10%;">평가 대상</th>' : ''}
+                            <th>평가 기준</th>
+                            <th style="width: 50px;">배점</th>
+                            <th style="width: 80px;">평가</th>
+                            <th style="width: 60px;">평점</th>
+                            <th style="width: 20%;">개선 요구 사항</th>
                         </tr>
                     </thead>
-                    <tbody id="checklist-body"></tbody>
-                    <tfoot id="table-foot"></tfoot>
+                    <tbody>
+                        ${section.rows.map((row, rowIndex) => `
+                            <tr>
+                                ${isPerformanceTable && row.target ? `<td class="eval-target" rowspan="${row.rowspan || 1}">${row.target}</td>` : ''}
+                                <td class="text-left criteria-link" data-regulation="${row.regulation || '관련 규정 정보가 없습니다.'}">${row.criteria}</td>
+                                <td>${row.points.toFixed(1)}</td>
+                                <td>
+                                    <select class="eval-select" data-base-points="${row.points.toFixed(1)}">
+                                        ${row.options.map(opt => `<option value="${opt.v}">${opt.t}</option>`).join('')}
+                                        <option value="na" selected>해당없음</option>
+                                    </select>
+                                </td>
+                                <td><input type="number" step="0.1" class="input-number score-input" readonly></td>
+                                <td><div class="input-text auto-expand-input" contenteditable="true"></div></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="${isPerformanceTable ? '4' : '3'}">항목 소계</th>
+                            <td class="section-subtotal">0</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
                 </table>
-            </div>
-
-            <div class="sticky bottom-0 bg-white/80 backdrop-blur-sm p-4 mt-8 border-t border-gray-200 no-print">
-                <div id="summary-container" class="mb-4">
-                    <button onclick="toggleSummary()" class="w-full text-left font-semibold text-lg mb-2 text-gray-800">재해 형태별 소계 요약 <span id="summary-toggle-icon">▼</span></button>
-                    <div id="summary-details" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-                </div>
-                
-                <div class="flex flex-col sm:flex-row justify-between items-center">
-                    <div class="flex items-center gap-4 w-full sm:w-auto mb-4 sm:mb-0">
-                        <button onclick="calculateScore()" class="w-full sm:w-auto bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition">점수 계산</button>
-                        <div class="w-auto text-lg p-3 bg-blue-50 rounded-lg text-center min-w-[20rem]">
-                            <strong>총점:</strong> <span id="total-score" class="font-bold text-blue-600 text-xl">0.00</span>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-4 w-full sm:w-auto">
-                        <button onclick="openPhotoReportModal()" class="w-1/3 sm:w-auto text-center bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition">사진 대지</button>
-                        <button onclick="resetAllPhotos()" class="w-1/3 sm:w-auto bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 transition">초기화</button>
-                        <button onclick="window.print()" class="w-1/3 sm:w-auto bg-gray-700 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-800 transition">인쇄</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 사진 첨부 Modal -->
-    <div id="photo-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden modal-overlay opacity-0 no-print-report" onclick="closePhotoModal()">
-        <div class="bg-white p-8 rounded-xl shadow-lg text-center w-full max-w-md mx-4 modal-container transform scale-95" onclick="event.stopPropagation()">
-            <h1 class="text-2xl font-bold text-gray-900 mb-4">사진 첨부</h1>
-            <p class="text-gray-600 mb-2">지적사항에 대한 사진을 촬영하거나 앨범에서 선택해 주세요.</p>
-            <p class="text-xs text-red-500 mb-6">(고용량 사진은 자동으로 리사이즈됩니다)</p>
-            
-            <label for="photo-input" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition shadow-md cursor-pointer inline-block">
-                사진 촬영 및 선택
-            </label>
-            <input type="file" id="photo-input" accept="image/*" capture="camera" class="hidden">
-
-            <div id="preview-container" class="mt-6 min-h-[200px] bg-gray-100 rounded-lg flex items-center justify-center">
-                <p id="preview-text" class="text-gray-500">사진을 선택해 주세요.</p>
-                <img id="preview-image" class="hidden max-w-full max-h-64 rounded-lg" alt="미리보기">
-            </div>
-            
-            <div class="mt-6 flex gap-4">
-                <button onclick="closePhotoModal()" class="w-1/2 bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 transition">
-                    취소
-                </button>
-                <button id="save-button" disabled onclick="savePhoto()" class="w-1/2 bg-gray-400 text-white font-bold py-3 px-6 rounded-lg transition cursor-not-allowed">
-                    저장
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 사진 대지 Modal -->
-    <div id="photo-report-modal" class="fixed inset-0 bg-white w-full h-full z-40 hidden overflow-y-auto print-only-report">
-        <div id="photo-report-modal-content" class="max-w-full mx-auto p-2">
-            <header class="bg-white p-6 rounded-xl mb-8 no-print">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900">사진 대지 보고서</h1>
-                        <p class="text-gray-500 mt-1">점검표에 첨부된 사진 목록입니다.</p>
-                    </div>
-                    <div class="flex gap-4">
-                        <button onclick="closePhotoReportModal()" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition">닫기</button>
-                        <button onclick="printPhotoReport()" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">인쇄하기</button>
-                    </div>
-                </div>
-            </header>
-
-            <main id="report-container" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <!-- 사진 대지가 여기에 동적으로 생성됩니다. -->
-            </main>
-        </div>
-    </div>
-
-
-    <script>
-        const checklistData = [
-            { category: '추락', subcategory: '개구부', count: 2, items: [ '개구부 덮개 설치(재질, 고정, 경고표지 등) 및 유지 관리여부', '대형개구부(발코니, 자재반출구, 계단실, E/V입구, 흙막이 단부 등) 안전난간 설치여부' ]}, { category: '추락', subcategory: '강관 비계/시스템비계', count: 2, items: [ '비계 설치상태(침하, 좌굴(수직도), 작업발판, 승강로 등) 이상여부', '비계 안전시설(안전난간대, 낙하물방지망, 수직보호망 등) 설치상태 이상여부' ]}, { category: '추락', subcategory: '이동식 틀비계', count: 3, items: [ '이동식틀비계 설치상태(규격품, 작업발판, 브레싱 등) 이상여부', '이동식틀비계 안전시설(안전난간대, 아웃트리거, 바퀴구름방지장치 등) 이상여부', '틀비계 실명제 등 실시여부' ]}, { category: '추락', subcategory: '말비계', count: 2, items: [ '비규격품(목재) 사용여부 및 관리여부', '발판 폭 40㎝ 이상 확보 및 구조적 안전여부' ]}, { category: '추락', subcategory: '달대비계', count: 3, items: [ '로프 설치상태(주/보조로프 사용 및 로프손상, 2점지지, 풀림방지 등) 실시여부', '로프 안전조치(주로프 16mm, 보조로프 14mm, 벽체 접촉부 마모예방조치 등) 실시여부', '추락예방조치(작업자 수직구명로프(코브라), 바닥여장길이 1m이상) 실시 여부' ]}, { category: '추락', subcategory: '사다리', count: 2, items: [ '사다리 사용상태(상부고정/여장길이 확보/설치각도/목재사다리)이상여부', '사다리 전도예방조치(아웃트리거 설치, 미끄럼방지판 등) 사용여부' ]}, { category: '추락', subcategory: '작업발판', count: 2, items: [ '비규격(목재, 단관파이프, 각파이프, 유로폼 등) 작업발판 사용여부', '작업발판 설치기준(하부고정, 밀실여부, 폭) 준수 여부' ]}, { category: '추락', subcategory: '갱폼', count: 5, items: [ '추락 예방조치(안전난간/작업발판 누락, 작업발판 이격거리, 압송관 개구부 보호 등) 여부', '낙하 예방조치(앵커볼트 설치간격, 인양고리 상태 및 변형 유무, 정리정돈 등) 여부', '전도 예방조치(작업발판 정리정돈 등) 실시 여부', '승강시설(근로자 이동통로 확보 등) 및 적정여부', '기타 갱폼 설치기준 준수여부' ]}, { category: '추락', subcategory: '교량 및 철골', count: 3, items: [ '추락예방조치(개인보호구, 안전난간대 시설, 추락방지망 등 ) 실시여부', '승강시 안전시설(안전블럭, 코브라 등)설치 및 사용여부', '자재 정리정돈 상태(철골 적재, 철골상부 자재 적재 유무 등) 이상여부' ]}, { category: '추락', subcategory: '추락방지망', count: 3, items: [ '추락방지망 설치상태(망재질, 망연결, 밀실도 등) 이상여부', '추락방지망 설치장소(E/V개구부, 대형개구부, 손상등) 누락여부', '추락방지망 관리(폐기물, 폐자재 등) 적정여부' ]}, { category: '충돌 및 협착', subcategory: '유해위험 기계기구', count: 2, items: [ '방호장치(둥근톱, 고속절단기, 그라인더 등) 설치 및 사용여부', '철근가공기 풋스위치 덮개 사용여부' ]}, { category: '충돌 및 협착', subcategory: '건설기계', count: 5, items: [ '협착 예방조치(후진경보등, 경보음, 후방감시카메라, 신호수 등) 실시 및 작동여부', '건설기계 방호장치(권과방지장치, 과상승방지장치, 리미트스위치 등) 부착 및 작동여부', '장비전도 방지장치(아웃트리거, 고임목 등) 적정여부', '인양 중 낙하 예방조치(퀵커플러 안전핀, 후크해지장치, 유도로프 등) 실시여부', '장비실명제 카드 부착여부' ]}, { category: '충돌 및 협착', subcategory: '타워크레인', count: 2, items: [ '자체점검(1회/6개월) 실시 여부', '크레인 하부 방호울 및 시건장치 설치여부' ]}, { category: '붕괴 및 도괴', subcategory: '굴착/터파기', count: 2, items: [ '굴착 법면 토사붕괴(굴착구배, 굴착단부 토사적치 등) 예방여부', '굴착부 통행시설 확보여부' ]}, { category: '붕괴 및 도괴', subcategory: '흙막이 공사', count: 4, items: [ '가시설 시공시 설계도서 준수 여부', '가시설 설치시기 및 과굴착에 의한 붕괴 사고 위험여부', '흙막이 벽체(토류판, 쉬트파일 등) 변위 및 부재 변형 여부', '띠장 설치상태(스티프너, 브레싱, 볼트너트 연결, 띠장 연결부 보강 등) 이상여부' ]}, { category: '붕괴 및 도괴', subcategory: '터널작업', count: 5, items: [ '차징카 안전조치(협착, 낙반 등) 실시 여부', '작업대차 안전조치(작업발판, 승강로, 안전난간 등) 적정여부', '터널 내 통행로 확보여부', '비상사태(외부와의 통신체계, 비상조명, 소음방지대책 등) 예방조치 실시여부', '작업환경(조도75Lux, 환기시설 등) 적정여부' ]}, { category: '붕괴 및 도괴', subcategory: '거푸집동바리/시스템동바리', count: 6, items: [ '거푸집동바리 설치 계획 및 조립도 등 작성 및 비치여부', '거푸집동바리 설치기준 준수(설치간격, 2본연결 설치시 4개이상 볼트체결 등) 여부', '가설자재(재사용 검정품, 파이프서포트, 연결핀, 클램프 등) 적정 사용여부', '붕괴 예방조치(밑받침, 수평연결재, 동바리 고정, 수직도, 고정목, u헤드고정 등) 실시여부', '수평연결재 적정(전용철물 사용, 누락여부 등) 설치여부', '거푸집동바리 설치, 해체시 정리정돈 실시여부' ]}, { category: '감전', subcategory: '분전반/수전설비', count: 4, items: [ '접지시설(외함접지, 접지봉 매립, 접지극 손상, 적정 접지선 사용 등) 적정여부', '누전차단기(정격감도전류 30mmA이하, 동작시간 0.03초이내)설치/ 경유 및 작동 여부', '접근/접촉 방지조치(아크릴판, 시건장치, 안전표지 등) 실시여부', '고압가공선로 감전예방(방호관, 접근한계거리 준수, 절연보호구 등)을 위한 접근방지 조치' ]}, { category: '감전', subcategory: '이동식 발전기', count: 3, items: [ '접지시설(외함접지, 접지봉 매립, 접지극 손상, 적정 접지선 사용 등) 실시 여부', '누전차단기(정격감도전류 30mmA이하, 동작시간 0.03초이내)설치/ 경유 및 작동 여부', '회전체 접근방지조치 실시여부' ]}, { category: '감전', subcategory: '작업전선', count: 3, items: [ '접지상태(3P전선, 접지선 연결, 피복손상여부, 접지극 손상) 이상 여부', '반입전 점검실시 및 유해위험기계기구 스티커 부착여부', '누전차단기 내장형 릴선 사용 및 정상 작동 여부' ]}, { category: '감전', subcategory: '교류아크 용접기', count: 3, items: [ '자동전격방지기 설치 및 정상작동(회로 결선의 적절성) 여부', '감전예방(외함접지, 접지봉 매립, 피복손상, 충전부 절연조치 등) 조치 여부', '화재예방(불티비산방지포, 소화기, 주변 가연성 물질 차단 등) 조치 여부' ]}, { category: '감전', subcategory: '이동식 투광등', count: 2, items: [ '누전차단(외함접지, 손잡이 절연조치, 거치대 활용 등) 조치 여부', '감전예방(전등 보호갓, 투광등 보호덮개) 실시여부' ]}, { category: '감전', subcategory: '양수기', count: 2, items: [ '접지상태(3P전선, 접지선 연결, 피복손상여부, 접지극 손상) 이상여부', '회전체(엔진양수기) 접근방지조치 실시여부' ]}, { category: '감전', subcategory: '기타', count: 2, items: [ '유해위험기계기구 점검필증 부착여부', '기타 유해위험기계기구 감전(접지, 누전차단기 등) 예방조치 실시여부' ]}, { category: '낙하 및 전도', subcategory: '방호선반', count: 2, items: [ '방호선반(설치자재, 안전표지판 등)설치상태 이상여부', '방호선반 설치 위치선정(건물 주출입구, 통행 용이 장소 등) 적정여부' ]}, { category: '낙하 및 전도', subcategory: '낙하물 방지망', count: 2, items: [ '낙하물방지망 설치상태(매10m마다, 내민길이, 자재선정 등) 적정여부', '낙하물방지망 관리(폐기물, 폐자재, 손상 등) 적정여부' ]}, { category: '낙하 및 전도', subcategory: '가설통로', count: 4, items: [ '전도 예방조치(정리정돈, 미끄럼방지조치 등) 실시 여부', '통로 조도(75Lux 이상) 확보 여부', '통로 발판재의 적정 사용여부', '1m이상의 가설계단 안전난간 설치여부' ]}, { category: '낙하 및 전도', subcategory: '터널작업', count: 2, items: [ '암석의 부석정리 및 상부 천공시 하부 근로자 출입금지 조치의 적정 여부', '버럭 운반차량 적재기준 설정 및 운반시 덮개 설치 적정 여부' ]}, { category: '낙하 및 전도', subcategory: '기타', count: 3, items: [ '낙하위험장소 하부 출입통제(접근금지시설, 신호수, 위험표지, 위험테이프 등)조치 여부', '상하 동시작업 실시 여부', '줄걸이 용구(와이어로프, 슬링밸트, 샤클, 하카클램프, 해지장치 등) 적정여부' ]}, { category: '기타', subcategory: '화재폭발', count: 5, items: [ '아세틸렌 및 LPG 역화방지기 부착 및 압력게이지/ 호스 파손여부', '압력용기(LPG, 산소통 등)전용 운반구 사용여부', '위험물질/인화물질 보관시설(안전표지, 시건장치 등) 설치 및 관리여부', '화기 사용 주변 가연성물질 격리 여부 및 소화시설 비치여부', '기타 화재폭발 위험 안전 조치사항' ]}, { category: '기타', subcategory: '밀폐작업', count: 4, items: [ '밀폐공간 환기시설 설치 및 운용 여부', '밀폐공간 및 유해가스 발생구간 작업전 유해가스농도 및 산소농도 측정여부', '작업장내 호흡용 보호구, 안전대, 안전로프 등 보호장구 비치여부', '관리책임자 선임 및 지휘감독, 감시인 배치 여부' ]}, { category: '기타', subcategory: '교통안전 시설', count: 2, items: [ '교통안전시설물(안내표지판, PE드럼, 윙카, 갈매기표시, 휀스 등) 적정 설치 여부', '기타 교통안전시설물 설치상태' ]}, { category: '기타', subcategory: 'MSDS', count: 1, items: [ 'MSDS 표지 현장게시 및 부착여부' ]}, { category: '기타', subcategory: '보건관리', count: 1, items: [ '현장내 휴게시설, 화장실 및 세면장 비치 및 청결상태' ]}, { category: '기타', subcategory: '개인보호구', count: 1, items: [ '작업상황에 맞는 개인보호구 지급 및 착용여부' ]}, { category: '기타', subcategory: '안전의식', count: 1, items: [ '작업상황에 맞는 안전표지판 및 안전현수막 설치여부' ]}, { category: '기타', subcategory: '음주', count: 1, items: [ '현장내 근로자 음주 및  음주흔적(소주병, 막걸리병 등)' ]}
-        ];
-        
-        let currentItemIndex = null;
-        const photoModal = document.getElementById('photo-modal');
-        const photoInput = document.getElementById('photo-input');
-        const previewImage = document.getElementById('preview-image');
-        const previewText = document.getElementById('preview-text');
-        const saveButton = document.getElementById('save-button');
-        let imageDataUrl = null;
-
-        window.addEventListener('load', () => {
-            const today = new Date();
-            document.getElementById('year').value = today.getFullYear();
-            document.getElementById('month').value = String(today.getMonth() + 1).padStart(2, '0');
-            document.getElementById('day').value = String(today.getDate()).padStart(2, '0');
-            generateTable();
-            loadAllPhotos();
+            `;
+            sectionsContainer.innerHTML += tableHTML;
         });
 
-        const scoreIdKeys = { '0.5': 's0_5', '0.3': 's0_3', '0.0': 's0_0', '-0.1': 'm0_1', '-0.3': 'm0_3' };
+        const addSupervisorBtn = document.getElementById('add-supervisor-btn');
+        const supervisorList = document.getElementById('supervisor-list');
+        const maxSupervisors = 10;
         
-        function generateTable() {
-            const tbody = document.getElementById('checklist-body');
-            const tfoot = document.getElementById('table-foot');
-            let htmlBody = '';
-            let itemIndex = 0;
-            const groupedData = checklistData.reduce((acc, item) => {
-                if (!acc[item.category]) { acc[item.category] = []; }
-                acc[item.category].push(item);
-                return acc;
-            }, {});
-            for (const category in groupedData) {
-                const subcategories = groupedData[category];
-                const categoryRowCount = subcategories.reduce((sum, item) => sum + item.count, 0);
-                let isFirstSubcategory = true;
-                subcategories.forEach(subcategoryData => {
-                    for (let i = 0; i < subcategoryData.count; i++) {
-                        htmlBody += `<tr class="align-middle text-center item-row" data-category="${category}" data-item-index="${itemIndex}">`;
-                        if (isFirstSubcategory && i === 0) {
-                            htmlBody += `<td rowspan="${categoryRowCount}" class="border border-gray-300 p-2 font-bold">${category}</td>`;
-                        }
-                        if (i === 0) {
-                            htmlBody += `<td rowspan="${subcategoryData.count}" class="border border-gray-300 p-2">${subcategoryData.subcategory}</td>`;
-                        }
-                        htmlBody += `<td class="border border-gray-300 p-2">${i+1}</td>`;
-                        htmlBody += `<td class="border border-gray-300"><input type="number" min="0" class="w-full p-1 text-center border-0 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"></td>`;
-                        htmlBody += `<td class="!text-left border border-gray-300 p-2">${subcategoryData.items[i]}</td>`;
-                        const scores = [0.5, 0.3, 0.0, -0.1, -0.3];
-                        scores.forEach(score => {
-                            htmlBody += `<td class="border border-gray-300 p-1"><input type="radio" name="rating-${itemIndex}" data-score="${score}" class="form-radio h-4 w-4 text-blue-600 cursor-pointer mx-auto"></td>`;
-                        });
-                        htmlBody += `<td class="border border-gray-300 comment-col"><textarea rows="2" class="w-full p-1 border-0 rounded-md focus:ring-2 focus:ring-blue-500 outline-none resize-y"></textarea></td>`;
-                        htmlBody += `<td class="border border-gray-300 p-2 align-top photo-col">
-                            <button onclick="openPhotoModal(${itemIndex})" class="bg-gray-200 text-gray-700 text-xs py-1 px-2 rounded hover:bg-gray-300 no-print">사진 추가</button>
-                            <div id="photo-container-${itemIndex}" class="mt-2"></div>
-                        </td>`;
-                        htmlBody += `</tr>`;
-                        itemIndex++;
-                    }
-                    isFirstSubcategory = false;
-                });
-                htmlBody += `<tr class="bg-gray-200 font-bold text-center subtotal-row" data-category-summary="${category}">
-                    <td colspan="3" class="border border-gray-300 p-2">소계</td>
-                    <td id="subtotal-count-${category}" class="border border-gray-300 p-2">0</td>
-                    <td class="border border-gray-300 p-2"></td>
-                    ${Object.keys(scoreIdKeys).map(key => `<td id="subtotal-rating-${scoreIdKeys[key]}-${category}" class="border border-gray-300 p-2">0</td>`).join('')}
-                    <td id="subtotal-score-${category}" class="border border-gray-300 p-2 text-blue-700 comment-col">0.00</td>
-                    <td class="border border-gray-300 p-2 photo-col"></td>
-                </tr>`;
-            }
-            tbody.innerHTML = htmlBody;
-            let htmlFoot = `<tr class="bg-gray-800 text-white font-bold text-center text-base">
-                <td colspan="3" class="border border-gray-400 p-3">총 합계</td>
-                <td id="grandtotal-count" class="border border-gray-400 p-3">0</td>
-                <td class="border border-gray-400 p-3"></td>
-                ${Object.keys(scoreIdKeys).map(key => `<td id="grandtotal-rating-${scoreIdKeys[key]}" class="border border-gray-400 p-3">0</td>`).join('')}
-                <td id="grandtotal-score" class="border border-gray-400 p-3 text-lg comment-col">0.00</td>
-                <td class="border border-gray-400 p-3 photo-col"></td>
-            </tr>`;
-            tfoot.innerHTML = htmlFoot;
-        }
+        const majorAccidentInput = document.getElementById('major-accident-count');
+        const workAccidentInput = document.getElementById('work-accident-count');
+        const fieldScoreInput = document.getElementById('field-score-input');
         
-        function openPhotoModal(index) {
-            currentItemIndex = index;
-            const overlay = document.getElementById('photo-modal');
-            const container = overlay.querySelector('.modal-container');
-            overlay.classList.remove('hidden');
-            setTimeout(() => {
-                overlay.classList.remove('opacity-0');
-                container.classList.remove('scale-95');
-            }, 10);
-        }
-
-        function closePhotoModal() {
-            const overlay = document.getElementById('photo-modal');
-            const container = overlay.querySelector('.modal-container');
-            overlay.classList.add('opacity-0');
-            container.classList.add('scale-95');
-            setTimeout(() => {
-                overlay.classList.add('hidden');
-                resetModalState();
-            }, 300);
-        }
-
-        function resetModalState() {
-            imageDataUrl = null;
-            photoInput.value = '';
-            previewImage.src = '';
-            previewImage.classList.add('hidden');
-            previewText.classList.remove('hidden');
-            saveButton.disabled = true;
-            saveButton.classList.add('bg-gray-400', 'cursor-not-allowed');
-            saveButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-        }
+        const modal = document.getElementById('regulation-modal');
+        const modalContent = document.getElementById('modal-content');
+        const closeModalBtn = document.getElementById('close-modal-btn');
         
-        photoInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
+        const phaseBadge = document.getElementById('evaluation-phase-badge');
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
+        // === 인쇄 버튼 이벤트 리스너 추가 ===
+        const printBtn = document.getElementById('print-btn');
 
-                    const MAX_WIDTH = 800;
-                    const MAX_HEIGHT = 800;
-                    let width = img.width;
-                    let height = img.height;
+        function showModal(content) {
+            modalContent.innerHTML = content;
+            modal.classList.add('visible');
+        }
 
-                    if (width > height) {
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
-                    } else {
-                        if (height > MAX_HEIGHT) {
-                            width *= MAX_HEIGHT / height;
-                            height = MAX_HEIGHT;
-                        }
-                    }
-                    canvas.width = width;
-                    canvas.height = height;
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    imageDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        function hideModal() {
+            modal.classList.remove('visible');
+        }
 
-                    previewImage.src = imageDataUrl;
-                    previewImage.classList.remove('hidden');
-                    previewText.classList.add('hidden');
-                    saveButton.disabled = false;
-                    saveButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
-                    saveButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
-
-        function savePhoto() {
-            if (imageDataUrl && currentItemIndex !== null) {
-                try {
-                    localStorage.setItem('photo_' + currentItemIndex, imageDataUrl);
-
-                    const row = document.querySelector(`tr[data-item-index="${currentItemIndex}"]`);
-                    const category = row.dataset.category;
-                    const subcategory = row.querySelector('td:nth-of-type(2)').textContent;
-                    const itemNumber = row.querySelector('td:nth-of-type(3)').textContent;
-                    const itemText = row.querySelector('td:nth-of-type(5)').textContent;
-
-                    const photoInfo = {
-                        category,
-                        subcategory,
-                        itemNumber,
-                        itemText
-                    };
-                    localStorage.setItem('photo_info_' + currentItemIndex, JSON.stringify(photoInfo));
-
-                    loadSinglePhoto(currentItemIndex);
-                    closePhotoModal();
-                } catch (e) {
-                    alert('사진을 저장하는 데 실패했습니다. 용량이 너무 클 수 있습니다.');
+        document.body.addEventListener('click', function(event) {
+            if (event.target.classList.contains('criteria-link')) {
+                const regulationText = event.target.dataset.regulation;
+                if (regulationText) {
+                    showModal(regulationText);
                 }
+            }
+        });
+
+        closeModalBtn.addEventListener('click', hideModal);
+        modal.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                hideModal();
+            }
+        });
+
+        function updateComprehensiveResults() {
+            const progress = parseFloat(document.querySelector('.progress-input').value) || 0;
+            
+            // --- 공정률에 따른 가중치 및 배점 조정 로직 (수정됨) ---
+            let maxSystemScore = 60;
+            let maxFieldScore = 40;
+            let phaseText = "마무리 단계 (시스템60:현장40)";
+            let phaseClass = "phase-late";
+            
+            // 기본 가중치 (마무리 단계)
+            let weights = {1:1, 2:1, 3:1, 4:1, 5:1, 6:1, 7:1.5}; 
+
+            if (progress < 30) {
+                // 초기 단계: 시스템 구축 위주 (70:30)
+                maxSystemScore = 70;
+                maxFieldScore = 30;
+                phaseText = "초기 단계 (시스템70:현장30)";
+                phaseClass = "phase-early";
+                weights = {1:1.2, 2:1, 3:1.2, 4:1, 5:1, 6:1.2, 7:1}; 
+            } else if (progress < 80) {
+                // 본 공사 단계: 현장 관리 위주 (50:50)
+                maxSystemScore = 50;
+                maxFieldScore = 50;
+                phaseText = "본 공사 단계 (시스템50:현장50)";
+                phaseClass = "phase-middle";
+                weights = {1:1, 2:1.2, 3:1, 4:1.2, 5:1.2, 6:1, 7:1}; 
+            }
+
+            // 만점 기준 표시 업데이트
+            document.getElementById('sys-max-display').textContent = maxSystemScore;
+            document.getElementById('field-max-display').textContent = maxFieldScore;
+            document.getElementById('field-base-score-display').textContent = maxFieldScore;
+            
+            // 현장 점수 입력 제한 업데이트
+            const fInput = document.getElementById('field-score-input');
+            fInput.max = maxFieldScore;
+            // 만점이 줄어들 경우 현재 입력값이 초과하면 자동으로 조정
+            if(parseFloat(fInput.value) > maxFieldScore) fInput.value = maxFieldScore;
+
+            // 배지 업데이트
+            phaseBadge.textContent = phaseText;
+            phaseBadge.className = phaseClass;
+
+
+            // --- 시스템 점수 계산 (가중치 반영) ---
+            let weightedObtainedSum = 0;
+            let weightedPossibleSum = 0;
+
+            const tables = document.querySelectorAll('.main-table');
+            tables.forEach((table, index) => {
+                const sectionIndex = index + 1;
+                const weight = weights[sectionIndex] || 1.0;
+                
+                let sectionObtained = 0;
+                let sectionPossible = 0;
+
+                table.querySelectorAll('.eval-select').forEach(select => {
+                    if (select.value !== 'na') {
+                        const maxPoint = parseFloat(select.dataset.basePoints) || 0;
+                        const val = parseFloat(select.value) || 0;
+                        sectionPossible += maxPoint;
+                        sectionObtained += val;
+                    }
+                });
+
+                weightedObtainedSum += sectionObtained * weight;
+                weightedPossibleSum += sectionPossible * weight;
+            });
+
+            weightedPossibleSum = Math.max(1, weightedPossibleSum);
+            
+            // 획득 비율에 따른 환산 점수 계산 (동적 만점 기준 적용)
+            let systemConvertedScore = (weightedObtainedSum / weightedPossibleSum) * maxSystemScore;
+            systemConvertedScore = Math.max(0, systemConvertedScore);
+            document.getElementById('system-converted-score').textContent = systemConvertedScore.toFixed(1);
+
+            let systemSimpleSum = 0;
+            for (let i = 1; i <= 7; i++) {
+                const input = document.getElementById(`comp-score-${i}`);
+                if(input) systemSimpleSum += parseFloat(input.value) || 0;
+            }
+            document.getElementById('system-score-sum').textContent = systemSimpleSum.toFixed(1);
+
+
+            // --- 감점 사항 ---
+            const majorAccidents = parseInt(majorAccidentInput.value) || 0;
+            const majorDeduction = majorAccidents * -30;
+            document.getElementById('major-accident-deduction').textContent = majorDeduction;
+
+            const workAccidents = parseInt(workAccidentInput.value) || 0;
+            const workDeduction = workAccidents * -5;
+            document.getElementById('work-accident-deduction').textContent = workDeduction;
+
+
+            // --- 현장 점수 ---
+            const fieldScore = parseFloat(fieldScoreInput.value) || 0;
+            // 입력된 현장 점수를 현재 만점 기준으로 clamp (넘치면 깎음)
+            const clampedFieldScore = Math.min(maxFieldScore, Math.max(0, fieldScore));
+            if (fieldScore !== clampedFieldScore) {
+                fieldScoreInput.value = clampedFieldScore;
+            }
+            document.getElementById('field-score-display').textContent = clampedFieldScore.toFixed(1);
+            document.getElementById('field-converted-score').textContent = clampedFieldScore.toFixed(1);
+
+
+            // --- 최종 총점 ---
+            let finalTotalScore = systemConvertedScore + clampedFieldScore + majorDeduction + workDeduction;
+            finalTotalScore = Math.max(0, finalTotalScore);
+            document.getElementById('final-total-score').textContent = finalTotalScore.toFixed(1);
+
+
+            // --- 등급 산정 ---
+            const finalGradeEl = document.getElementById('final-grade-display');
+            let grade = '-';
+            let gradeClass = '';
+
+            // 평가가 진행된 경우에만 등급 표시 (시스템 점수 > 0 또는 감점 발생 또는 현장 점수가 만점이 아님)
+            if (systemSimpleSum > 0 || majorDeduction < 0 || workDeduction < 0 || fieldScore < maxFieldScore) {
+                if (finalTotalScore >= 90) { grade = '우수'; gradeClass = 'excellent'; }
+                else if (finalTotalScore >= 60) { grade = '보통'; gradeClass = 'good'; } 
+                else { grade = '미흡'; gradeClass = 'poor'; } 
             } else {
-                alert('저장할 사진이 없습니다.');
+                 grade = '-';
             }
+            
+            finalGradeEl.textContent = grade;
+            finalGradeEl.className = gradeClass;
         }
 
-        function deleteSinglePhoto(index) {
-            localStorage.removeItem('photo_' + index);
-            localStorage.removeItem('photo_info_' + index);
-            localStorage.removeItem('photo_comment_' + index);
-            loadSinglePhoto(index);
+        function updateAllScores() {
+            document.querySelectorAll('.main-table').forEach((table, index) => {
+                let sectionSubtotal = 0;
+                table.querySelectorAll('tbody .score-input').forEach(input => {
+                    sectionSubtotal += parseFloat(input.value) || 0;
+                });
+                const subtotalCell = table.querySelector('tfoot .section-subtotal');
+                if (subtotalCell) subtotalCell.textContent = sectionSubtotal.toFixed(1);
+                
+                const compScoreInput = document.getElementById(`comp-score-${index + 1}`);
+                if(compScoreInput) {
+                    compScoreInput.value = sectionSubtotal.toFixed(1);
+                }
+            });
+            updateComprehensiveResults();
         }
         
-        function loadSinglePhoto(index) {
-            const photoData = localStorage.getItem('photo_' + index);
-            const container = document.getElementById('photo-container-' + index);
-            if (container) {
-                container.innerHTML = '';
-                if (photoData) {
-                    const thumbContainer = document.createElement('div');
-                    thumbContainer.className = 'photo-thumbnail-container';
-
-                    const img = document.createElement('img');
-                    img.src = photoData;
-                    img.className = 'photo-thumbnail';
-                    img.onclick = () => {
-                        const image = new Image();
-                        image.src = photoData;
-                        const w = window.open("");
-                        w.document.write(image.outerHTML);
-                    };
-
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.innerHTML = '&times;';
-                    deleteBtn.className = 'delete-photo-btn no-print';
-                    deleteBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        deleteSinglePhoto(index);
-                    };
-
-                    thumbContainer.appendChild(img);
-                    thumbContainer.appendChild(deleteBtn);
-                    container.appendChild(thumbContainer);
+        document.body.addEventListener('change', function(event) {
+            if (event.target.matches('.eval-select')) {
+                const row = event.target.closest('tr');
+                const scoreInput = row.querySelector('.score-input');
+                if (scoreInput) {
+                    if (event.target.value === 'na') {
+                        scoreInput.value = 0;
+                    } else {
+                        scoreInput.value = event.target.value;
+                    }
+                    updateAllScores(); 
                 }
             }
+        });
+        
+        document.querySelector('.progress-input').addEventListener('input', updateComprehensiveResults);
+
+        majorAccidentInput.addEventListener('input', updateComprehensiveResults);
+        workAccidentInput.addEventListener('input', updateComprehensiveResults);
+        fieldScoreInput.addEventListener('input', updateComprehensiveResults);
+
+        function updateSupervisorButtonState() {
+            addSupervisorBtn.disabled = supervisorList.querySelectorAll('.supervisor-entry').length >= maxSupervisors;
         }
 
-        function loadAllPhotos() {
-            const totalItems = checklistData.reduce((acc, val) => acc + val.count, 0);
-            for (let i = 0; i < totalItems; i++) {
-                loadSinglePhoto(i);
-            }
-        }
-
-        function resetAllPhotos() {
-            if (confirm('정말로 모든 사진을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
-                Object.keys(localStorage).forEach(key => {
-                    if (key.startsWith('photo_')) {
-                        localStorage.removeItem(key);
-                    }
-                });
-                loadAllPhotos();
-            }
-        }
-
-        function calculateScore() {
-            const categories = [...new Set(checklistData.map(item => item.category))];
-            const scoreKeys = ['0.5', '0.3', '0.0', '-0.1', '-0.3'];
-            let grandTotalScore = 0;
-            let grandTotalIssueCount = 0;
-            const grandTotalRatingCounts = { '0.5': 0, '0.3': 0, '0.0': 0, '-0.1': 0, '-0.3': 0 };
-            const subtotalScores = {};
-            let runningTotalScore = 0;
-
-            categories.forEach(category => {
-                let subtotalIssueCount = 0;
-                const subtotalRatingCounts = { '0.5': 0, '0.3': 0, '0.0': 0, '-0.1': 0, '-0.3': 0 };
-                const itemRows = document.querySelectorAll(`#checklist-body tr.item-row[data-category="${category}"]`);
+        addSupervisorBtn.addEventListener('click', () => {
+            if (supervisorList.querySelectorAll('.supervisor-entry').length < maxSupervisors) {
+                const entryDiv = document.createElement('div');
+                entryDiv.className = 'supervisor-entry';
+                entryDiv.style.cssText = 'display:flex; align-items:center; margin-bottom:5px;';
                 
-                itemRows.forEach(row => {
-                    const issueInput = row.querySelector('input[type="number"]');
-                    if (issueInput && issueInput.value) {
-                        subtotalIssueCount += parseInt(issueInput.value, 10) || 0;
-                    }
-                    const checkedRadio = row.querySelector('input[type="radio"]:checked');
-                    if (checkedRadio) {
-                        const scoreKey = checkedRadio.dataset.score;
-                        if(subtotalRatingCounts.hasOwnProperty(scoreKey)) {
-                            subtotalRatingCounts[scoreKey]++;
-                        }
-                    }
-                });
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'input-text';
+                input.placeholder = '관리감독자 성명을 입력하세요';
+                input.style.flexGrow = '1';
 
-                let subtotalScore = 0;
-                let subtotalCalcParts = [];
-                scoreKeys.forEach(scoreKey => {
-                    const count = subtotalRatingCounts[scoreKey];
-                    if (count > 0) {
-                        const scoreValue = parseFloat(scoreKey);
-                        subtotalScore += count * scoreValue;
-                        subtotalCalcParts.push(`(${scoreValue} × ${count})`);
-                    }
-                });
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.textContent = '-';
+                removeBtn.style.cssText = 'margin-left:10px; padding:5px 10px; cursor:pointer;';
                 
-                runningTotalScore += subtotalScore;
-                subtotalScores[category] = subtotalScore;
+                removeBtn.addEventListener('click', () => { entryDiv.remove(); updateSupervisorButtonState(); });
 
-                let subtotalCalcString = subtotalCalcParts.join(' + ').replace(/\+ \(-/g, ' - (');
-                if(subtotalCalcString === '') subtotalCalcString = '0';
-
-                document.getElementById(`subtotal-count-${category}`).textContent = subtotalIssueCount;
-                document.getElementById(`subtotal-score-${category}`).innerHTML = `${subtotalCalcString} = <span class="font-bold">${subtotalScore.toFixed(2)}</span> <span class="text-sm text-gray-600">(누계: ${runningTotalScore.toFixed(2)})</span>`;
-                scoreKeys.forEach(key => {
-                    document.getElementById(`subtotal-rating-${scoreIdKeys[key]}-${category}`).textContent = subtotalRatingCounts[key];
-                });
-
-                grandTotalIssueCount += subtotalIssueCount;
-                grandTotalScore += subtotalScore;
-                scoreKeys.forEach(key => { grandTotalRatingCounts[key] += subtotalRatingCounts[key]; });
-            });
-
-            let grandTotalCalcParts = [];
-            scoreKeys.forEach(scoreKey => {
-                const count = grandTotalRatingCounts[scoreKey];
-                if (count > 0) {
-                    grandTotalCalcParts.push(`(${parseFloat(scoreKey)} × ${count})`);
-                }
-            });
-            let grandTotalCalcString = grandTotalCalcParts.join(' + ').replace(/\+ \(-/g, ' - (');
-            if(grandTotalCalcString === '') grandTotalCalcString = '0';
-
-            document.getElementById('grandtotal-count').textContent = grandTotalIssueCount;
-            document.getElementById('grandtotal-score').innerHTML = `${grandTotalCalcString} = <span class="font-bold text-lg">${grandTotalScore.toFixed(2)}</span>`;
-            scoreKeys.forEach(key => {
-                document.getElementById(`grandtotal-rating-${scoreIdKeys[key]}`).textContent = grandTotalRatingCounts[key];
-            });
-
-            const summaryDetails = document.getElementById('summary-details');
-            summaryDetails.innerHTML = '';
-            categories.forEach(category => {
-                const score = subtotalScores[category];
-                const scoreElement = document.createElement('div');
-                scoreElement.className = 'p-3 bg-white rounded-md shadow-sm flex justify-between items-center';
-                const scoreColor = score > 0 ? 'text-blue-600' : (score < 0 ? 'text-red-600' : 'text-gray-800');
-                scoreElement.innerHTML = `<span class="font-medium text-gray-700">${category}:</span> <span class="font-bold text-lg ${scoreColor}">${score.toFixed(2)}</span>`;
-                summaryDetails.appendChild(scoreElement);
-            });
-            
-            const totalScoreEl = document.getElementById('total-score');
-            const totalScoreColor = grandTotalScore > 0 ? 'text-blue-600' : (grandTotalScore < 0 ? 'text-red-600' : 'text-gray-800');
-            totalScoreEl.innerHTML = `${grandTotalCalcString} = <span class="font-bold text-xl ${totalScoreColor}">${grandTotalScore.toFixed(2)}</span>`;
-        }
-
-        function toggleSummary() {
-            const details = document.getElementById('summary-details');
-            const icon = document.getElementById('summary-toggle-icon');
-            const isHidden = details.classList.toggle('hidden');
-            icon.textContent = isHidden ? '▼' : '▲';
-        }
-
-        function openPhotoReportModal() {
-            const reportContainer = document.getElementById('report-container');
-            reportContainer.innerHTML = '';
-            let photoFound = false;
-            const totalItems = checklistData.reduce((acc, val) => acc + val.count, 0);
-
-            for (let i = 0; i < totalItems; i++) {
-                const photoData = localStorage.getItem('photo_' + i);
-                const photoInfoData = localStorage.getItem('photo_info_' + i);
-
-                if (photoData && photoInfoData) {
-                    photoFound = true;
-                    const photoInfo = JSON.parse(photoInfoData);
-                    const savedComment = localStorage.getItem('photo_comment_' + i) || '';
-
-                    const entry = document.createElement('div');
-                    entry.className = 'bg-white rounded-xl shadow-lg overflow-hidden photo-entry';
-                    
-                    entry.innerHTML = `
-                        <div class="p-4 bg-gray-50 border-b photo-entry-header">
-                            <h3 class="font-bold text-gray-800">${photoInfo.category}</h3>
-                        </div>
-                        <div class="p-4 photo-entry-body">
-                            <div class="report-photo-container mb-4">
-                               <img src="${photoData}" class="report-photo" alt="점검 사진">
-                            </div>
-                            <textarea
-                                data-index="${i}"
-                                class="w-full h-24 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50"
-                                placeholder="사진에 대한 설명을 입력하세요..."
-                                oninput="saveComment(this)"
-                            >${savedComment}</textarea>
-                        </div>
-                    `;
-                    reportContainer.appendChild(entry);
+                entryDiv.appendChild(input);
+                entryDiv.appendChild(removeBtn);
+                supervisorList.appendChild(entryDiv);
+                updateSupervisorButtonState();
+            }
+        });
+        
+        document.querySelectorAll('.eval-select').forEach(select => {
+            const row = select.closest('tr');
+            if (row) {
+                const scoreInput = row.querySelector('.score-input');
+                if (scoreInput) {
+                    if (select.value === 'na') {
+                        scoreInput.value = 0;
+                    } else {
+                        scoreInput.value = select.value;
+                    }
                 }
             }
-
-            if (!photoFound) {
-                reportContainer.innerHTML = `
-                    <div class="col-span-1 md:col-span-3 text-center bg-white p-12 rounded-xl shadow-lg">
-                        <p class="text-gray-500">점검표에 추가된 사진이 없습니다.</p>
-                    </div>
-                `;
-            }
-            
-            document.getElementById('photo-report-modal').classList.remove('hidden');
-        }
-
-        function closePhotoReportModal() {
-            document.getElementById('photo-report-modal').classList.add('hidden');
-        }
-
-        function saveComment(textarea) {
-            const index = textarea.dataset.index;
-            localStorage.setItem('photo_comment_' + index, textarea.value);
-        }
-
-        function printPhotoReport() {
-            document.body.classList.add('printing-report');
+        });
+        
+        printBtn.addEventListener('click', function() {
             window.print();
-            // Using a timeout to ensure the class is removed after the print dialog has done its thing.
-            setTimeout(() => {
-                document.body.classList.remove('printing-report');
-            }, 1000);
-        }
-    </script>
+        });
+
+        printBtn.addEventListener('mouseenter', () => printBtn.style.backgroundColor = '#3949ab');
+        printBtn.addEventListener('mouseleave', () => printBtn.style.backgroundColor = '#1a237e');
+        
+        updateSupervisorButtonState();
+        updateAllScores();
+    });
+</script>
+
 </body>
 </html>
