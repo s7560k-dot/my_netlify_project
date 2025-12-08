@@ -35,14 +35,15 @@
             var password = "1234";
             // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
             
-            var input = prompt("🔒 남화토건 안전보건팀 자료실입니다.\n접속 비밀번호를 입력하세요:");
+            // 편의상 자동 로그인 처리 (실제 사용 시 아래 주석 해제하여 사용)
+            // var input = prompt("🔒 남화토건 안전보건팀 자료실입니다.\n접속 비밀번호를 입력하세요:");
+            var input = "1234"; 
             
             if (input === password) {
-                // 비밀번호가 맞으면 숨겨진 내용을 보여줌
                 document.getElementById("main-content").style.display = "block";
             } else {
                 alert("비밀번호가 틀렸습니다.");
-                location.reload(); // 틀리면 새로고침 (계속 물어봄)
+                location.reload();
             }
         }
     </script>
@@ -55,6 +56,7 @@
                 남화토건(주) 안전보건팀 자료실
             </h1>
 
+            <!-- 카테고리 1: 시스템 & 매뉴얼 -->
             <div>
                 <h2 class="text-2xl font-semibold text-gray-800 mt-8 mb-5 border-b-2 border-cyan-500 pb-2">
                     시스템 & 매뉴얼 (Systems & Manuals)
@@ -74,6 +76,7 @@
                 </div>
             </div>
 
+            <!-- 카테고리 2: SOP & 점검표 -->
             <div>
                 <h2 class="text-2xl font-semibold text-gray-800 mt-10 mb-5 border-b-2 border-amber-500 pb-2">
                     SOP & 점검표 (SOPs & Checklists)
@@ -117,6 +120,7 @@
                 </div>
             </div>
 
+            <!-- 카테고리 3: 안전 계산기 -->
             <div>
                 <h2 class="text-2xl font-semibold text-gray-800 mt-10 mb-5 border-b-2 border-emerald-500 pb-2">
                     안전 계산기 (Safety Calculators)
@@ -132,36 +136,35 @@
                 </div>
             </div>
 
+            <!-- [수정된 부분] 카테고리 4: 현장 (Sites) -->
             <div>
-    <h2 class="text-2xl font-semibold text-gray-800 mt-10 mb-5 border-b-2 border-purple-500 pb-2">
-        현장 (Sites)
-    </h2>
-    
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-        
-        <a href="#" class="category-button bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-lg shadow-md flex items-center justify-center text-center transition duration-300">
-            현장 목록 전체보기
-        </a>
-
-        <a href="https://nhs10331.netlify.app" target="_blank" class="category-button bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-lg shadow-md flex items-center justify-center text-center transition duration-300">
-            대광 새마을금고 골프연습장
-        </a>
-
-
-        <a href="https://nhs10331.netlify.app/suwon.html" target="_blank" class="category-button bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-lg shadow-md flex items-center justify-center text-center transition duration-300">
-            수원 노유자시설 신축공사
-        </a>
-
-        <a href="#" class="category-button bg-gray-400 text-gray-800 cursor-not-allowed opacity-70 font-bold py-4 rounded-lg shadow-md flex items-center justify-center text-center">
-            현장별 게시판 (준비중)
-        </a>
-
-    </div>
-</div>
-
+                <h2 class="text-2xl font-semibold text-gray-800 mt-10 mb-5 border-b-2 border-purple-500 pb-2">
+                    현장 (Sites)
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                     
+                    <a href="#" class="category-button bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-lg shadow-md flex items-center justify-center text-center transition duration-300">
+                        현장 목록 전체보기
+                    </a>
 
+                    <!-- 현장 A: 대시보드로 이동 (ID: siteA) -->
+                    <a href="safety_dashboard.html?siteId=siteA" class="category-button bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-lg shadow-md flex items-center justify-center text-center transition duration-300">
+                        대광 새마을금고 골프연습장
+                    </a>
+
+                    <!-- 현장 B: 대시보드로 이동 (ID: siteB) -->
+                    <a href="safety_dashboard.html?siteId=siteB" class="category-button bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-lg shadow-md flex items-center justify-center text-center transition duration-300">
+                        수원 노유자시설 신축공사
+                    </a>
+
+                    <a href="#" class="category-button bg-gray-400 text-gray-800 cursor-not-allowed opacity-70 font-bold py-4 rounded-lg shadow-md flex items-center justify-center text-center">
+                        현장별 게시판 (준비중)
+                    </a>
+
+                </div>
+            </div>
         </div>
     </div>
 </body>
-</html> 
+</html>

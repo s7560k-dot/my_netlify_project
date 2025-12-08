@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safety ON - 스마트 안전보건 플랫폼</title>
+    
+    <!-- 1. Tailwind CSS (스타일링) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. React & ReactDOM (UI 라이브러리) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- 3. Babel (JSX 변환) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- 4. Firebase SDK (데이터베이스 연동용 - Compat 버전 사용) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        
+        /* 서울한강체 (SeoulHangang) 추가 */
+        @font-face {
+            font-family: 'SeoulHangang';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/SeoulHangangM.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body { font-family: Pretendard, sans-serif; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        
+        /* 애니메이션 */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // ==================================================================================
+        // [설정 구역] Firebase Console에서 발급받은 키를 아래에 입력하세요.
+        // ==================================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDbVG3iL3FBJe6alPLZnhFW_QAGpzeqFoY",
+            authDomain: "namhwa-safety-dashboard.firebaseapp.com",
+            projectId: "namhwa-safety-dashboard",
+            storageBucket: "namhwa-safety-dashboard.firebasestorage.app",
+            messagingSenderId: "152864778612",
+            appId: "1:152864778612:web:ecc482adce93a1534a2421"
+        };
+
+        // --- Firebase 초기화 ---
+        let db = null;
+        let isFirebaseActive = false;
+
+        if (firebaseConfig.apiKey) {
+            try {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                db = firebase.firestore();
+                isFirebaseActive = true;
+                console.log("🔥 Firebase 연결 성공: 실시간 데이터 모드");
+            } catch (error) {
+                console.error("Firebase 초기화 실패:", error);
+                isFirebaseActive = false;
+            }
+        } else {
+            console.log("⚠️ Firebase 설정 없음: 데모 데이터 모드");
+        }
+
+        // --- 아이콘 컴포넌트 ---
+        const Icon = ({ children, color = "currentColor", size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+        );
+        const Shield = (props) => <Icon {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></Icon>;
+        const CalendarIcon = (props) => <Icon {...props}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></Icon>;
+        const Bell = (props) => <Icon {...props}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></Icon>;
+        const Users = (props) => <Icon {...props}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></Icon>;
+        const MoreHorizontal = (props) => <Icon {...props}><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></Icon>;
+        const AlertTriangle = (props) => <Icon {...props}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></Icon>;
+        const AlertOctagon = (props) => <Icon {...props}><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></Icon>;
+        const Save = (props) => <Icon {...props}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></Icon>;
+        const Edit2 = (props) => <Icon {...props}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></Icon>;
+        const FileText = (props) => <Icon {...props}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></Icon>;
+        const MessageSquare = (props) => <Icon {...props}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></Icon>;
+        const Plus = (props) => <Icon {...props}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></Icon>;
+        const CheckCircle = (props) => <Icon {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></Icon>;
+        const Activity = (props) => <Icon {...props}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></Icon>;
+        const Truck = (props) => <Icon {...props}><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></Icon>;
+        const FlaskConical = (props) => <Icon {...props}><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><line x1="8.5" y1="2" x2="15.5" y2="2"/><path d="M8.5 14h7"/></Icon>;
+        const X = (props) => <Icon {...props}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></Icon>;
+        const Upload = (props) => <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></Icon>;
+        const Trash = (props) => <Icon {...props}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></Icon>;
+        const Tool = (props) => <Icon {...props}><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></Icon>;
+        const FileSpreadsheet = (props) => <Icon {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></Icon>;
+        const Settings = (props) => <Icon {...props}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></Icon>;
+        const ArrowRight = (props) => <Icon {...props}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></Icon>;
+        const ClipboardCheck = (props) => <Icon {...props}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></Icon>;
+        const LinkIcon = (props) => <Icon {...props}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></Icon>;
+
+        // --- Mock Data (현장별 구분 구조로 변경) ---
+        // key값을 현장 ID(siteA, siteB 등)로 사용
+        const SITES_DB = {
+            'siteA': {
+                name: '대광 새마을금고 골프연습장',
+                scheduleUrl: 'https://nhs10331.netlify.app',
+                riskWorks: [
+                    { id: '1', team: '골조 2팀', task: '203동 갱폼 인양 작업', risk: '상', status: '작업중', manager: '김철수', workerCount: 5, eduCompleted: 5, assessment: '크레인 인양 중 낙하 위험, 신호수 배치 및 하부 통제 철저' },
+                    { id: '2', team: '설비 1팀', task: '지하 2층 밀폐공간 용접', risk: '상', status: '예정', manager: '이영희', workerCount: 3, eduCompleted: 2, assessment: '질식 사고 예방을 위한 송풍기 가동 필수, 산소 농도 측정 기록' },
+                ],
+                notices: [
+                    { id: '1', type: '공지', title: '[현장A] 혹서기 근로자 휴게 시간 준수 안내', content: '최고 기온이 33도 이상인 폭염 주의보 발령 시...', author: '안전팀장', date: '05.20' },
+                    { id: '2', type: '일정', title: '[현장A] 제5회 안전보건협의체 회의', content: '금일 14:00 현장 회의실...', author: '현장소장', date: '05.21' },
+                ],
+                issueList: [
+                    { id: 101, loc: '105동 3층', desc: '개구부 덮개 미설치로 인한 추락 위험', finder: '안전과장', status: 'new' },
+                    { id: 102, loc: '지하 1층', desc: '가설 분전반 접지 누락', finder: '전기반장', status: 'processing' },
+                    { id: 103, loc: '야적장', desc: '자재 정리정돈 불량', finder: '관리자', status: 'done' },
+                ],
+                inspectionLog: [
+                    { id: 1, type: '장비', item: '이동식 크레인 (100t)', date: '05.20', status: '합격' },
+                    { id: 2, type: '기계', item: '용접기 A-102', date: '05.19', status: '합격' },
+                    { id: 3, type: '물질', item: '에폭시 프라이머', date: '05.18', status: '조건부승인' },
+                    { id: 4, type: '장비', item: '지게차 3t', date: '05.17', status: '불합격' },
+                    { id: 5, type: '장비', item: '고소작업대', date: '05.16', status: '합격' },
+                    { id: 6, type: '기계', item: '그라인더', date: '05.15', status: '합격' },
+                ],
+                workerDetails: [
+                    { id: 1, trade: '관리자', count: 12 },
+                    { id: 2, trade: '철근공', count: 45 },
+                    { id: 3, trade: '목공', count: 30 },
+                    { id: 4, trade: '일용직', count: 22 },
+                ]
+            },
+            // 테스트용 두 번째 현장
+            'siteB': {
+                name: '수원 노유자시설 신축공사',
+                scheduleUrl: 'https://nhs10331.netlify.app/suwon.html',
+                riskWorks: [
+                    { id: 'b1', team: '전기 1팀', task: '임시 전력 인입', risk: '중', status: '작업중', manager: '박준호', workerCount: 3, eduCompleted: 3, assessment: '감전 방지 보호구 착용' },
+                ],
+                notices: [
+                    { id: 'b_n1', type: '공지', title: '[현장B] 우기 대비 점검', content: '배수로 점검 철저', author: '공사과장', date: '05.22' },
+                ],
+                issueList: [],
+                inspectionLog: [],
+                workerDetails: [
+                    { id: 1, trade: '관리자', count: 5 },
+                    { id: 2, trade: '내장목공', count: 15 },
+                ]
+            }
+        };
+
+        const SafetyDashboard = () => {
+            const [currentDate, setCurrentDate] = useState('');
+            
+            // URL 파라미터로 현장 ID 가져오기
+            const queryParams = new URLSearchParams(window.location.search);
+            const siteId = queryParams.get('siteId') || 'siteA'; 
+            const currentSiteData = SITES_DB[siteId] || SITES_DB['siteA'];
+
+            // 상태 관리
+            const [startDate, setStartDate] = useState('2024-01-01');
+            const [targetDays, setTargetDays] = useState(500);
+            const [accidentFreeDays, setAccidentFreeDays] = useState(0);
+            const [riskWorks, setRiskWorks] = useState(currentSiteData.riskWorks);
+            const [noticeData, setNoticeData] = useState(currentSiteData.notices);
+            const [issueList, setIssueList] = useState(currentSiteData.issueList); 
+            const [inspectionLog, setInspectionLog] = useState(currentSiteData.inspectionLog);
+            const [workerList, setWorkerList] = useState(currentSiteData.workerDetails);
+            
+            // UI 상태
+            const [logoUrl, setLogoUrl] = useState(null);
+            const [showWorkerModal, setShowWorkerModal] = useState(false);
+            const [showIssueModal, setShowIssueModal] = useState(false);
+            const [selectedIssueType, setSelectedIssueType] = useState(null); 
+            const [editingWorkId, setEditingWorkId] = useState(null);
+            const [showInspectionModal, setShowInspectionModal] = useState(false);
+            const [inspectionType, setInspectionType] = useState('');
+            const [showSettingsModal, setShowSettingsModal] = useState(false); 
+            const [selectedNotice, setSelectedNotice] = useState(null); 
+
+            useEffect(() => {
+                const today = new Date();
+                setCurrentDate(`${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`);
+                
+                const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                const startParts = startDate.split('-'); 
+                const startMidnight = new Date(parseInt(startParts[0]), parseInt(startParts[1]) - 1, parseInt(startParts[2]));
+                const diffTime = todayMidnight - startMidnight;
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
+                setAccidentFreeDays(diffDays >= 0 ? diffDays + 1 : 0);
+
+                if (isFirebaseActive && db) {
+                    const siteDocRef = db.collection('sites').doc(siteId);
+                    const unsubscribeRisk = siteDocRef.collection('riskWorks').onSnapshot(snapshot => {
+                        const works = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        if(works.length > 0) setRiskWorks(works);
+                    });
+                    return () => { unsubscribeRisk(); };
+                }
+            }, [startDate, siteId]);
+
+            const issueCounts = {
+                new: issueList.filter(i => i.status === 'new').length,
+                processing: issueList.filter(i => i.status === 'processing').length,
+                done: issueList.filter(i => i.status === 'done').length
+            };
+
+            // Handlers
+            const handleLogoUpload = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => setLogoUrl(reader.result); reader.readAsDataURL(file); } };
+            const handleWorkEdit = (id) => setEditingWorkId(id);
+            const handleWorkSave = async (id) => { setEditingWorkId(null); if (!isFirebaseActive) alert("✅ 저장되었습니다. (데모 모드)"); };
+            const handleWorkChange = (id, field, value) => { setRiskWorks(riskWorks.map(work => work.id === id ? { ...work, [field]: value } : work)); };
+            const handleAddWork = () => { const newWork = { id: Date.now().toString(), team: '', task: '', risk: '중', manager: '', status: '예정', workerCount: 0, eduCompleted: 0, assessment: '' }; setRiskWorks([...riskWorks, newWork]); setEditingWorkId(newWork.id); };
+            const handleWorkerChange = (id, field, value) => { setWorkerList(workerList.map(w => w.id === id ? { ...w, [field]: value } : w)); };
+            const handleAddWorker = () => setWorkerList([...workerList, { id: Date.now(), trade: '', count: 0 }]);
+            const handleDeleteWorker = (id) => setWorkerList(workerList.filter(w => w.id !== id));
+            const handleIssueChange = (id, field, value) => { setIssueList(issueList.map(issue => issue.id === id ? { ...issue, [field]: value } : issue)); };
+            const changeIssueStatus = (id, newStatus) => { setIssueList(issueList.map(issue => issue.id === id ? { ...issue, status: newStatus } : issue)); alert(newStatus === 'processing' ? '조치가 시작되었습니다.' : '조치가 완료되었습니다.'); };
+            const handleAddNotice = () => { const title = prompt("제목 입력"); if(title) setNoticeData([{ id: Date.now(), type: '공지', title, content: '', author: '관리자', date: new Date().toISOString().slice(5,10) }, ...noticeData]); };
+            const openInspectionModal = (type) => { setInspectionType(type); setShowInspectionModal(true); };
+            const handleSaveInspection = (e) => { e.preventDefault(); setInspectionLog([{ id: Date.now(), type: inspectionType, item: e.target.item.value, date: new Date().toISOString().slice(5,10), status: e.target.result.value }, ...inspectionLog]); setShowInspectionModal(false); };
+            const handleSaveSettings = (e) => { e.preventDefault(); setStartDate(e.target.startDate.value); setTargetDays(e.target.targetDays.value); setShowSettingsModal(false); };
+            const closeModal = (setter) => (e) => { if(e.target === e.currentTarget) setter(false); };
+            const getStatusColor = (status) => status === '합격' ? 'bg-green-100 text-green-600' : status === '불합격' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600';
+            const filteredIssues = issueList.filter(i => i.status === selectedIssueType);
+
+            return (
+                <div className="min-h-screen bg-gray-50 text-gray-800 font-sans relative pb-20">
+                
+                {/* Header */}
+                <header className="bg-white shadow-sm sticky top-0 z-30">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+                        <div className="flex items-center w-1/4">
+                            <label className="cursor-pointer group relative flex flex-col items-center justify-center w-12 h-12 bg-gray-100 rounded-lg border border-gray-200 hover:bg-gray-200 transition overflow-hidden mr-3">
+                                {logoUrl ? <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" /> : <div className="text-center"><span className="text-[10px] text-gray-500 font-bold">LOGO</span><div className="text-[8px] text-gray-400">업로드</div></div>}
+                                <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+                            </label>
+                            <div>
+                                <h1 className="text-xl font-bold text-gray-900 leading-tight">Safety ON</h1>
+                                <p className="text-xs text-gray-500">스마트 안전보건 플랫폼</p>
+                            </div>
+                        </div>
+                        <div className="flex-1 text-center">
+                            <h2 className="text-4xl font-extrabold text-blue-900 tracking-widest font-['SeoulHangang'] drop-shadow-md">" 남화의 안전을 켜다 "</h2>
+                        </div>
+                        <div className="flex items-center justify-end space-x-6 w-1/4">
+                            <span className="text-sm font-medium text-gray-500 flex items-center hidden sm:flex"><CalendarIcon className="mr-2" size={16} /> {currentDate}</span>
+                            <div className="relative cursor-pointer"><Bell className="text-gray-400 hover:text-gray-600" /><span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">3</span></div>
+                            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-bold text-gray-600 cursor-pointer">관리</div>
+                        </div>
+                    </div>
+                </header>
+
+                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    
+                    {/* Top Banner (무재해) */}
+                    <div className="bg-gradient-to-r from-green-700 to-green-500 rounded-2xl shadow-lg p-6 mb-8 text-white flex flex-col md:flex-row items-center justify-between animate-fade-in relative">
+                        <button onClick={() => setShowSettingsModal(true)} className="absolute top-4 right-4 p-2 bg-white/20 rounded-full hover:bg-white/30 transition"><Settings size={20} className="text-white" /></button>
+                        <div className="mb-4 md:mb-0">
+                            <h2 className="text-lg font-medium opacity-90 mb-1 flex items-center">
+                                우리 현장 무재해 기록
+                                <button onClick={() => setShowSettingsModal(true)} className="ml-3 text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded flex items-center transition cursor-pointer border border-transparent hover:border-white/40" title="클릭하여 날짜 수정">실착공일: {startDate} <Edit2 size={12} className="ml-1 opacity-70"/></button>
+                            </h2>
+                            <div className="flex items-end"><span className="text-5xl font-bold mr-2">{accidentFreeDays}</span><span className="text-xl mb-2">일째</span><span className="ml-4 bg-white/20 px-3 py-1 rounded-full text-sm">목표: {targetDays}일</span></div>
+                        </div>
+                        <div className="flex space-x-8 text-center pr-12">
+                            <div className="cursor-pointer hover:bg-white/10 p-2 rounded-lg transition" onClick={() => setShowWorkerModal(true)}>
+                                <p className="text-sm opacity-75 mb-1 flex items-center justify-center">금일 출력 인원 <MoreHorizontal size={12} className="ml-1" /></p>
+                                <p className="text-2xl font-bold flex items-center justify-center"><Users size={20} className="mr-1" /> {workerList.reduce((acc, cur) => acc + parseInt(cur.count || 0), 0)}명</p>
+                            </div>
+                            <div className="h-12 w-px bg-white/30"></div>
+                            <div>
+                                <p className="text-sm opacity-75 mb-1">고위험 작업</p>
+                                <p className="text-2xl font-bold flex items-center justify-center text-yellow-300"><AlertTriangle size={20} className="mr-1" /> {riskWorks.length}건</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Left Column (2/3) */}
+                        <div className="lg:col-span-2 space-y-6">
+                            
+                            {/* 1. 고위험 작업 현황 (투입 인원 필드 추가) */}
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fade-in" style={{animationDelay: '0.1s'}}>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-lg font-bold text-gray-800 flex items-center"><AlertOctagon className="text-red-500 mr-2" size={20} /> 금일 고위험 작업 현황</h3>
+                                    {isFirebaseActive && <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">실시간 동기화 중</span>}
+                                </div>
+                                <div className="overflow-x-auto mb-2">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="bg-gray-50 text-gray-500">
+                                            <tr><th className="px-3 py-3 rounded-l-lg">작업팀</th><th className="px-3 py-3">작업 내용</th><th className="px-3 py-3">위험도</th><th className="px-3 py-3">투입 인원</th><th className="px-3 py-3">감독자</th><th className="px-3 py-3">상태</th><th className="px-3 py-3 rounded-r-lg w-16">관리</th></tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {riskWorks.map((work) => (
+                                                <tr key={work.id} className="hover:bg-gray-50">
+                                                    {editingWorkId === work.id ? (
+                                                        <>
+                                                            <td className="px-3 py-2"><input className="border rounded px-1 w-full" value={work.team} onChange={(e) => handleWorkChange(work.id, 'team', e.target.value)} /></td>
+                                                            <td className="px-3 py-2"><input className="border rounded px-1 w-full" value={work.task} onChange={(e) => handleWorkChange(work.id, 'task', e.target.value)} /></td>
+                                                            <td className="px-3 py-2">
+                                                                <select className="border rounded px-1" value={work.risk} onChange={(e) => handleWorkChange(work.id, 'risk', e.target.value)}><option value="상">상</option><option value="중">중</option><option value="하">하</option></select>
+                                                            </td>
+                                                            <td className="px-3 py-2"><input type="number" className="border rounded px-1 w-full" value={work.workerCount} onChange={(e) => handleWorkChange(work.id, 'workerCount', e.target.value)} /></td>
+                                                            <td className="px-3 py-2"><input className="border rounded px-1 w-full" value={work.manager} onChange={(e) => handleWorkChange(work.id, 'manager', e.target.value)} /></td>
+                                                            <td className="px-3 py-2">
+                                                                <select className="border rounded px-1" value={work.status} onChange={(e) => handleWorkChange(work.id, 'status', e.target.value)}><option value="예정">예정</option><option value="진행">진행</option><option value="완료">완료</option></select>
+                                                            </td>
+                                                            <td className="px-3 py-2 text-center"><button onClick={() => handleWorkSave(work.id)} className="text-green-600 bg-green-100 p-1 rounded"><Save size={16} /></button></td>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <td className="px-3 py-3 font-medium">{work.team}</td>
+                                                            <td className="px-3 py-3">{work.task}</td>
+                                                            <td className="px-3 py-3"><span className={`px-2 py-1 rounded text-xs font-bold ${work.risk === '상' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-600'}`}>{work.risk}</span></td>
+                                                            <td className="px-3 py-3 font-bold text-blue-600">{work.workerCount}명</td>
+                                                            <td className="px-3 py-3">{work.manager}</td>
+                                                            <td className="px-3 py-3"><span className="flex items-center text-gray-500"><span className={`w-2 h-2 rounded-full mr-2 ${work.status === '진행' ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></span>{work.status}</span></td>
+                                                            <td className="px-3 py-3 text-center"><button onClick={() => handleWorkEdit(work.id)} className="text-blue-500 p-1 rounded hover:bg-blue-50"><Edit2 size={16} /></button></td>
+                                                        </>
+                                                    )}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <button onClick={handleAddWork} className="w-full py-2 border-2 border-dashed border-gray-200 rounded-lg text-gray-400 hover:border-blue-400 hover:text-blue-500 transition text-sm font-bold flex items-center justify-center">
+                                    <Plus size={16} className="mr-1" /> 작업 추가하기
+                                </button>
+                            </div>
+
+                            {/* 2. 안전 교육 및 위험성평가 현황 (Updated: 고위험 작업 연동) */}
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fade-in" style={{animationDelay: '0.2s'}}>
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 className="text-lg font-bold text-gray-800 flex items-center">
+                                        <ClipboardCheck className="text-blue-500 mr-2" size={20} /> 고위험 작업 안전 관리 (교육 & 위험성평가)
+                                    </h3>
+                                </div>
+                                
+                                {riskWorks.length === 0 ? (
+                                    <div className="text-center py-8 text-gray-400 border-2 border-dashed rounded-lg">등록된 고위험 작업이 없습니다.</div>
+                                ) : (
+                                    <div className="space-y-6">
+                                        {riskWorks.map((work) => {
+                                            const rate = work.workerCount > 0 ? Math.round((work.eduCompleted / work.workerCount) * 100) : 0;
+                                            return (
+                                                <div key={work.id} className="border border-gray-200 rounded-xl p-5 bg-gray-50 hover:bg-white transition hover:shadow-md">
+                                                    {/* 상단: 작업 정보 & 교육 현황 */}
+                                                    <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
+                                                        <div>
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded font-bold">{work.team}</span>
+                                                                <span className={`text-xs px-2 py-0.5 rounded font-bold ${work.risk === '상' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-600'}`}>위험도 {work.risk}</span>
+                                                            </div>
+                                                            <h4 className="font-bold text-gray-800 text-lg">{work.task}</h4>
+                                                        </div>
+                                                        
+                                                        {/* 교육 이수율 관리 (인원수 연동) */}
+                                                        <div className="flex-1 max-w-md bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+                                                            <div className="flex justify-between items-center mb-2">
+                                                                <span className="text-sm font-bold text-gray-600">특별 안전 교육 이수 현황</span>
+                                                                <span className={`text-sm font-bold ${rate === 100 ? 'text-green-600' : 'text-orange-500'}`}>{rate}% 달성</span>
+                                                            </div>
+                                                            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                                                                <div className={`h-2.5 rounded-full transition-all duration-500 ${rate === 100 ? 'bg-green-500' : 'bg-blue-500'}`} style={{width: `${rate}%`}}></div>
+                                                            </div>
+                                                            <div className="flex justify-between items-center text-xs">
+                                                                <span className="text-gray-500">교육 대상 (투입 인원): <strong className="text-gray-800">{work.workerCount}명</strong></span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span>이수 완료:</span>
+                                                                    <input 
+                                                                        type="number" 
+                                                                        min="0"
+                                                                        max={work.workerCount}
+                                                                        className="w-16 border rounded px-1 py-0.5 text-center font-bold"
+                                                                        value={work.eduCompleted} 
+                                                                        onChange={(e) => handleWorkChange(work.id, 'eduCompleted', parseInt(e.target.value) || 0)}
+                                                                    />
+                                                                    <span>명</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* 하단: 사전 위험성평가 입력 */}
+                                                    <div className="mt-3">
+                                                        <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">사전 위험성평가 및 중점 관리 대책</label>
+                                                        <textarea 
+                                                            className="w-full p-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 resize-none bg-white"
+                                                            rows="2"
+                                                            placeholder="해당 작업의 주요 위험 요인과 안전 대책을 입력하세요. (예: 2인 1조 작업 준수, 신호수 배치 확인 등)"
+                                                            value={work.assessment}
+                                                            onChange={(e) => handleWorkChange(work.id, 'assessment', e.target.value)}
+                                                        ></textarea>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 3. 알림 게시판 */}
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fade-in" style={{animationDelay: '0.3s'}}>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-lg font-bold text-gray-800 flex items-center"><MessageSquare className="text-purple-500 mr-2" size={20} /> Safety 알림 게시판</h3>
+                                    <button onClick={handleAddNotice} className="text-sm px-3 py-1 bg-purple-50 text-purple-600 rounded hover:bg-purple-100 transition flex items-center"><Plus size={12} className="mr-1" /> 글쓰기</button>
+                                </div>
+                                <div className="space-y-3">
+                                    {noticeData.map((notice) => (
+                                        <div key={notice.id} onClick={() => setSelectedNotice(notice)} className="flex items-center justify-between p-3 border-b border-gray-50 hover:bg-gray-50 transition cursor-pointer">
+                                            <div className="flex items-center gap-3">
+                                                <span className={`text-xs font-bold px-2 py-1 rounded ${notice.type === '공지' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>{notice.type}</span>
+                                                <span className="text-sm font-medium text-gray-800 hover:text-blue-600 transition">{notice.title}</span>
+                                            </div>
+                                            <div className="flex items-center text-xs text-gray-400 gap-3"><span>{notice.author}</span><span>{notice.date}</span></div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right Column (1/3) */}
+                        <div className="space-y-6">
+                            {/* 4. 부적합 조치 현황 */}
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fade-in" style={{animationDelay: '0.4s'}}>
+                                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center"><CheckCircle className="text-green-500 mr-2" size={20} /> 안전 부적합 조치</h3>
+                                <div className="space-y-3">
+                                    <div onClick={() => { setSelectedIssueType('new'); setShowIssueModal(true); }} className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-100 cursor-pointer hover:-translate-y-1 transition">
+                                        <div className="flex items-center"><div className="w-8 h-8 rounded-full bg-red-200 flex items-center justify-center text-red-600 mr-3"><AlertTriangle size={16} /></div><span className="text-sm font-bold text-gray-700">신규 발견 (접수 대기)</span></div><span className="text-xl font-bold text-red-600">{issueCounts.new}</span>
+                                    </div>
+                                    <div onClick={() => { setSelectedIssueType('processing'); setShowIssueModal(true); }} className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg border border-yellow-100 cursor-pointer hover:-translate-y-1 transition">
+                                        <div className="flex items-center"><div className="w-8 h-8 rounded-full bg-yellow-200 flex items-center justify-center text-yellow-600 mr-3"><Activity size={16} /></div><span className="text-sm font-bold text-gray-700">조치 중 (진행)</span></div><span className="text-xl font-bold text-yellow-600">{issueCounts.processing}</span>
+                                    </div>
+                                    <div onClick={() => { setSelectedIssueType('done'); setShowIssueModal(true); }} className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-100 cursor-pointer hover:-translate-y-1 transition">
+                                        <div className="flex items-center"><div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-600 mr-3"><CheckCircle size={16} /></div><span className="text-sm font-bold text-gray-700">조치 완료</span></div><span className="text-xl font-bold text-green-600">{issueCounts.done}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 5. 반입 점검 및 알림 */}
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fade-in" style={{animationDelay: '0.5s'}}>
+                                <h3 className="text-lg font-bold text-gray-800 mb-4">반입 점검 및 알림</h3>
+                                <div className="grid grid-cols-1 gap-2 mb-4">
+                                    <button onClick={() => openInspectionModal('건설장비')} className="py-2.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-bold hover:bg-blue-100 flex items-center justify-center border border-blue-100"><Truck size={16} className="mr-2"/> 건설장비 점검</button>
+                                    <button onClick={() => openInspectionModal('기계기구')} className="py-2.5 bg-orange-50 text-orange-700 rounded-lg text-sm font-bold hover:bg-orange-100 flex items-center justify-center border border-orange-100"><Tool size={16} className="mr-2"/> 기계기구 점검</button>
+                                    <button onClick={() => openInspectionModal('유해화학물질')} className="py-2.5 bg-purple-50 text-purple-700 rounded-lg text-sm font-bold hover:bg-purple-100 flex items-center justify-center border border-purple-100"><FlaskConical size={16} className="mr-2"/> 유해화학물질 점검</button>
+                                </div>
+                                <ul className="space-y-3 mt-4">
+                                    {inspectionLog.slice(0, 5).map(log => (
+                                        <li key={log.id} className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-100 text-sm">
+                                            <div className="flex flex-col"><span className="font-medium text-gray-700">{log.item}</span><span className="text-xs text-gray-500">{log.type} | {log.date}</span></div>
+                                            <span className={`text-xs px-2 py-1 rounded font-bold ${getStatusColor(log.status)}`}>{log.status}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+                
+                {/* [수정됨] Footer 영역: 중앙 텍스트, 우측 버튼 그룹 */}
+                <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 border-t border-gray-200 mt-8 relative flex justify-center items-center">
+                    {/* 중앙 텍스트 */}
+                    <p className="text-gray-400 text-sm font-medium">
+                        남화토건(주) 안전보건팀
+                    </p>
+
+                    {/* 우측 버튼 그룹 (absolute positioning으로 텍스트 중앙 정렬 유지) */}
+                    <div className="absolute right-4 flex space-x-2">
+                        {/* 예정공정표 버튼 */}
+                        {currentSiteData.scheduleUrl && (
+                            <a href={currentSiteData.scheduleUrl} target="_blank" className="flex items-center bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-purple-700 transition shadow-sm whitespace-nowrap">
+                                <LinkIcon size={16} className="mr-2" />
+                                예정공정표(안전활동)
+                            </a>
+                        )}
+                        {/* 나가기 버튼 */}
+                        <a href="index.html" className="flex items-center bg-gray-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-700 transition shadow-sm whitespace-nowrap">
+                            나가기
+                        </a>
+                    </div>
+                </footer>
+
+                {/* Modals (간소화) */}
+                {showSettingsModal && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={closeModal(setShowSettingsModal)}>
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
+                            <div className="p-4 flex justify-between items-center bg-gray-800 text-white rounded-t-xl"><h3 className="font-bold">무재해 목표 설정</h3><button onClick={() => setShowSettingsModal(false)}><X size={24} /></button></div>
+                            <form onSubmit={handleSaveSettings} className="p-6 space-y-4">
+                                <div><label className="block text-sm font-bold text-gray-700 mb-1">실착공일</label><input name="startDate" type="date" defaultValue={startDate} className="w-full border rounded-lg p-2" required /></div>
+                                <div><label className="block text-sm font-bold text-gray-700 mb-1">목표일수</label><input name="targetDays" type="number" defaultValue={targetDays} className="w-full border rounded-lg p-2" required /></div>
+                                <button type="submit" className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-bold hover:bg-blue-700">설정 저장</button>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {/* 1. 출력 인원 팝업 */}
+                {showWorkerModal && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center animate-fade-in" onClick={closeModal(setShowWorkerModal)}>
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
+                            <div className="bg-green-600 p-4 flex justify-between items-center text-white"><h3 className="font-bold">금일 출력 인원 수정</h3><button onClick={() => setShowWorkerModal(false)}><X size={20} /></button></div>
+                            <div className="p-4">
+                                <div className="space-y-2 max-h-[60vh] overflow-y-auto mb-3">
+                                    {workerList.map((worker) => (
+                                        <div key={worker.id} className="flex items-center gap-2 mb-2">
+                                            <input type="text" className="border p-2 rounded w-1/2 text-sm" value={worker.trade} onChange={(e) => handleWorkerChange(worker.id, 'trade', e.target.value)} placeholder="공종명"/>
+                                            <input type="number" className="border p-2 rounded w-1/3 text-sm" value={worker.count} onChange={(e) => handleWorkerChange(worker.id, 'count', e.target.value)} placeholder="인원"/>
+                                            <button onClick={() => handleDeleteWorker(worker.id)} className="text-red-400 hover:text-red-600"><Trash size={16} /></button>
+                                        </div>
+                                    ))}
+                                </div>
+                                <button onClick={handleAddWorker} className="w-full py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-bold hover:bg-gray-200">+ 공종 추가</button>
+                                <button onClick={() => setShowWorkerModal(false)} className="w-full mt-2 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700">저장 및 닫기</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 2. 안전 부적합 조치 팝업 */}
+                {showIssueModal && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={closeModal(setShowIssueModal)}>
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+                            <div className="p-4 flex justify-between items-center bg-red-500 text-white rounded-t-xl">
+                                <h3 className="font-bold">{selectedIssueType === 'new' ? '신규 발견 목록' : selectedIssueType === 'processing' ? '조치 중 목록' : '조치 완료 목록'}</h3>
+                                <button onClick={() => setShowIssueModal(false)}><X size={24} /></button>
+                            </div>
+                            <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
+                                {filteredIssues.length > 0 ? filteredIssues.map(issue => (
+                                    <div key={issue.id} className="border rounded-lg p-4 bg-white shadow-sm">
+                                        <div className="flex justify-between mb-2 items-center">
+                                            <input type="text" className="font-bold text-lg bg-transparent border-b border-dashed border-gray-300 focus:border-blue-500 outline-none w-1/2" value={issue.loc} onChange={(e) => handleIssueChange(issue.id, 'loc', e.target.value)} placeholder="장소 입력"/>
+                                            <div className="flex items-center text-sm bg-gray-100 px-2 py-1 rounded"><span className="text-gray-500 mr-2 text-xs">발견자:</span><input type="text" className="bg-transparent border-b border-gray-400 focus:border-blue-500 outline-none w-20 text-gray-700 font-medium text-xs" value={issue.finder} onChange={(e) => handleIssueChange(issue.id, 'finder', e.target.value)}/></div>
+                                        </div>
+                                        <textarea className="w-full text-gray-600 mb-4 bg-gray-50 border border-gray-200 rounded p-2 text-sm focus:border-blue-500 outline-none resize-none h-20" value={issue.desc} onChange={(e) => handleIssueChange(issue.id, 'desc', e.target.value)} placeholder="부적합 내용을 입력하세요"/>
+                                        <div className="grid grid-cols-2 gap-3 mb-4">
+                                            <label className="border-2 border-dashed h-24 flex flex-col items-center justify-center text-gray-400 text-xs cursor-pointer hover:border-blue-400 hover:text-blue-500 transition"><Upload size={20} className="mb-1"/><span>조치 전 사진</span><input type="file" className="hidden" accept="image/*" /></label>
+                                            <label className="border-2 border-dashed h-24 flex flex-col items-center justify-center text-gray-400 text-xs cursor-pointer hover:border-green-400 hover:text-green-500 transition"><Upload size={20} className="mb-1"/><span>조치 후 사진</span><input type="file" className="hidden" accept="image/*" /></label>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button className="flex-1 bg-gray-200 text-gray-700 py-2 rounded text-sm hover:bg-gray-300 font-bold" onClick={() => setShowIssueModal(false)}>내용 저장</button>
+                                            {selectedIssueType === 'new' && (<button className="flex-1 bg-yellow-500 text-white py-2 rounded text-sm hover:bg-yellow-600 font-bold flex items-center justify-center" onClick={() => changeIssueStatus(issue.id, 'processing')}>조치 착수 <ArrowRight size={14} className="ml-1" /></button>)}
+                                            {selectedIssueType === 'processing' && (<button className="flex-1 bg-green-600 text-white py-2 rounded text-sm hover:bg-green-700 font-bold flex items-center justify-center" onClick={() => changeIssueStatus(issue.id, 'done')}>조치 완료 승인 <CheckCircle size={14} className="ml-1" /></button>)}
+                                        </div>
+                                    </div>
+                                )) : (<div className="text-center text-gray-400 py-10">{selectedIssueType === 'new' ? '신규 발견된 항목이 없습니다.' : selectedIssueType === 'processing' ? '조치 중인 항목이 없습니다.' : '완료된 항목이 없습니다.'}</div>)}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 3. 반입 점검 팝업 */}
+                {showInspectionModal && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={closeModal(setShowInspectionModal)}>
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+                            <div className="p-4 flex justify-between items-center bg-blue-600 text-white rounded-t-xl"><h3 className="font-bold">{inspectionType} 점검 등록</h3><button onClick={() => setShowInspectionModal(false)}><X size={24} /></button></div>
+                            <form onSubmit={handleSaveInspection} className="p-6 space-y-4">
+                                <div><label className="block text-sm font-medium text-gray-700 mb-1">품목명 / 장비명</label><input name="item" type="text" className="w-full border rounded-lg p-2" required placeholder="예: 이동식 크레인, 에폭시 등" /></div>
+                                <div><label className="block text-sm font-medium text-gray-700 mb-2">점검 결과</label><div className="flex gap-4"><label className="flex items-center cursor-pointer"><input type="radio" name="result" value="합격" className="mr-2" defaultChecked /><span className="text-sm font-bold text-green-600">합격</span></label><label className="flex items-center cursor-pointer"><input type="radio" name="result" value="불합격" className="mr-2" /><span className="text-sm font-bold text-red-600">불합격</span></label></div></div>
+                                <div><label className="block text-sm font-medium text-gray-700 mb-1">세부 점검 내용</label><textarea className="w-full border rounded-lg p-2 h-20" placeholder="특이사항 및 점검 결과를 입력하세요"></textarea></div>
+                                <div><label className="block text-sm font-medium text-gray-700 mb-2">점검 사진 / 서류 첨부</label><label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50"><div className="flex flex-col items-center justify-center pt-5 pb-6"><Upload className="w-8 h-8 text-gray-400 mb-2" /><p className="text-sm text-gray-500"><span className="font-semibold">클릭하여 업로드</span></p></div><input type="file" className="hidden" /></label></div>
+                                <button type="submit" className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-bold hover:bg-blue-700">저장 하기</button>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {/* 4. 공지사항 상세 팝업 */}
+                {selectedNotice && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={closeModal(() => setSelectedNotice(null))}>
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+                            <div className="p-4 flex justify-between items-center bg-purple-600 text-white rounded-t-xl"><h3 className="font-bold">공지사항 상세</h3><button onClick={() => setSelectedNotice(null)}><X size={24} /></button></div>
+                            <div className="p-6">
+                                <div className="flex items-center gap-2 mb-4"><span className={`text-xs font-bold px-2 py-1 rounded ${selectedNotice.type === '공지' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>{selectedNotice.type}</span><span className="text-sm text-gray-500">{selectedNotice.date} | {selectedNotice.author}</span></div>
+                                <h4 className="text-xl font-bold text-gray-800 mb-4">{selectedNotice.title}</h4>
+                                <div className="bg-gray-50 p-4 rounded-lg text-gray-700 text-sm min-h-[150px] whitespace-pre-wrap leading-relaxed">{selectedNotice.content}</div>
+                                <button onClick={() => setSelectedNotice(null)} className="w-full mt-4 bg-gray-200 text-gray-700 py-2 rounded-lg font-bold hover:bg-gray-300 transition">닫기</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<SafetyDashboard />);
+    </script>
+</body>
+</html>

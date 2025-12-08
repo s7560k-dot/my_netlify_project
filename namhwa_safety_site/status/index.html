@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>남화토건 안전보건 통합 로드맵 (Admin Ver)</title>
+    <title>대광 새마을금고 안전보건 통합 로드맵</title>
     <style>
         /* [공통] 폰트 및 기본 설정 */
         :root {
@@ -21,28 +21,32 @@
         
         /* [메인] 상단 프로젝트 정보 */
         .header-panel { background: #fff; padding: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
-        .info-container { display: flex; gap: 15px; max-width: 1400px; margin: 0 auto; }
+        .info-container { display: flex; gap: 15px; max-width: 1600px; margin: 0 auto; }
         .info-box { flex: 1; background: #f0f4ff; border: 1px solid #d0dbf5; padding: 15px; border-radius: 5px; font-size: 14px; display: flex; flex-direction: column; gap: 5px; }
         .info-box.pink { background: #fff0f0; border-color: #ffd0d0; }
         .info-title { font-weight: bold; color: #555; font-size: 12px; }
-        
-        /* 상단 편집 가능 텍스트 스타일 */
-        .info-content { outline: none; padding: 2px 5px; border-radius: 4px; transition: background 0.2s; border: 1px solid transparent; }
-        .info-content:hover { background: rgba(0,0,0,0.05); cursor: text; }
+        .info-content { outline: none; padding: 2px 5px; border-radius: 4px; transition: background 0.2s; border: 1px solid transparent; cursor: pointer; }
+        .info-content:hover { background: rgba(0,0,0,0.05); }
         .info-content:focus { background: #fff; border-color: var(--primary); box-shadow: 0 0 3px rgba(74, 144, 226, 0.3); }
 
         /* [메인] 차트 그리드 */
-        .chart-wrapper { max-width: 1400px; margin: 0 auto 30px auto; background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .grid-container { display: grid; grid-template-columns: 200px repeat(10, 1fr); min-width: 1200px; }
-        .cell { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 10px; font-size: 13px; position: relative; }
-        .cell-header { background: #f5f5f5; text-align: center; font-weight: bold; padding: 12px; }
-        .cell-sidebar { background: #fff; font-weight: bold; color: #0056b3; display: flex; align-items: center; padding-left: 20px; }
-        .cell-sidebar.safety-row { background: #fffdf0; color: #333; font-size: 12px; }
+        .chart-wrapper { max-width: 1600px; margin: 0 auto 30px auto; background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        /* 대광 현장은 10개월 기준이므로 컬럼 조정 */
+        .grid-container { display: grid; grid-template-columns: 180px 80px repeat(10, 1fr); min-width: 1300px; }
+        .cell { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 8px; font-size: 12px; position: relative; display: flex; align-items: center; justify-content: center; }
+        .cell-header { background: #f5f5f5; text-align: center; font-weight: bold; padding: 10px; }
+        .cell-sidebar { background: #fff; font-weight: bold; color: #0056b3; justify-content: flex-start; padding-left: 15px; }
+        .cell-sidebar.safety-row { background: #fffdf0; color: #333; }
         .clickable-cell { cursor: pointer; transition: background 0.2s; }
         .clickable-cell:hover { background-color: #f0f8ff; }
+        
+        .prep-header { background: #e3f2fd; color: #1976d2; }
+        .prep-cell { color: #555; background: #fafafa; outline: none; transition: 0.2s; }
+        .prep-cell:focus { background: white; border: 2px solid var(--primary); }
+        .prep-cell:hover { background: #eee; cursor: text; }
 
         /* [메인] 공정 막대 */
-        .task-bar { height: 30px; border-radius: 4px; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.2s; margin-top: 5px; }
+        .task-bar { width: 100%; height: 24px; border-radius: 4px; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.2s; white-space: nowrap; overflow: hidden; }
         .task-bar:hover { transform: scale(1.02); z-index: 10; }
         
         .bg-blue { background: var(--primary); }
@@ -56,9 +60,8 @@
         .divider-row { grid-column: 1 / -1; background: #eef2f5; text-align: center; font-weight: bold; padding: 8px; font-size: 13px; color: #555; border-bottom: 1px solid var(--border); }
         
         /* 태그 스타일 */
-        .tag-container { display: flex; flex-direction: column; gap: 4px; align-items: center; min-height: 40px; justify-content: center; }
-        .tag { font-size: 11px; padding: 3px 6px; border-radius: 6px; border: 1px solid #ddd; background: #fff; text-align: center; width: 95%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold; }
-        
+        .tag-container { flex-direction: column; gap: 2px; min-height: 40px; }
+        .tag { font-size: 10px; padding: 2px 4px; border-radius: 4px; border: 1px solid #ddd; background: #fff; text-align: center; width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold; }
         .tag.pink { background: #ffeef0; color: #d63384; border-color: #f8d7da; }
         .tag.green { background: #e8f5e9; color: #2e7d32; border-color: #c8e6c9; }
         .tag.orange { background: #fff3e0; color: #e65100; border-color: #ffe0b2; }
@@ -67,10 +70,10 @@
         .tag.purple { background: #f3e5f5; color: #7b1fa2; border-color: #e1bee7; }
 
         /* KPI 테이블 스타일 */
-        .kpi-section { max-width: 1400px; margin: 0 auto; background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .kpi-section { max-width: 1600px; margin: 0 auto; background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .kpi-header-title { background: #2c3e50; color: white; padding: 15px 20px; font-size: 16px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
         .kpi-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .kpi-th { background: #f8f9fa; color: #333; font-weight: bold; padding: 12px; border: 1px solid #ddd; text-align: center; background: #eef2f5; }
+        .kpi-th { background: #f8f9fa; color: #333; font-weight: bold; padding: 12px; border: 1px solid #ddd; text-align: center; }
         .kpi-td { border: 1px solid #ddd; padding: 12px; vertical-align: middle; line-height: 1.6; }
         .kpi-td.center { text-align: center; }
         
@@ -79,6 +82,23 @@
         .editable { outline: none; transition: background 0.2s; border-radius: 4px; padding: 5px; }
         .editable:hover { background: #f8f9fa; cursor: pointer; }
         .editable:focus { background: #fff; border: 1px solid var(--primary); cursor: text; box-shadow: 0 0 5px rgba(74, 144, 226, 0.3); }
+
+        /* 하단 활동 내역 리스트 스타일 */
+        .log-section { max-width: 1600px; margin: 30px auto; background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; padding: 20px; box-sizing: border-box; }
+        .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .log-search { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; width: 250px; font-size: 13px; }
+        .log-list { list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto; }
+        .log-item { display: flex; flex-direction: column; padding: 15px; border-bottom: 1px solid #eee; transition: background 0.2s; cursor: pointer; }
+        .log-item:hover { background: #f9f9f9; }
+        .log-top { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #888; margin-bottom: 5px; }
+        .log-task { font-weight: bold; color: var(--navy); font-size: 14px; margin-bottom: 4px; }
+        .log-content { font-size: 13px; color: #555; white-space: pre-wrap; line-height: 1.4; }
+        .log-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 5px; color: white; }
+        .badge-risk { background: var(--danger); }
+        .badge-kpi { background: var(--primary); }
+        
+        .btn-log-delete { background: white; border: 1px solid #ccc; color: #888; border-radius: 4px; padding: 2px 8px; font-size: 11px; cursor: pointer; margin-left: 10px; }
+        .btn-log-delete:hover { border-color: #d9534f; color: #d9534f; background: #fff5f5; }
 
         /* 팝업 UI */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
@@ -89,58 +109,94 @@
         .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 20px; max-height: 80vh; overflow-y: auto; }
         .form-label { font-size: 13px; font-weight: bold; color: #666; margin-bottom: 8px; display: block; }
         .form-input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box; }
-        .row-2-col { display: flex; gap: 20px; }
-        .col { flex: 1; }
+        .row-2-col { display: flex; gap: 20px; } .col { flex: 1; }
         .risk-text { color: var(--danger); font-weight: bold; }
         .comment-section { background-color: #f1f3f5; padding: 15px; border-radius: 8px; }
         .comment-list { list-style: none; padding: 0; margin: 0 0 10px 0; max-height: 150px; overflow-y: auto; }
         .comment-item { font-size: 13px; color: #333; padding: 8px 0; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }
         .comment-item strong { color: var(--navy); }
         .comment-date { color: #888; font-size: 11px; margin-left: 5px; }
-        
-        /* 댓글 삭제 버튼 */
         .btn-del-comment { background: none; border: none; color: #999; cursor: pointer; font-size: 12px; margin-left: 10px; }
         .btn-del-comment:hover { color: #d9534f; font-weight: bold; }
-
         .comment-input-group { display: flex; gap: 8px; }
         .input-name { width: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; text-align: center; }
         .input-content { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
         .modal-footer { padding: 15px 20px; border-top: 1px solid #eee; background: #fff; text-align: right; display: flex; justify-content: flex-end; gap: 8px; }
         .btn { padding: 8px 20px; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; border: none; }
-        .btn-gray { background: #e0e0e0; color: #333; }
-        .btn-navy { background: var(--navy); color: white; }
+        .btn-gray { background: #e0e0e0; color: #333; } .btn-navy { background: var(--navy); color: white; }
         
         .preview-box { margin-top: 10px; padding: 10px; border: 1px dashed #ccc; border-radius: 5px; text-align: center; background: #fafafa; display: none; position: relative; }
-        .preview-img { max-width: 100%; max-height: 200px; border-radius: 5px; }
-        .btn-delete-img { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; }
-
+        .preview-img { max-width: 100%; max-height: 300px; border-radius: 5px; display: none; margin: 0 auto; }
+        .preview-pdf { width: 100%; height: 350px; border: 1px solid #ddd; border-radius: 5px; display: none; }
+        
+        .btn-delete-img { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; z-index: 10; }
         .tag-editor-list { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; background: #f8f9fa; border-radius: 5px; min-height: 50px; border: 1px solid #eee; margin-bottom: 10px; }
         .tag-item { display: flex; align-items: center; font-size: 12px; padding: 4px 8px; border-radius: 15px; border: 1px solid #ddd; font-weight: bold; }
         .tag-item .del-btn { margin-left: 6px; cursor: pointer; color: #888; font-weight: bold; }
         .tag-input-group { display: flex; gap: 5px; }
         .color-select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        
+        /* 로딩 스피너 */
+        #loading { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:9999; display: flex; flex-direction: column; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; color: var(--navy); }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* [NEW] Footer 스타일 추가 */
+        .footer {
+            max-width: 1600px; 
+            margin: 30px auto 0; 
+            padding: 20px; 
+            border-top: 1px solid #eee; 
+            position: relative; 
+            display: flex; 
+            justify-content: center; /* 텍스트 중앙 정렬 */
+            align-items: center;
+        }
+        .footer-text {
+            color: #999; 
+            font-size: 14px; 
+            font-weight: 500; 
+            margin: 0;
+        }
+        .footer-btn-group {
+            position: absolute; 
+            right: 20px; 
+            display: flex; 
+            gap: 8px;
+        }
+        .btn-link {
+            text-decoration: none; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
+
+    <div id="loading">
+        <div class="spinner"></div>
+        <div>데이터 동기화 중...</div>
+    </div>
 
     <div class="header-panel">
         <h2 style="text-align:center; margin-bottom: 20px;">대광 새마을금고 골프연습장 신축공사</h2>
         <div class="info-container">
             <div class="info-box">
                 <div class="info-title">📅 공사 기간</div>
-                <div id="infoPeriod" class="info-content" contenteditable="true" onblur="saveHeaderInfo()">
+                <div id="infoPeriod" class="info-content" contenteditable="true" onblur="updateDB()">
                     실착공일로부터 10개월 (2025.01 ~ 2025.10)
                 </div>
             </div>
             <div class="info-box">
                 <div class="info-title">🏢 공사 규모</div>
-                <div id="infoScale" class="info-content" contenteditable="true" onblur="saveHeaderInfo()">
+                <div id="infoScale" class="info-content" contenteditable="true" onblur="updateDB()">
                     지하1층 ~ 지상4층 / 49타석 (철골+RC조)
                 </div>
             </div>
             <div class="info-box pink">
                 <div class="info-title">🏆 안전 목표</div>
-                <div id="infoGoal" class="info-content" contenteditable="true" onblur="saveHeaderInfo()" style="color:#d9534f; font-weight:bold;">
+                <div id="infoGoal" class="info-content" contenteditable="true" onblur="updateDB()" style="color:#d9534f; font-weight:bold;">
                     중대재해 ZERO / 무재해 300일 달성
                 </div>
             </div>
@@ -154,58 +210,59 @@
     <div class="kpi-section">
         <div class="kpi-header-title">
             <span>📋 월별 안전보건 중점 활동 및 성과 목표 (KPI)</span>
-            <span style="font-size:12px; font-weight:normal; opacity:0.8;">※ 표의 내용을 클릭하여 직접 수정할 수 있습니다. (자동 저장)</span>
+            <span style="font-size:12px; font-weight:normal; opacity:0.8;">※ 모든 내용은 실시간으로 서버에 저장됩니다.</span>
         </div>
         <table class="kpi-table">
-            <colgroup>
-                <col style="width: 50px;">
-                <col style="width: 150px;">
-                <col style="width: 150px;">
-                <col style="width: auto;">
-                <col style="width: 120px;">
-                <col style="width: 120px;">
-            </colgroup>
+            <colgroup><col style="width: 50px;"><col style="width: 150px;"><col style="width: 150px;"><col style="width: auto;"><col style="width: 120px;"><col style="width: 120px;"></colgroup>
             <thead>
-                <tr>
-                    <th class="kpi-th">월</th>
-                    <th class="kpi-th">주요 공정</th>
-                    <th class="kpi-th">핵심 위험 (Risk)</th>
-                    <th class="kpi-th">안전보건 활동 (P-D-C-A)</th>
-                    <th class="kpi-th">성과 지표 (KPI)</th>
-                    <th class="kpi-th">법적 서류</th>
-                </tr>
+                <tr><th class="kpi-th">월</th><th class="kpi-th">주요 공정</th><th class="kpi-th">핵심 위험</th><th class="kpi-th">안전보건 활동</th><th class="kpi-th">성과 지표</th><th class="kpi-th">법적 서류</th></tr>
             </thead>
             <tbody id="kpiTableBody"></tbody>
         </table>
     </div>
 
+    <div class="log-section">
+        <div class="log-header">
+            <h3 style="margin:0;">📊 실시간 안전활동 등록 현황 (최신순)</h3>
+            <input type="text" id="logSearchInput" class="log-search" placeholder="공종명, 내용 검색..." onkeyup="renderActivityLog()">
+        </div>
+        <ul id="activityLogList" class="log-list">
+            <li style="text-align:center; padding:20px; color:#999;">데이터를 불러오는 중입니다...</li>
+        </ul>
+    </div>
+
+    <!-- [NEW] Footer 추가 (수원 현장과 동일하게 적용) -->
+    <div class="footer">
+        <!-- 중앙 텍스트 -->
+        <p class="footer-text">남화토건(주) 안전보건팀</p>
+        
+        <!-- 우측 정렬 버튼 -->
+        <div class="footer-btn-group">
+            <a href="safety_dashboard.html?siteId=siteA" class="btn btn-navy btn-link">
+                🛡️ 안전 대시보드 바로가기
+            </a>
+            <a href="index.html" class="btn btn-gray btn-link">
+                나가기
+            </a>
+        </div>
+    </div>
+
     <div id="modal" class="modal-overlay">
         <div class="modal-box">
-            <div class="modal-header">
-                <h3 class="modal-title" id="modalTitle">공정 상세 활동</h3>
-                <button class="btn-close" onclick="closeModal()">×</button>
-            </div>
+            <div class="modal-header"><h3 class="modal-title" id="modalTitle">공정 상세 활동</h3><button class="btn-close" onclick="closeModal()">×</button></div>
             <div class="modal-body">
                 <div class="row-2-col">
-                    <div class="col">
-                        <label class="form-label">⚠️ 핵심 위험 (Risk) - <span>수정 가능</span></label>
-                        <input type="text" id="modalRisk" class="form-input risk-text">
-                    </div>
-                    <div class="col">
-                        <label class="form-label">📈 성과 지표 (KPI) - <span>수정 가능</span></label>
-                        <input type="text" id="modalKPI" class="form-input">
-                    </div>
+                    <div class="col"><label class="form-label">⚠️ 핵심 위험</label><input type="text" id="modalRisk" class="form-input risk-text"></div>
+                    <div class="col"><label class="form-label">📈 성과 지표</label><input type="text" id="modalKPI" class="form-input"></div>
                 </div>
+                <div><label class="form-label">📝 안전보건 활동 일지</label><textarea id="modalActivity" class="form-input" rows="4"></textarea></div>
                 <div>
-                    <label class="form-label">📝 금일 안전보건 활동 기록</label>
-                    <textarea id="modalActivity" class="form-input" rows="4"></textarea>
-                </div>
-                <div>
-                    <label class="form-label">📸 사진/문서 첨부</label>
-                    <input type="file" id="fileInput" class="form-input" style="padding: 6px;" accept="image/*" onchange="handleFileSelect(this)">
+                    <label class="form-label">📸 사진/문서 첨부 (이미지 or PDF)</label>
+                    <input type="file" id="fileInput" class="form-input" style="padding: 6px;" accept="image/*, .pdf" onchange="handleFileSelect(this)">
                     <div id="previewBox" class="preview-box">
-                        <button class="btn-delete-img" onclick="deleteImage()">×</button>
+                        <button class="btn-delete-img" onclick="deleteFile()">×</button>
                         <img id="previewImg" class="preview-img" src="">
+                        <iframe id="previewPdf" class="preview-pdf" src=""></iframe>
                     </div>
                 </div>
                 <div class="comment-section">
@@ -227,105 +284,133 @@
 
     <div id="safetyModal" class="modal-overlay">
         <div class="modal-box" style="width: 450px;">
-            <div class="modal-header">
-                <h3 class="modal-title" id="safetyModalTitle">일정 태그 수정</h3>
-                <button class="btn-close" onclick="closeSafetyModal()">×</button>
-            </div>
+            <div class="modal-header"><h3 class="modal-title" id="safetyModalTitle">일정 태그 수정</h3><button class="btn-close" onclick="closeSafetyModal()">×</button></div>
             <div class="modal-body">
-                <p style="font-size:13px; color:#666; margin-bottom:10px;">해당 월의 활동 태그를 추가하거나 삭제하세요.</p>
-                <label class="form-label">현재 등록된 태그</label>
-                <div id="currentTagList" class="tag-editor-list"></div>
+                <label class="form-label">현재 등록된 태그</label><div id="currentTagList" class="tag-editor-list"></div>
                 <label class="form-label">새 태그 추가</label>
                 <div class="tag-input-group">
                     <select id="newTagColor" class="color-select">
-                        <option value="blue">평가(파랑)</option>
-                        <option value="green">교육(초록)</option>
-                        <option value="red">특별(빨강)</option>
-                        <option value="orange">점검(주황)</option>
-                        <option value="pink">측정(분홍)</option>
-                        <option value="purple">회의(보라)</option>
+                        <option value="blue">평가(파랑)</option><option value="green">교육(초록)</option><option value="red">특별(빨강)</option><option value="orange">점검(주황)</option><option value="pink">측정(분홍)</option><option value="purple">회의(보라)</option>
                     </select>
-                    <input type="text" id="newTagText" class="form-input" placeholder="내용 (예: 정기교육)">
+                    <input type="text" id="newTagText" class="form-input" placeholder="내용">
                     <button class="btn btn-navy" style="padding: 0 15px;" onclick="addSafetyTag()">추가</button>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-gray" onclick="closeSafetyModal()">취소</button>
-                <button class="btn btn-navy" onclick="saveSafetyChanges()">적용하기</button>
-            </div>
+            <div class="modal-footer"><button class="btn btn-gray" onclick="closeSafetyModal()">취소</button><button class="btn btn-navy" onclick="saveSafetyChanges()">적용하기</button></div>
         </div>
     </div>
 
-    <script>
-        // === 데이터 및 변수 ===
-        const constructionData = [
-            { name: "가설/토공사", start: 1, duration: 1, color: "bg-grey", label: "가설(EGI)/터파기", risk: "가설물 전도, 협착", kpi: "교육 이수율 100%" },
-            { name: "기초/지하골조", start: 2, duration: 1, color: "bg-blue", label: "기초/지하", risk: "거푸집 붕괴, 질식", kpi: "밀폐공간 허가 100%" },
-            { name: "지상골조(RC)", start: 3, duration: 3, color: "bg-blue", label: "1F~4F 골조", risk: "단부 추락, 붕괴", kpi: "TBM 참여율 100%" },
-            { name: "철골/철탑공사", start: 3, duration: 2, color: "bg-red", label: "철탑/타석 빔", risk: "크레인 전도, 낙하", kpi: "위험요인 개선율 90%" },
-            { name: "마감/창호/방수", start: 6, duration: 2, color: "bg-yellow", label: "내외장/방수", risk: "중독, 말비계 전도", kpi: "부적합 사항 조치율 100%" },
-            { name: "비계해체/정리", start: 7, duration: 1, color: "bg-warning", label: "비계해체", risk: "해체 중 추락, 낙하", kpi: "아차사고 발굴 5건↑" },
-            { name: "부대토목/조경", start: 9, duration: 1, color: "bg-green", label: "포장/조경", risk: "장비 충돌, 협착", kpi: "장비점검 실시율 100%" },
-            { name: "준공/인계", start: 10, duration: 1, color: "bg-dark", label: "준공", risk: "전도, 폐기물 사고", kpi: "무재해 달성" }
-        ];
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-        const defaultSafetyRows = [
-            { title: "위험성평가", monthlyTags: { 1: ["최초평가|blue", "TBM|pink"], 2: ["수시|blue", "TBM|pink"], 3: ["수시|blue", "TBM|pink"], 6: ["정기|blue"] } },
-            { title: "안전교육", monthlyTags: { 1: ["채용시|green"], 2: ["특별(밀폐)|red"], 3: ["특별(철탑)|red"], 5: ["정기|green"] } },
-            { title: "협의체/회의", monthlyTags: { 1: ["협의체|purple"], 2: ["협의체|purple"], 3: ["협의체|purple"] } },
-            { title: "법적점검", monthlyTags: { 1: ["해빙기|orange"], 2: ["합동|orange"], 6: ["장마철|orange"] } },
-            { title: "성과측정", monthlyTags: { 1: ["이행점검|pink"], 6: ["경영검토|pink"] } }
-        ];
-
-        const defaultKpiData = [
-            { month: 1, process: "가설(EGI), 터파기", risk: "가설물 전도, 협착", activity: "• [평가] 최초 위험성평가 실시 및 전파\n• [교육] 신규자 특별안전교육(장비)\n• [점검] 월간 합동 안전점검 (1회차)", kpi: "교육 이수율 100%", docs: "유해위험\n방지계획서" },
-            { month: 2, process: "기초/지하 골조", risk: "거푸집 붕괴, 질식", activity: "• [평가] 골조공사 상시 위험성평가\n• [교육] 밀폐공간 작업 특별교육\n• [점검] 합동점검: 개구부 덮개 확인", kpi: "밀폐공간\n허가 100%", docs: "콘크리트\n타설승인" },
-            { month: 3, process: "철탑(60m) 인양", risk: "크레인 전도, 낙하", activity: "• [평가] 철탑 인양 수시 위험성평가\n• [분석] 1분기 안전관리비 사용내역 분석\n• [점검] 합동점검: 줄걸이 및 지반상태", kpi: "위험요인\n개선율 90%↑", docs: "중량물\n작업계획서" },
-            { month: 4, process: "지상 골조, 타석철골", risk: "용접 화재, 추락", activity: "• [활동] 화기작업 허가제 및 감시자 배치\n• [TBM] 철골 위 이동 시 생명줄 체결\n• [협의] 협력업체 소장단 안전보건협의체", kpi: "화기작업\n승인 100%", docs: "화기작업\n허가서" },
-            { month: 5, process: "옥상 골조, 데크", risk: "단부 추락, 붕괴", activity: "• [교육] 데크플레이트 특별안전교육\n• [점검] 합동점검: 데크 용접부 확인\n• [TBM] 슬래브 단부 안전난간 상태 확인", kpi: "TBM\n참여율 100%", docs: "비계조립\n승인서" },
-            { month: 6, process: "조적/방수/창호", risk: "중독, 말비계 전도", activity: "• [검토] 상반기 안전보건 이행결과 경영검토\n• [활동] 밀폐공간 질식재해 예방 프로그램\n• [점검] 우기 대비 특별 합동점검", kpi: "부적합 사항\n조치율 100%", docs: "MSDS\n교육일지" },
-            { month: 7, process: "외벽/비계 해체", risk: "해체 중 추락/낙하", activity: "• [평가] 비계 해체작업 수시 위험성평가\n• [교육] 해체 작업자 특별안전교육\n• [점검] 합동점검: 하부 통제구역 설정", kpi: "아차사고\n발굴 5건↑", docs: "해체\n계획서" },
-            { month: 8, process: "내부 수장/천장", risk: "사다리 추락, 화재", activity: "• [교육] 화재 예방 및 비상 대피 훈련\n• [TBM] 이동식 사다리 전도방지 조치\n• [점검] 합동점검: 가설전기 누전 확인", kpi: "비상훈련\n실시 완료", docs: "가설전기\n점검표" },
-            { month: 9, process: "토목, 설비(오토티업)", risk: "장비 충돌, 협착", activity: "• [분석] 3분기 합동안전점검 결과 분석\n• [활동] 오토티업 설비 LOTO 준수\n• [점검] 합동점검: 장비 유도원 배치", kpi: "장비점검\n실시율 100%", docs: "기계기구\n방호조치" },
-            { month: 10, process: "준공 청소, 인계", risk: "전도, 폐기물 사고", activity: "• [검토] 공사 전체 무재해 달성 최종 확인\n• [평가] 준공 마무리 작업 위험성평가\n• [정리] 안전시설물 철거 시 관리자 입회", kpi: "무재해\n달성", docs: "안전보건\n대장" }
-        ];
-
-        const defaultHeaderInfo = {
-            period: "실착공일로부터 10개월 (2025.01 ~ 2025.10)",
-            scale: "지하1층 ~ 지상4층 / 49타석 (철골+RC조)",
-            goal: "중대재해 ZERO / 무재해 300일 달성"
+        // ============================================
+        // [파이어베이스 설정]
+        // ============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDmc99sQdztu_-BXObXtB_dnWeQYj6p_SI",
+            authDomain: "namhwa-safety-6bb36.firebaseapp.com",
+            projectId: "namhwa-safety-6bb36",
+            storageBucket: "namhwa-safety-6bb36.firebasestorage.app",
+            messagingSenderId: "841961578562",
+            appId: "1:841961578562:web:85c500cea7727d9e0fcddb"
         };
 
-        // 로컬 스토리지 데이터 로드
-        let allComments = JSON.parse(localStorage.getItem('namhwaComments')) || {};
-        let allDetails = JSON.parse(localStorage.getItem('namhwaDetails')) || {};
-        let safetyData = JSON.parse(localStorage.getItem('namhwaSafetyData')) || defaultSafetyRows;
-        let kpiData = JSON.parse(localStorage.getItem('namhwaKpiData')) || defaultKpiData;
-        let headerData = JSON.parse(localStorage.getItem('namhwaHeaderInfo')) || defaultHeaderInfo;
-
-        // --- 렌더링 함수들 ---
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
         
-        function renderHeader() {
-            document.getElementById('infoPeriod').innerText = headerData.period;
-            document.getElementById('infoScale').innerText = headerData.scale;
-            document.getElementById('infoGoal').innerText = headerData.goal;
+        // ★ [중요] 대광 현장용 DB 문서 ID (수원과 분리) ★
+        const SITE_ID = "daegwang_golf_center"; 
+        const docRef = doc(db, "projects", SITE_ID);
+
+        // 기본 데이터 구조 (초기값 - 대광 현장에 맞게 조정됨)
+        let globalData = {
+            headerInfo: {
+                period: "실착공일로부터 10개월 (2025.01 ~ 2025.10)",
+                scale: "지하1층 ~ 지상4층 / 49타석 (철골+RC조)",
+                goal: "중대재해 ZERO / 무재해 300일 달성"
+            },
+            prepConst: {},
+            prepSafety: {},
+            comments: {},
+            taskDetails: {},
+            kpiData: [
+                { month: 1, process: "가설(EGI), 터파기", risk: "가설물 전도, 협착", activity: "• [평가] 최초 위험성평가\n• [교육] 신규자 특별안전교육", kpi: "교육 이수율 100%", docs: "유해위험방지계획서" },
+                { month: 2, process: "기초/지하 골조", risk: "거푸집 붕괴, 질식", activity: "• [평가] 상시 위험성평가\n• [교육] 밀폐공간 특별교육", kpi: "밀폐공간 허가 100%", docs: "콘크리트 타설승인" },
+                { month: 3, process: "철탑(60m) 인양", risk: "크레인 전도, 낙하", activity: "• [평가] 철탑 인양 수시 위험성평가\n• [점검] 합동점검: 줄걸이 및 지반상태", kpi: "위험요인 개선율 90%↑", docs: "중량물 작업계획서" },
+                { month: 4, process: "지상 골조", risk: "용접 화재, 추락", activity: "• [활동] 화기작업 허가제\n• [TBM] 철골 위 이동 시 생명줄", kpi: "화기작업 승인 100%", docs: "화기작업 허가서" },
+                { month: 5, process: "옥상 골조", risk: "단부 추락, 붕괴", activity: "• [교육] 데크플레이트 특별교육\n• [점검] 데크 용접부 확인", kpi: "TBM 참여율 100%", docs: "비계조립 승인서" },
+                { month: 6, process: "마감 공사", risk: "중독, 전도", activity: "• [활동] 밀폐공간 프로그램\n• [점검] 우기 대비 점검", kpi: "조치율 100%", docs: "MSDS 교육일지" },
+                { month: 7, process: "비계 해체", risk: "추락, 낙하", activity: "• [평가] 해체작업 위험성평가\n• [점검] 하부 통제구역 설정", kpi: "아차사고 5건", docs: "해체 계획서" },
+                { month: 8, process: "내부 수장", risk: "사다리 추락", activity: "• [교육] 비상 대피 훈련\n• [TBM] 사다리 전도방지", kpi: "비상훈련 완료", docs: "가설전기 점검표" },
+                { month: 9, process: "부대 토목", risk: "장비 충돌", activity: "• [활동] 장비 유도원 배치\n• [점검] 장비 방호장치 확인", kpi: "장비점검 100%", docs: "기계기구 방호" },
+                { month: 10, process: "준공 청소", risk: "전도", activity: "• [검토] 무재해 달성 확인\n• [정리] 안전시설물 철거", kpi: "무재해 달성", docs: "안전보건대장" }
+            ],
+            safetyData: [
+                { title: "위험성평가", monthlyTags: { 1: ["최초평가|blue"], 6: ["정기|blue"] } },
+                { title: "안전교육", monthlyTags: { 1: ["채용시|green"] } },
+                { title: "협의체/회의", monthlyTags: { 1: ["협의체|purple"] } },
+                { title: "법적점검", monthlyTags: { 1: ["해빙기|orange"] } },
+                { title: "성과측정", monthlyTags: { 1: ["이행점검|pink"] } }
+            ]
+        };
+
+        // 공정 데이터 (대광 현장 10개월)
+        const constructionData = [
+            { name: "가설/토공사", start: 1, duration: 1, color: "bg-grey", label: "가설(EGI)/터파기" },
+            { name: "기초/지하골조", start: 2, duration: 1, color: "bg-blue", label: "기초/지하" },
+            { name: "지상골조(RC)", start: 3, duration: 3, color: "bg-blue", label: "1F~4F 골조" },
+            { name: "철골/철탑공사", start: 3, duration: 2, color: "bg-red", label: "철탑/타석 빔" },
+            { name: "마감/창호/방수", start: 6, duration: 2, color: "bg-yellow", label: "내외장/방수" },
+            { name: "비계해체/정리", start: 7, duration: 1, color: "bg-warning", label: "비계해체" },
+            { name: "부대토목/조경", start: 9, duration: 1, color: "bg-green", label: "포장/조경" },
+            { name: "준공/인계", start: 10, duration: 1, color: "bg-dark", label: "준공" }
+        ];
+
+        // 1. Firebase 읽기 (Real-time)
+        onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                globalData = { ...globalData, ...data };
+                if(!globalData.prepConst) globalData.prepConst = {};
+                if(!globalData.prepSafety) globalData.prepSafety = {};
+                // KPI 데이터 보정 (10개 맞추기)
+                if(globalData.kpiData) {
+                    for(let i=0; i<10; i++) {
+                        if(!globalData.kpiData[i]) globalData.kpiData[i] = { month: i+1, process:"", risk:"", activity:"", kpi:"", docs:"" };
+                    }
+                }
+            } else {
+                setDoc(docRef, globalData); // 문서 생성
+            }
+            renderAll();
+            document.getElementById('loading').style.display = 'none';
+        });
+
+        // 2. 렌더링
+        function renderAll() {
+            renderHeader();
+            renderGrid();
+            renderKpiTable();
+            renderActivityLog();
         }
 
-        function saveHeaderInfo() {
-            const period = document.getElementById('infoPeriod').innerText;
-            const scale = document.getElementById('infoScale').innerText;
-            const goal = document.getElementById('infoGoal').innerText;
-            headerData = { period, scale, goal };
-            localStorage.setItem('namhwaHeaderInfo', JSON.stringify(headerData));
+        function renderHeader() {
+            document.getElementById('infoPeriod').innerText = globalData.headerInfo.period;
+            document.getElementById('infoScale').innerText = globalData.headerInfo.scale;
+            document.getElementById('infoGoal').innerText = globalData.headerInfo.goal;
         }
 
         function renderGrid() {
             const grid = document.getElementById('mainGrid');
-            grid.innerHTML = "";
-            grid.innerHTML += `<div class="cell-header">구분 / 월</div>`;
+            grid.innerHTML = `<div class="cell-header">구분</div><div class="cell-header prep-header">착공준비</div>`;
             for(let i=1; i<=10; i++) grid.innerHTML += `<div class="cell-header">${i}월</div>`;
+
+            // 공정
             constructionData.forEach((task, index) => {
                 let rowHTML = `<div class="cell cell-sidebar">${task.name}</div>`;
+                let prepVal = globalData.prepConst[index] || "";
+                rowHTML += `<div class="cell prep-cell" contenteditable="true" onblur="updatePrep('const', ${index}, this.innerText)">${prepVal}</div>`;
                 for(let i=1; i<=10; i++) {
                     if(i === task.start) {
                         rowHTML += `<div class="cell" style="grid-column: span ${task.duration}; background:#fff; padding:5px;"><div class="task-bar ${task.color}" onclick="openModal(${index})">${task.label}</div></div>`;
@@ -334,12 +419,17 @@
                 }
                 grid.innerHTML += rowHTML;
             });
+
             grid.innerHTML += `<div class="divider-row">▼ 법적 안전관리 및 성과 측정 일정 (클릭하여 수정)</div>`;
-            safetyData.forEach((row, rowIndex) => {
+
+            // 안전
+            globalData.safetyData.forEach((row, rowIndex) => {
                 let rowHTML = `<div class="cell cell-sidebar safety-row">${row.title}</div>`;
+                let prepVal = globalData.prepSafety[rowIndex] || "";
+                rowHTML += `<div class="cell prep-cell" contenteditable="true" onblur="updatePrep('safety', ${rowIndex}, this.innerText)">${prepVal}</div>`;
                 for(let i=1; i<=10; i++) {
                     let tagsHTML = "";
-                    if(row.monthlyTags[i]) {
+                    if(row.monthlyTags && row.monthlyTags[i]) {
                         row.monthlyTags[i].forEach(tagStr => {
                             const [text, color] = tagStr.split("|");
                             tagsHTML += `<div class="tag ${color}">${text}</div>`;
@@ -354,156 +444,209 @@
         function renderKpiTable() {
             const tbody = document.getElementById('kpiTableBody');
             tbody.innerHTML = "";
-            kpiData.forEach((row, index) => {
+            globalData.kpiData.forEach((row, index) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="kpi-td center"><strong>${row.month}월</strong></td>
-                    <td class="kpi-td editable center" contenteditable="true" onblur="updateKpiData(${index}, 'process', this.innerText)">${row.process}</td>
-                    <td class="kpi-td editable center text-red" contenteditable="true" onblur="updateKpiData(${index}, 'risk', this.innerText)">${row.risk}</td>
-                    <td class="kpi-td editable" contenteditable="true" style="white-space: pre-wrap;" onblur="updateKpiData(${index}, 'activity', this.innerText)">${row.activity}</td>
-                    <td class="kpi-td editable center text-blue" contenteditable="true" style="white-space: pre-wrap;" onblur="updateKpiData(${index}, 'kpi', this.innerText)">${row.kpi}</td>
-                    <td class="kpi-td editable center" contenteditable="true" style="white-space: pre-wrap;" onblur="updateKpiData(${index}, 'docs', this.innerText)">${row.docs}</td>
+                    <td class="kpi-td editable center" contenteditable="true" onblur="updateKpi(${index}, 'process', this.innerText)">${row.process || ""}</td>
+                    <td class="kpi-td editable center text-red" contenteditable="true" onblur="updateKpi(${index}, 'risk', this.innerText)">${row.risk || ""}</td>
+                    <td class="kpi-td editable" contenteditable="true" style="white-space: pre-wrap;" onblur="updateKpi(${index}, 'activity', this.innerText)">${row.activity || ""}</td>
+                    <td class="kpi-td editable center text-blue" contenteditable="true" style="white-space: pre-wrap;" onblur="updateKpi(${index}, 'kpi', this.innerText)">${row.kpi || ""}</td>
+                    <td class="kpi-td editable center" contenteditable="true" style="white-space: pre-wrap;" onblur="updateKpi(${index}, 'docs', this.innerText)">${row.docs || ""}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
-        function updateKpiData(index, key, value) {
-            kpiData[index][key] = value;
-            localStorage.setItem('namhwaKpiData', JSON.stringify(kpiData));
-        }
 
-        renderHeader();
-        renderGrid();
-        renderKpiTable();
+        // 3. 쓰기 (전역 함수)
+        window.updateDB = async function() {
+            globalData.headerInfo = {
+                period: document.getElementById('infoPeriod').innerText,
+                scale: document.getElementById('infoScale').innerText,
+                goal: document.getElementById('infoGoal').innerText
+            };
+            await updateDoc(docRef, { headerInfo: globalData.headerInfo });
+        };
 
-        // --- 팝업 로직 ---
+        window.updatePrep = async function(type, index, value) {
+            if(type === 'const') globalData.prepConst[index] = value;
+            else globalData.prepSafety[index] = value;
+            await updateDoc(docRef, { prepConst: globalData.prepConst, prepSafety: globalData.prepSafety });
+        };
+
+        window.updateKpi = async function(index, key, value) {
+            globalData.kpiData[index][key] = value;
+            await updateDoc(docRef, { kpiData: globalData.kpiData });
+        };
+
+        // --- 팝업 ---
         let currentTaskIndex = null;
-        let tempImageBase64 = null;
-        const modal = document.getElementById('modal');
-        const previewBox = document.getElementById('previewBox');
-        const previewImg = document.getElementById('previewImg');
-        const fileInput = document.getElementById('fileInput');
+        let tempFileBase64 = null; // [수정됨] 변수명 변경 (Image->File)
 
-        function openModal(index) {
+        window.openModal = function(index) {
             currentTaskIndex = index;
-            const defaultData = constructionData[index];
-            const savedDetail = allDetails[index] || {};
-            document.getElementById('modalTitle').innerText = defaultData.label + " 상세 활동";
-            document.getElementById('modalRisk').value = savedDetail.risk !== undefined ? savedDetail.risk : (defaultData.risk || "");
-            document.getElementById('modalKPI').value = savedDetail.kpi !== undefined ? savedDetail.kpi : (defaultData.kpi || "");
+            const savedDetail = (globalData.taskDetails && globalData.taskDetails[index]) || {};
+            const defaultLabel = constructionData[index].label;
+
+            document.getElementById('modalTitle').innerText = defaultLabel + " 상세 활동";
+            document.getElementById('modalRisk').value = savedDetail.risk || "";
+            document.getElementById('modalKPI').value = savedDetail.kpi || "";
             document.getElementById('modalActivity').value = savedDetail.activity || "";
-            fileInput.value = "";
-            tempImageBase64 = savedDetail.imageData || null;
-            if (tempImageBase64) {
-                previewImg.src = tempImageBase64;
+            
+            document.getElementById('fileInput').value = "";
+            tempFileBase64 = savedDetail.imageData || null; // 예전 키값 유지(imageData)
+            
+            // [수정됨] 저장된 파일이 PDF인지 이미지인지 확인하여 표시
+            const previewBox = document.getElementById('previewBox');
+            const previewImg = document.getElementById('previewImg');
+            const previewPdf = document.getElementById('previewPdf');
+            
+            if (tempFileBase64) {
                 previewBox.style.display = "block";
+                // 데이터 헤더로 타입 구분
+                if(tempFileBase64.startsWith("data:application/pdf")) {
+                    previewImg.style.display = "none";
+                    previewPdf.style.display = "block";
+                    previewPdf.src = tempFileBase64;
+                } else {
+                    previewPdf.style.display = "none";
+                    previewImg.style.display = "block";
+                    previewImg.src = tempFileBase64;
+                }
             } else {
                 previewBox.style.display = "none";
                 previewImg.src = "";
+                previewPdf.src = "";
             }
-            // 댓글 렌더링
-            const list = document.getElementById('commentList');
-            list.innerHTML = "";
-            if (allComments[index]) allComments[index].forEach((c, i) => renderComment(c.name, c.content, c.date, i));
-            modal.style.display = 'flex';
-        }
-        function closeModal() { modal.style.display = 'none'; }
-        
-        function handleFileSelect(input) {
+            renderComments(index);
+            document.getElementById('modal').style.display = 'flex';
+        };
+
+        window.closeModal = function() { document.getElementById('modal').style.display = 'none'; };
+
+        // [수정됨] 파일 처리 (PDF 지원)
+        window.handleFileSelect = function(input) {
             if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                // 파일 용량 체크 (예: 2MB 제한) - Base64 변환 시 용량 커짐 주의
+                if(file.size > 2 * 1024 * 1024) {
+                    alert("파일 크기가 너무 큽니다. (2MB 이하만 가능)");
+                    input.value = "";
+                    return;
+                }
+
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    tempImageBase64 = e.target.result;
-                    previewImg.src = tempImageBase64;
+                    tempFileBase64 = e.target.result;
+                    const previewBox = document.getElementById('previewBox');
+                    const previewImg = document.getElementById('previewImg');
+                    const previewPdf = document.getElementById('previewPdf');
+                    
                     previewBox.style.display = "block";
+                    
+                    if(file.type === "application/pdf") {
+                        previewImg.style.display = "none";
+                        previewPdf.style.display = "block";
+                        previewPdf.src = tempFileBase64;
+                    } else {
+                        previewPdf.style.display = "none";
+                        previewImg.style.display = "block";
+                        previewImg.src = tempFileBase64;
+                    }
                 };
-                reader.readAsDataURL(input.files[0]);
+                reader.readAsDataURL(file);
             }
-        }
-        function deleteImage() {
-            if(confirm("삭제하시겠습니까?")) {
-                tempImageBase64 = null;
-                previewBox.style.display = "none";
-                fileInput.value = "";
+        };
+
+        window.deleteFile = function() {
+            if(confirm("첨부파일을 삭제하시겠습니까?")) {
+                tempFileBase64 = null;
+                document.getElementById('previewBox').style.display = "none";
+                document.getElementById('previewImg').src = "";
+                document.getElementById('previewPdf').src = "";
+                document.getElementById('fileInput').value = "";
             }
-        }
-        function saveTaskDetails() {
+        };
+
+        // [수정] 저장 기능
+        window.saveTaskDetails = async function() {
             try {
-                allDetails[currentTaskIndex] = {
+                if(!globalData.taskDetails) globalData.taskDetails = {};
+                globalData.taskDetails[currentTaskIndex] = {
                     risk: document.getElementById('modalRisk').value,
                     kpi: document.getElementById('modalKPI').value,
                     activity: document.getElementById('modalActivity').value,
-                    imageData: tempImageBase64
+                    imageData: tempFileBase64, // 변수값 저장
+                    lastUpdated: new Date().toISOString()
                 };
-                localStorage.setItem('namhwaDetails', JSON.stringify(allDetails));
-                alert("저장되었습니다.");
-            } catch (e) { alert("저장 실패: 이미지 용량 초과"); }
-        }
+                await updateDoc(docRef, { taskDetails: globalData.taskDetails });
+                alert("✅ [저장 완료]\n\n안전보건 활동 내역이 서버에 안전하게 저장되었습니다.\n화면 하단 목록에서 내역을 확인하실 수 있습니다.");
+                closeModal();
+            } catch(e) { 
+                alert("❌ 저장 실패: 인터넷 연결을 확인하거나 파일 용량을 줄여주세요."); 
+                console.error(e); 
+            }
+        };
 
-        // --- 댓글 기능 (삭제 포함) ---
-        function addComment() {
+        window.addComment = async function() {
             const name = document.getElementById('writerName').value.trim();
             const content = document.getElementById('commentContent').value.trim();
-            if(!name || !content) { alert("입력하세요."); return; }
+            if(!name || !content) return alert("입력하세요");
+            
             const dateStr = new Date().toISOString().slice(0,10);
-            
-            if (!allComments[currentTaskIndex]) allComments[currentTaskIndex] = [];
-            allComments[currentTaskIndex].push({ name, content, date: dateStr });
-            localStorage.setItem('namhwaComments', JSON.stringify(allComments));
-            
-            // 리스트 갱신
+            const newComment = { name, content, date: dateStr };
+
+            if(!globalData.comments) globalData.comments = {};
+            if(!globalData.comments[currentTaskIndex]) globalData.comments[currentTaskIndex] = [];
+            globalData.comments[currentTaskIndex].push(newComment);
+
+            await updateDoc(docRef, { comments: globalData.comments });
+            document.getElementById('commentContent').value = '';
+            renderComments(currentTaskIndex); 
+        };
+
+        function renderComments(index) {
             const list = document.getElementById('commentList');
             list.innerHTML = "";
-            allComments[currentTaskIndex].forEach((c, i) => renderComment(c.name, c.content, c.date, i));
-            
-            document.getElementById('commentContent').value = '';
+            const comments = (globalData.comments && globalData.comments[index]) || [];
+            comments.forEach((c, i) => {
+                const li = document.createElement('li');
+                li.className = 'comment-item';
+                li.innerHTML = `<div><strong>${c.name}:</strong> ${c.content} <span class="comment-date">(${c.date})</span></div><button class="btn-del-comment" onclick="deleteComment(${i})">삭제</button>`;
+                list.appendChild(li);
+            });
         }
 
-        function renderComment(name, content, date, index) {
-            const list = document.getElementById('commentList');
-            const newLi = document.createElement('li');
-            newLi.className = 'comment-item';
-            newLi.innerHTML = `
-                <div><strong>${name}:</strong> ${content} <span class="comment-date">(${date})</span></div>
-                <button class="btn-del-comment" onclick="deleteComment(${index})">삭제</button>
-            `;
-            list.appendChild(newLi);
-        }
+        window.deleteComment = async function(idx) {
+            const pwd = prompt("관리자 비밀번호:");
+            if(pwd === "1234") {
+                globalData.comments[currentTaskIndex].splice(idx, 1);
+                await updateDoc(docRef, { comments: globalData.comments });
+                renderComments(currentTaskIndex);
+            } else if(pwd !== null) alert("비밀번호 오류");
+        };
 
-        // 댓글 삭제 (비밀번호 확인)
-        function deleteComment(commentIndex) {
-            const password = prompt("관리자 비밀번호를 입력하세요:");
-            if (password === "1234") {
-                allComments[currentTaskIndex].splice(commentIndex, 1);
-                localStorage.setItem('namhwaComments', JSON.stringify(allComments));
-                // 리스트 갱신
-                const list = document.getElementById('commentList');
-                list.innerHTML = "";
-                allComments[currentTaskIndex].forEach((c, i) => renderComment(c.name, c.content, c.date, i));
-                alert("삭제되었습니다.");
-            } else {
-                if (password !== null) alert("비밀번호가 틀렸습니다.");
-            }
-        }
-
-        // --- 안전일정 편집 ---
+        // --- 태그 편집 ---
         let safetyEditRow = null;
         let safetyEditMonth = null;
         let tempTags = [];
-        const safetyModal = document.getElementById('safetyModal');
-        function openSafetyModal(rowIdx, month) {
+
+        window.openSafetyModal = function(rowIdx, month) {
             safetyEditRow = rowIdx;
             safetyEditMonth = month;
             document.getElementById('safetyModalTitle').innerText = `${month}월 일정 수정`;
             tempTags = [];
-            if (safetyData[rowIdx].monthlyTags && safetyData[rowIdx].monthlyTags[month]) {
-                tempTags = [...safetyData[rowIdx].monthlyTags[month]];
+            if (globalData.safetyData[rowIdx].monthlyTags && globalData.safetyData[rowIdx].monthlyTags[month]) {
+                tempTags = [...globalData.safetyData[rowIdx].monthlyTags[month]];
             }
             renderTempTags();
             document.getElementById('newTagText').value = "";
-            safetyModal.style.display = 'flex';
-        }
-        function closeSafetyModal() { safetyModal.style.display = 'none'; }
+            document.getElementById('safetyModal').style.display = 'flex';
+        };
+
+        window.closeSafetyModal = function() { document.getElementById('safetyModal').style.display = 'none'; };
+
         function renderTempTags() {
             const container = document.getElementById('currentTagList');
             container.innerHTML = "";
@@ -515,7 +658,8 @@
                 container.appendChild(span);
             });
         }
-        function addSafetyTag() {
+
+        window.addSafetyTag = function() {
             const text = document.getElementById('newTagText').value.trim();
             const color = document.getElementById('newTagColor').value;
             if(!text) return;
@@ -523,18 +667,99 @@
             renderTempTags();
             document.getElementById('newTagText').value = "";
             document.getElementById('newTagText').focus();
-        }
+        };
+
         window.removeSafetyTag = function(idx) {
             tempTags.splice(idx, 1);
             renderTempTags();
-        }
-        function saveSafetyChanges() {
-            if (!safetyData[safetyEditRow].monthlyTags) safetyData[safetyEditRow].monthlyTags = {};
-            safetyData[safetyEditRow].monthlyTags[safetyEditMonth] = tempTags;
-            localStorage.setItem('namhwaSafetyData', JSON.stringify(safetyData));
-            renderGrid();
+        };
+
+        window.saveSafetyChanges = async function() {
+            if (!globalData.safetyData[safetyEditRow].monthlyTags) globalData.safetyData[safetyEditRow].monthlyTags = {};
+            globalData.safetyData[safetyEditRow].monthlyTags[safetyEditMonth] = tempTags;
+            await updateDoc(docRef, { safetyData: globalData.safetyData });
             closeSafetyModal();
-        }
+        };
+
+        window.deleteTaskDetail = async function(index) {
+            if(confirm("정말로 이 활동 내역을 삭제하시겠습니까?")) {
+                const pwd = prompt("관리자 비밀번호를 입력하세요:");
+                if(pwd === "1234") {
+                    delete globalData.taskDetails[index]; 
+                    await updateDoc(docRef, { taskDetails: globalData.taskDetails });
+                    alert("삭제되었습니다.");
+                    renderActivityLog();
+                } else {
+                    if(pwd !== null) alert("비밀번호가 틀렸습니다.");
+                }
+            }
+        };
+
+        window.renderActivityLog = function() {
+            const listContainer = document.getElementById('activityLogList');
+            const searchText = document.getElementById('logSearchInput').value.toLowerCase();
+            const details = globalData.taskDetails || {};
+            
+            let logArray = Object.keys(details).map(index => {
+                return {
+                    index: index,
+                    taskName: constructionData[index].label,
+                    data: details[index]
+                };
+            });
+
+            logArray = logArray.filter(item => 
+                (item.data.risk || item.data.kpi || item.data.activity)
+            );
+
+            if(searchText) {
+                logArray = logArray.filter(item => 
+                    item.taskName.toLowerCase().includes(searchText) ||
+                    (item.data.risk && item.data.risk.toLowerCase().includes(searchText)) ||
+                    (item.data.activity && item.data.activity.toLowerCase().includes(searchText))
+                );
+            }
+
+            logArray.sort((a, b) => {
+                const dateA = a.data.lastUpdated ? new Date(a.data.lastUpdated) : new Date(0);
+                const dateB = b.data.lastUpdated ? new Date(b.data.lastUpdated) : new Date(0);
+                return dateB - dateA; 
+            });
+
+            if(logArray.length === 0) {
+                listContainer.innerHTML = '<li style="text-align:center; padding:20px; color:#999;">검색 결과가 없거나 등록된 내역이 없습니다.</li>';
+                return;
+            }
+
+            listContainer.innerHTML = "";
+            logArray.forEach(item => {
+                const d = item.data;
+                let dateStr = "날짜 정보 없음";
+                if(d.lastUpdated) {
+                    const dateObj = new Date(d.lastUpdated);
+                    dateStr = dateObj.toLocaleString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+                }
+
+                const li = document.createElement('li');
+                li.className = 'log-item';
+                li.onclick = function() { openModal(item.index); };
+
+                let badges = "";
+                if(d.risk) badges += `<span class="log-badge badge-risk">핵심위험</span>`;
+                if(d.kpi) badges += `<span class="log-badge badge-kpi">KPI</span>`;
+
+                li.innerHTML = `
+                    <div class="log-top">
+                        <span>No. ${Number(item.index)+1} &nbsp;&nbsp; 🕒 ${dateStr}</span>
+                        <button class="btn-log-delete" onclick="event.stopPropagation(); deleteTaskDetail('${item.index}')">삭제</button>
+                    </div>
+                    <div class="log-task">${item.taskName} ${badges}</div>
+                    <div class="log-content">${d.activity ? d.activity : '<span style="color:#ccc">(활동 내용 없음)</span>'}</div>
+                    ${d.risk ? `<div style="font-size:12px; color:#d9534f; margin-top:5px;">⚠️ 위험: ${d.risk}</div>` : ''}
+                `;
+                listContainer.appendChild(li);
+            });
+        };
     </script>
 </body>
 </html>
