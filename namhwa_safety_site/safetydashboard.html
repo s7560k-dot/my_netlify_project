@@ -43,7 +43,6 @@
         @media print {
             @page {
                 size: A4;
-                /* 상단 30mm(3cm), 우하좌 10mm - 편철 고려 */
                 margin: 30mm 10mm 10mm 10mm;
             }
             body {
@@ -98,7 +97,7 @@
             console.error("Firebase 초기화 오류:", error);
         }
 
-        // --- 아이콘 컴포넌트 (변경 없음) ---
+        // --- 아이콘 컴포넌트 ---
         const Icon = ({ children, color = "currentColor", size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
         );
@@ -283,6 +282,7 @@
             const [workerList, setWorkerList] = useState([]);
             
             // UI States
+            const [logoUrl, setLogoUrl] = useState(null);
             const [showWorkerModal, setShowWorkerModal] = useState(false);
             const [showIssueModal, setShowIssueModal] = useState(false);
             const [selectedIssueType, setSelectedIssueType] = useState(null); 
@@ -322,19 +322,22 @@
                         }
                     });
 
-                    // 1. 초기 데이터 시딩 (DB가 비어있으면 기본값 넣기)
-                    siteRef.collection('riskWorks').get().then(snap => {
+                    // [수정됨] 개별 컬렉션 시딩 (중복 방지)
+                    const seedCollection = async (colName, data) => {
+                        const colRef = siteRef.collection(colName);
+                        const snap = await colRef.get();
                         if(snap.empty) {
-                            console.log("DB 초기화: 샘플 데이터 입력 중...");
                             const batch = db.batch();
-                            DEFAULT_SEED_DATA.riskWorks.forEach(d => batch.set(siteRef.collection('riskWorks').doc(d.id), d));
-                            DEFAULT_SEED_DATA.notices.forEach(d => batch.set(siteRef.collection('notices').doc(d.id), d));
-                            DEFAULT_SEED_DATA.issueList.forEach(d => batch.set(siteRef.collection('issues').doc(d.id), d));
-                            DEFAULT_SEED_DATA.inspectionLog.forEach(d => batch.set(siteRef.collection('inspections').doc(d.id), d));
-                            DEFAULT_SEED_DATA.workerDetails.forEach(d => batch.set(siteRef.collection('workers').doc(d.id), d));
-                            batch.commit().then(() => console.log("샘플 데이터 입력 완료"));
+                            data.forEach(d => batch.set(colRef.doc(d.id), d));
+                            await batch.commit();
                         }
-                    });
+                    };
+
+                    seedCollection('riskWorks', DEFAULT_SEED_DATA.riskWorks);
+                    seedCollection('notices', DEFAULT_SEED_DATA.notices);
+                    seedCollection('issues', DEFAULT_SEED_DATA.issueList);
+                    seedCollection('inspections', DEFAULT_SEED_DATA.inspectionLog);
+                    seedCollection('workers', DEFAULT_SEED_DATA.workerDetails);
 
                     // 2. 실시간 리스너 등록
                     const unsubRisk = siteRef.collection('riskWorks').onSnapshot(snap => setRiskWorks(snap.docs.map(d => ({id: d.id, ...d.data()}))));
@@ -359,6 +362,9 @@
 
             // --- Handlers (DB Write) ---
             
+            // 로고 (로컬 프리뷰만)
+            const handleLogoUpload = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => setLogoUrl(reader.result); reader.readAsDataURL(file); } };
+            
             // 작업 관리
             const handleWorkEdit = (id) => setEditingWorkId(id);
             const handleWorkSave = (id) => { 
@@ -369,36 +375,52 @@
                 if(workToSave && db) db.collection('sites').doc(siteId).collection('riskWorks').doc(id).update(workToSave);
             };
             // Input Change -> Local State Update (UX 반응성)
-            const handleWorkChange = (id, field, value) => { setRiskWorks(riskWorks.map(work => work.id === id ? { ...work, [field]: value } : work)); };
+            const handleWorkChange = (id, field, value) => { 
+                setRiskWorks(riskWorks.map(work => work.id === id ? { ...work, [field]: value } : work)); 
+            };
             
             const handleAddWork = () => { 
                 const newWork = { team: '', task: '', risk: '중', manager: '', status: '예정', workerCount: 0, eduCompleted: 0, assessment: '' };
                 if(db) db.collection('sites').doc(siteId).collection('riskWorks').add(newWork);
             };
 
-            // 출력 인원 관리
+            // [수정됨] 출력 인원 관리 (ID 중복 문제 해결 + 동기화)
             const handleWorkerChange = (id, field, value) => { 
-                // 로컬 업데이트 후 디바운싱 or 모달 닫을 때 저장 필요. 여기선 모달 닫을 때 일괄 저장.
                 setWorkerList(workerList.map(w => w.id === id ? { ...w, [field]: value } : w)); 
             };
             const handleAddWorker = () => setWorkerList([...workerList, { id: Date.now().toString(), trade: '', count: 0 }]);
             const handleDeleteWorker = (id) => setWorkerList(workerList.filter(w => w.id !== id));
-            const saveWorkersToDB = () => {
+            
+            const saveWorkersToDB = async () => {
                 if(!db) return;
                 const batch = db.batch();
                 const workerRef = db.collection('sites').doc(siteId).collection('workers');
-                // 기존꺼 다 지우고 새로 쓰거나, ID 맞춰서 업데이트. 간단하게 개별 업데이트
-                workerList.forEach(w => {
-                    const docRef = w.id.length < 10 ? workerRef.doc() : workerRef.doc(w.id); // 새 ID면 자동생성
-                    batch.set(docRef, { trade: w.trade, count: w.count }, { merge: true });
+                
+                // 1. DB에 있는 ID 목록 가져오기
+                const snapshot = await workerRef.get();
+                const dbIds = snapshot.docs.map(doc => doc.id);
+                const currentIds = workerList.map(w => String(w.id));
+
+                // 2. 삭제된 항목 처리 (DB에는 있는데 현재 리스트에 없는 것 삭제)
+                dbIds.forEach(dbId => {
+                    if (!currentIds.includes(dbId)) {
+                        batch.delete(workerRef.doc(dbId));
+                    }
                 });
-                batch.commit().then(() => setShowWorkerModal(false));
+
+                // 3. 현재 항목 업데이트/추가
+                workerList.forEach(w => {
+                    const docRef = workerRef.doc(String(w.id)); 
+                    batch.set(docRef, { trade: w.trade, count: parseInt(w.count) || 0 }, { merge: true });
+                });
+                
+                await batch.commit();
+                setShowWorkerModal(false);
             };
 
             // 부적합 조치
             const handleIssueChange = (id, field, value) => { setIssueList(issueList.map(issue => issue.id === id ? { ...issue, [field]: value } : issue)); };
             const saveIssueChanges = () => {
-                 // 모달 닫을 때 변경사항 일괄 저장
                  if(!db) return;
                  const batch = db.batch();
                  filteredIssues.forEach(issue => {
@@ -418,6 +440,17 @@
                     db.collection('sites').doc(siteId).collection('notices').add({
                         type: '공지', title, content: '', author: '관리자', date: new Date().toISOString().slice(5,10)
                     });
+                }
+            };
+            // [추가] 공지사항 삭제 기능
+            const handleDeleteNotice = (id) => {
+                if(confirm("이 공지사항을 삭제하시겠습니까?")) {
+                    const pwd = prompt("관리자 비밀번호를 입력하세요");
+                    if(pwd === "1234") {
+                        if(db) db.collection('sites').doc(siteId).collection('notices').doc(id).delete();
+                    } else if(pwd !== null) {
+                        alert("비밀번호가 틀렸습니다.");
+                    }
                 }
             };
 
@@ -542,7 +575,7 @@
                                         {riskWorks.length === 0 ? <div className="text-center py-8 text-gray-400 border-2 border-dashed rounded-lg">등록된 고위험 작업이 없습니다.</div> : (
                                             <div className="space-y-6">
                                                 {riskWorks.map((work) => {
-                                                    const rate = work.workerCount > 0 ? Math.round((work.eduCompleted / work.workerCount) * 100) : 0;
+                                                    const rate = parseInt(work.workerCount) > 0 ? Math.round((parseInt(work.eduCompleted) / parseInt(work.workerCount)) * 100) : 0;
                                                     return (
                                                         <div key={work.id} className="border border-gray-200 rounded-xl p-5 bg-gray-50 hover:bg-white transition hover:shadow-md">
                                                             <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
@@ -575,9 +608,12 @@
                                         </div>
                                         <div className="space-y-3">
                                             {noticeData.map((notice) => (
-                                                <div key={notice.id} onClick={() => setSelectedNotice(notice)} className="flex items-center justify-between p-3 border-b border-gray-50 hover:bg-gray-50 transition cursor-pointer">
+                                                <div key={notice.id} onClick={() => setSelectedNotice(notice)} className="flex items-center justify-between p-3 border-b border-gray-50 hover:bg-gray-50 transition cursor-pointer group">
                                                     <div className="flex items-center gap-3"><span className={`text-xs font-bold px-2 py-1 rounded ${notice.type === '공지' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>{notice.type}</span><span className="text-sm font-medium text-gray-800 hover:text-blue-600 transition">{notice.title}</span></div>
-                                                    <div className="flex items-center text-xs text-gray-400 gap-3"><span>{notice.author}</span><span>{notice.date}</span></div>
+                                                    <div className="flex items-center text-xs text-gray-400 gap-3">
+                                                        <span>{notice.author}</span><span>{notice.date}</span>
+                                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteNotice(notice.id); }} className="p-1 hover:bg-red-100 rounded text-gray-400 hover:text-red-500 transition ml-2"><Trash size={14} /></button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
