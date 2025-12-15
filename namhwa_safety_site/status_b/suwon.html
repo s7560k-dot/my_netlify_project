@@ -139,6 +139,36 @@
         #loading { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:9999; display: flex; flex-direction: column; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; color: var(--navy); }
         .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* [NEW] Footer 스타일 추가 */
+        .footer {
+            max-width: 1600px; 
+            margin: 30px auto 0; 
+            padding: 20px; 
+            border-top: 1px solid #eee; 
+            position: relative; 
+            display: flex; 
+            justify-content: center; /* 텍스트 중앙 정렬 */
+            align-items: center;
+        }
+        .footer-text {
+            color: #999; 
+            font-size: 14px; 
+            font-weight: 500; 
+            margin: 0;
+        }
+        .footer-btn-group {
+            position: absolute; 
+            right: 20px; 
+            display: flex; 
+            gap: 8px;
+        }
+        .btn-link {
+            text-decoration: none; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -192,12 +222,28 @@
 
     <div class="log-section">
         <div class="log-header">
-            <h3 style="margin:0;">📊 실시간 안전활동 등록 현황 (최신순)</h3>
+            <h3 style="margin:0;">📊 실시간 안전활동 등록 현황 (누적)</h3>
             <input type="text" id="logSearchInput" class="log-search" placeholder="공종명, 내용 검색..." onkeyup="renderActivityLog()">
         </div>
         <ul id="activityLogList" class="log-list">
             <li style="text-align:center; padding:20px; color:#999;">데이터를 불러오는 중입니다...</li>
         </ul>
+    </div>
+
+    <!-- [NEW] Footer 추가 -->
+    <div class="footer">
+        <!-- 중앙 텍스트 -->
+        <p class="footer-text">남화토건(주) 안전보건팀</p>
+        
+        <!-- 우측 정렬 버튼 -->
+        <div class="footer-btn-group">
+            <a href="safety_dashboard.html?siteId=suwon_senior_center" class="btn btn-navy btn-link">
+                🛡️ 안전 대시보드 바로가기
+            </a>
+            <a href="index.html" class="btn btn-gray btn-link">
+                나가기
+            </a>
+        </div>
     </div>
 
     <div id="modal" class="modal-overlay">
@@ -289,8 +335,8 @@
             prepConst: {},
             prepSafety: {},
             comments: {},
-            taskDetails: {},
-            activityLog: [], 
+            taskDetails: {}, // 로컬 캐시용
+            activityLog: [], // 로컬 캐시용
             kpiData: [], 
             safetyData: [
                 { title: "위험성평가", monthlyTags: { 1: ["최초평가|blue"] } },
@@ -332,58 +378,56 @@
             { name: "준공/인계", start: 16, duration: 1, color: "bg-dark", label: "준공" }
         ];
 
-        // 1. Firebase 읽기 (Real-time)
-        // (1) 메인 문서 읽기
+        // 1. Firebase 읽기 (Real-time) - 구조 개선: 개별 리스너 사용
+        
+        // (1) 메인 프로젝트 정보 (헤더, KPI, 일정 등)
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
+                // 필요한 필드만 업데이트 (taskDetails, activityLog는 하위 컬렉션에서 별도 로드)
                 if(data.headerInfo) globalData.headerInfo = data.headerInfo;
                 if(data.prepConst) globalData.prepConst = data.prepConst;
                 if(data.prepSafety) globalData.prepSafety = data.prepSafety;
                 if(data.kpiData) globalData.kpiData = data.kpiData;
                 if(data.safetyData) globalData.safetyData = data.safetyData;
                 if(data.comments) globalData.comments = data.comments;
-                // taskDetails, activityLog는 별도 컬렉션에서 로드
             } else {
-                setDoc(docRef, { 
+                setDoc(docRef, {
                     headerInfo: globalData.headerInfo,
                     kpiData: globalData.kpiData,
                     safetyData: globalData.safetyData
                 }, { merge: true });
             }
-            renderAll();
+            renderHeader();
+            renderGrid();
+            renderKpiTable();
             document.getElementById('loading').style.display = 'none';
         });
 
-        // (2) 활동 로그 컬렉션 읽기 (activityLogs)
-        const logsRef = collection(db, "projects", SITE_ID, "activityLogs");
-        const q = query(logsRef, orderBy("lastUpdated", "desc"), limit(50));
-        
-        onSnapshot(q, (snapshot) => {
-            globalData.activityLog = [];
-            snapshot.forEach((doc) => {
-                globalData.activityLog.push({ id: doc.id, ...doc.data() });
-            });
-            renderActivityLog(); // 로그 UI 갱신
-        });
-
-        // (3) 공정별 상세 정보 (taskDetails) 읽기
+        // (2) 공정별 상세 활동 (taskDetails) - 하위 컬렉션
         const detailsRef = collection(db, "projects", SITE_ID, "taskDetails");
         onSnapshot(detailsRef, (snapshot) => {
             globalData.taskDetails = {};
             snapshot.forEach((doc) => {
                 globalData.taskDetails[doc.id] = doc.data();
             });
+            // 모달이 열려있다면 새로고침 (선택사항)
         });
 
-        // 2. 렌더링
-        function renderAll() {
-            renderHeader();
-            renderGrid();
-            renderKpiTable();
+        // (3) 실시간 활동 로그 (activityLogs) - 하위 컬렉션 (최신순 정렬)
+        const logsRef = collection(db, "projects", SITE_ID, "activityLogs");
+        const logsQuery = query(logsRef, orderBy("lastUpdated", "desc"), limit(50)); // 최신 50개만 로드
+        
+        onSnapshot(logsQuery, (snapshot) => {
+            globalData.activityLog = [];
+            snapshot.forEach((doc) => {
+                globalData.activityLog.push({ id: doc.id, ...doc.data() });
+            });
             renderActivityLog();
-        }
+        });
 
+
+        // 2. 렌더링 함수들
         function renderHeader() {
             document.getElementById('infoPeriod').innerText = globalData.headerInfo.period;
             document.getElementById('infoScale').innerText = globalData.headerInfo.scale;
@@ -473,20 +517,23 @@
         let selectedFile = null; // ★ 파일 객체 저장용
         let currentFileUrl = null; // ★ 기존 URL 저장용
 
-        window.openModal = function(index) {
+        // [수정됨] 팝업 열기 함수 개선 - 특정 이력(logData) 보기 지원
+        window.openModal = function(index, logData = null) {
             currentTaskIndex = index;
-            // taskDetails는 실시간 리스너에 의해 이미 최신 상태임
-            const savedDetail = (globalData.taskDetails && globalData.taskDetails[index]) || {};
+            // logData가 있으면(리스트 클릭) 그것을 사용, 없으면(차트 클릭) 최신 상태 사용
+            const dataToLoad = logData || (globalData.taskDetails && globalData.taskDetails[index]) || {};
             const defaultLabel = constructionData[index].label;
 
-            document.getElementById('modalTitle').innerText = defaultLabel + " 상세 활동";
-            document.getElementById('modalRisk').value = savedDetail.risk || "";
-            document.getElementById('modalKPI').value = savedDetail.kpi || "";
-            document.getElementById('modalActivity').value = savedDetail.activity || "";
+            // 타이틀 수정: 이력 조회 시 구분
+            document.getElementById('modalTitle').innerText = defaultLabel + (logData ? " 기록 (조회)" : " 상세 활동");
+            
+            document.getElementById('modalRisk').value = dataToLoad.risk || "";
+            document.getElementById('modalKPI').value = dataToLoad.kpi || "";
+            document.getElementById('modalActivity').value = dataToLoad.activity || "";
             
             document.getElementById('fileInput').value = "";
             selectedFile = null;
-            currentFileUrl = savedDetail.imageData || null; // URL 로드
+            currentFileUrl = dataToLoad.imageData || null; // 해당 데이터의 이미지 URL 로드
             
             // 프리뷰 설정
             const previewBox = document.getElementById('previewBox');
@@ -517,6 +564,35 @@
 
         window.closeModal = function() { document.getElementById('modal').style.display = 'none'; };
 
+        // [이미지 압축 함수]
+        function compressImage(file, maxWidth, maxHeight, quality, callback) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = function(event) {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = function() {
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; }
+                    } else {
+                        if (height > maxHeight) { width *= maxHeight / height; height = maxHeight; }
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    const dataUrl = canvas.toDataURL("image/jpeg", quality);
+                    callback(dataUrl);
+                }
+            }
+        }
+
         // ★ [파일 선택 핸들러]
         window.handleFileSelect = function(input) {
             if (input.files && input.files[0]) {
@@ -528,11 +604,11 @@
                     input.value = "";
                     return;
                 }
-                
-                selectedFile = file; // 업로드 대기
-                currentFileUrl = null; // 새 파일이므로 기존 URL 무효화
 
-                // 로컬 프리뷰
+                selectedFile = file; // 업로드 대기
+                currentFileUrl = null; // 새 파일 선택했으므로 기존 URL 무시
+
+                // 로컬 프리뷰 표시
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const result = e.target.result;
@@ -547,7 +623,11 @@
                     } else {
                         previewPdf.style.display = "none";
                         previewImg.style.display = "block";
-                        previewImg.src = result;
+                        
+                        // 압축해서 미리보기에 표시 (선택사항, 원본도 무방)
+                        compressImage(file, 1024, 1024, 0.7, function(dataUrl) {
+                             previewImg.src = dataUrl;
+                        });
                     }
                 };
                 reader.readAsDataURL(file);
@@ -576,7 +656,7 @@
                 const now = new Date().toISOString();
                 let finalImageUrl = currentFileUrl; // 기본: 기존 URL
 
-                // 1. 새 파일이 있으면 Storage 업로드
+                // 1. 새 파일이 선택되었다면 Storage에 업로드
                 if (selectedFile) {
                     const storageRef = ref(storage, `site_attachments/${Date.now()}_${selectedFile.name}`);
                     await uploadBytes(storageRef, selectedFile);
@@ -588,12 +668,12 @@
                     risk: document.getElementById('modalRisk').value,
                     kpi: document.getElementById('modalKPI').value,
                     activity: document.getElementById('modalActivity').value,
-                    imageData: finalImageUrl, // URL 저장
+                    imageData: finalImageUrl, // URL 저장 (용량 작음)
                     lastUpdated: now
                 };
 
                 // 2. 공정별 상세 정보 저장 (덮어쓰기) -> taskDetails 컬렉션
-                // ID를 공정 인덱스로 사용하여 중복 방지 및 최신 상태 유지
+                // 문서 ID를 공정 인덱스로 사용하여 중복 방지 및 최신 상태 유지
                 const taskDocRef = doc(db, "projects", SITE_ID, "taskDetails", String(currentTaskIndex));
                 await setDoc(taskDocRef, taskData);
 
@@ -604,7 +684,7 @@
                 };
                 const logsCollectionRef = collection(db, "projects", SITE_ID, "activityLogs");
                 await addDoc(logsCollectionRef, logData);
-
+                
                 alert("✅ [저장 완료]\n\n안전보건 활동 내역이 서버에 안전하게 저장되었습니다.");
                 closeModal();
             } catch(e) { 
@@ -762,11 +842,22 @@
 
                 const li = document.createElement('li');
                 li.className = 'log-item';
-                li.onclick = function() { openModal(d.taskIndex); };
+                // 클릭하면 해당 로그 데이터를 전달하여 팝업 오픈 (누적된 파일 확인 가능)
+                li.onclick = function() { openModal(d.taskIndex, d); };
 
                 let badges = "";
                 if(d.risk) badges += `<span class="log-badge badge-risk">핵심위험</span>`;
                 if(d.kpi) badges += `<span class="log-badge badge-kpi">KPI</span>`;
+
+                // [수정됨] 리스트에 이미지/문서 미리보기 표시 추가
+                let fileDisplay = "";
+                if(d.imageData) {
+                    if(d.imageData.includes("pdf") || d.imageData.startsWith("data:application/pdf")) {
+                         fileDisplay = `<div style="margin-top:8px; padding:4px; background:#f8f9fa; border-radius:4px; font-size:12px;"><a href="${d.imageData}" target="_blank" onclick="event.stopPropagation()" style="color:#e67e22; text-decoration:none; display:flex; align-items:center;">📄 PDF 문서 보기 (클릭)</a></div>`;
+                    } else {
+                         fileDisplay = `<div style="margin-top:8px;"><img src="${d.imageData}" style="height:60px; width:auto; border-radius:4px; border:1px solid #eee; cursor:zoom-in;" onclick="event.stopPropagation(); window.open(this.src)"></div>`;
+                    }
+                }
 
                 li.innerHTML = `
                     <div class="log-top">
@@ -776,6 +867,7 @@
                     <div class="log-task">${d.taskName} ${badges}</div>
                     <div class="log-content">${d.activity ? d.activity : '<span style="color:#ccc">(활동 내용 없음)</span>'}</div>
                     ${d.risk ? `<div style="font-size:12px; color:#d9534f; margin-top:5px;">⚠️ 위험: ${d.risk}</div>` : ''}
+                    ${fileDisplay}
                 `;
                 listContainer.appendChild(li);
             });

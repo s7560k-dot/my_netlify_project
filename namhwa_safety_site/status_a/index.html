@@ -238,7 +238,8 @@
         
         <!-- 우측 정렬 버튼 -->
         <div class="footer-btn-group">
-            <a href="safety_dashboard.html?siteId=siteA" class="btn btn-navy btn-link">
+            <!-- [수정됨] 파일명을 실제 파일명인 '수원_노유자시설_안전보건_통합_로드맵.html'로 변경 -->
+            <a href="수원_노유자시설_안전보건_통합_로드맵.html?siteId=daegwang_golf_center" class="btn btn-navy btn-link">
                 🛡️ 안전 대시보드 바로가기
             </a>
             <a href="index.html" class="btn btn-gray btn-link">
@@ -303,6 +304,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        // ★ [추가] 스토리지 함수
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
         // ============================================
@@ -319,7 +321,7 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const storage = getStorage(app);
+        const storage = getStorage(app); // ★ 스토리지 초기화
         
         // ★ [중요] 대광 현장용 DB 문서 ID (수원과 분리) ★
         const SITE_ID = "daegwang_golf_center"; 
@@ -375,17 +377,19 @@
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                globalData = { ...globalData, ...data };
-                if(!globalData.prepConst) globalData.prepConst = {};
-                if(!globalData.prepSafety) globalData.prepSafety = {};
-                // KPI 데이터 보정 (10개 맞추기)
-                if(globalData.kpiData) {
-                    for(let i=0; i<10; i++) {
-                        if(!globalData.kpiData[i]) globalData.kpiData[i] = { month: i+1, process:"", risk:"", activity:"", kpi:"", docs:"" };
-                    }
-                }
+                if(data.headerInfo) globalData.headerInfo = data.headerInfo;
+                if(data.prepConst) globalData.prepConst = data.prepConst;
+                if(data.prepSafety) globalData.prepSafety = data.prepSafety;
+                if(data.kpiData) globalData.kpiData = data.kpiData;
+                if(data.safetyData) globalData.safetyData = data.safetyData;
+                if(data.comments) globalData.comments = data.comments;
+                // taskDetails, activityLog는 별도 컬렉션에서 로드
             } else {
-                setDoc(docRef, globalData); // 문서 생성
+                setDoc(docRef, { 
+                    headerInfo: globalData.headerInfo,
+                    kpiData: globalData.kpiData,
+                    safetyData: globalData.safetyData
+                }, { merge: true });
             }
             renderAll();
             document.getElementById('loading').style.display = 'none';
@@ -433,7 +437,7 @@
 
             // 공정
             constructionData.forEach((task, index) => {
-                let rowHTML = `<div class="cell cell-sidebar">${task.name}</div>`;
+                let rowHTML = `<div class="cell cell-sidebar" title="${task.name}">${task.name}</div>`;
                 let prepVal = globalData.prepConst[index] || "";
                 rowHTML += `<div class="cell prep-cell" contenteditable="true" onblur="updatePrep('const', ${index}, this.innerText)">${prepVal}</div>`;
                 for(let i=1; i<=10; i++) {
@@ -509,20 +513,23 @@
         let selectedFile = null; // ★ 파일 객체 저장용
         let currentFileUrl = null; // ★ 기존 URL 저장용
 
-        window.openModal = function(index) {
+        // [수정됨] 팝업 열기 함수 개선 - 특정 이력(logData) 보기 지원
+        window.openModal = function(index, logData = null) {
             currentTaskIndex = index;
-            // taskDetails는 실시간 리스너에 의해 이미 최신 상태임
-            const savedDetail = (globalData.taskDetails && globalData.taskDetails[index]) || {};
+            // logData가 있으면(리스트 클릭) 그것을 사용, 없으면(차트 클릭) 최신 상태 사용
+            const dataToLoad = logData || (globalData.taskDetails && globalData.taskDetails[index]) || {};
             const defaultLabel = constructionData[index].label;
 
-            document.getElementById('modalTitle').innerText = defaultLabel + " 상세 활동";
-            document.getElementById('modalRisk').value = savedDetail.risk || "";
-            document.getElementById('modalKPI').value = savedDetail.kpi || "";
-            document.getElementById('modalActivity').value = savedDetail.activity || "";
+            // 타이틀 수정: 이력 조회 시 구분
+            document.getElementById('modalTitle').innerText = defaultLabel + (logData ? " 기록 (조회)" : " 상세 활동");
+            
+            document.getElementById('modalRisk').value = dataToLoad.risk || "";
+            document.getElementById('modalKPI').value = dataToLoad.kpi || "";
+            document.getElementById('modalActivity').value = dataToLoad.activity || "";
             
             document.getElementById('fileInput').value = "";
             selectedFile = null;
-            currentFileUrl = savedDetail.imageData || null; // URL 로드
+            currentFileUrl = dataToLoad.imageData || null; // 해당 데이터의 이미지 URL 로드
             
             // 프리뷰 설정
             const previewBox = document.getElementById('previewBox');
@@ -831,11 +838,22 @@
 
                 const li = document.createElement('li');
                 li.className = 'log-item';
-                li.onclick = function() { openModal(d.taskIndex); };
+                // 클릭하면 해당 로그 데이터를 전달하여 팝업 오픈 (누적된 파일 확인 가능)
+                li.onclick = function() { openModal(d.taskIndex, d); };
 
                 let badges = "";
                 if(d.risk) badges += `<span class="log-badge badge-risk">핵심위험</span>`;
                 if(d.kpi) badges += `<span class="log-badge badge-kpi">KPI</span>`;
+
+                // [수정됨] 리스트에 이미지/문서 미리보기 표시 추가
+                let fileDisplay = "";
+                if(d.imageData) {
+                    if(d.imageData.includes("pdf") || d.imageData.startsWith("data:application/pdf")) {
+                         fileDisplay = `<div style="margin-top:8px; padding:4px; background:#f8f9fa; border-radius:4px; font-size:12px;"><a href="${d.imageData}" target="_blank" onclick="event.stopPropagation()" style="color:#e67e22; text-decoration:none; display:flex; align-items:center;">📄 PDF 문서 보기 (클릭)</a></div>`;
+                    } else {
+                         fileDisplay = `<div style="margin-top:8px;"><img src="${d.imageData}" style="height:60px; width:auto; border-radius:4px; border:1px solid #eee; cursor:zoom-in;" onclick="event.stopPropagation(); window.open(this.src)"></div>`;
+                    }
+                }
 
                 li.innerHTML = `
                     <div class="log-top">
@@ -845,6 +863,7 @@
                     <div class="log-task">${d.taskName} ${badges}</div>
                     <div class="log-content">${d.activity ? d.activity : '<span style="color:#ccc">(활동 내용 없음)</span>'}</div>
                     ${d.risk ? `<div style="font-size:12px; color:#d9534f; margin-top:5px;">⚠️ 위험: ${d.risk}</div>` : ''}
+                    ${fileDisplay}
                 `;
                 listContainer.appendChild(li);
             });
