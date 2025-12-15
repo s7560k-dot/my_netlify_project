@@ -268,7 +268,28 @@
         const SafetyDashboard = () => {
             const [currentDate, setCurrentDate] = useState('');
             const queryParams = new URLSearchParams(window.location.search);
-            const siteId = queryParams.get('siteId') || 'siteA'; // URL로 현장 구분 가능
+            
+            // [수정] URL 파라미터가 없으면 'status_b'(수원)를 기본값으로 설정
+            const siteId = queryParams.get('siteId') || 'status_b'; 
+            
+            // [추가] 현장 ID에 따른 이름 및 링크 매핑 정보 (폴더 구조 기반)
+            const SITE_INFO = {
+                'status_a': { 
+                    name: '대광 새마을금고 골프연습장', 
+                    scheduleLink: './status_a/index.html' // status_a 폴더 내부의 파일 경로 (추정)
+                },
+                'status_b': { 
+                    name: '수원 노유자시설 신축공사', 
+                    scheduleLink: './status_b/suwon.html' // status_b 폴더 내부의 파일 경로
+                },
+                'default': { 
+                    name: '미지정 현장', 
+                    scheduleLink: '#' 
+                }
+            };
+
+            // 현재 현장 정보 가져오기
+            const currentSiteInfo = SITE_INFO[siteId] || SITE_INFO['default'];
             
             const [startDate, setStartDate] = useState('2024-01-01');
             const [targetDays, setTargetDays] = useState(500);
@@ -492,7 +513,7 @@
 
             return (
                 <div className="min-h-screen bg-gray-50 text-gray-800 font-sans relative pb-20">
-                    <PrintReport data={{ workerList, riskWorks, noticeData, issueList, inspectionLog }} siteName="수원 노유자시설 신축공사" currentDate={currentDate} accidentFreeDays={accidentFreeDays} targetDays={targetDays} />
+                    <PrintReport data={{ workerList, riskWorks, noticeData, issueList, inspectionLog }} siteName={currentSiteInfo.name} currentDate={currentDate} accidentFreeDays={accidentFreeDays} targetDays={targetDays} />
                     <div className="no-print">
                         <header className="bg-white shadow-sm sticky top-0 z-30">
                             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
@@ -513,7 +534,7 @@
                             <div className="bg-gradient-to-r from-green-700 to-green-500 rounded-2xl shadow-lg p-6 mb-8 text-white flex flex-col md:flex-row items-center justify-between animate-fade-in relative">
                                 <button onClick={() => setShowSettingsModal(true)} className="absolute top-4 right-4 p-2 bg-white/20 rounded-full hover:bg-white/30 transition"><Settings size={20} className="text-white" /></button>
                                 <div className="mb-4 md:mb-0">
-                                    <h2 className="text-lg font-medium opacity-90 mb-1 flex items-center">우리 현장 무재해 기록 <button onClick={() => setShowSettingsModal(true)} className="ml-3 text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded flex items-center transition cursor-pointer border border-transparent hover:border-white/40" title="클릭하여 날짜 수정">실착공일: {startDate} <Edit2 size={12} className="ml-1 opacity-70"/></button></h2>
+                                    <h2 className="text-lg font-medium opacity-90 mb-1 flex items-center">{currentSiteInfo.name} 무재해 기록 <button onClick={() => setShowSettingsModal(true)} className="ml-3 text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded flex items-center transition cursor-pointer border border-transparent hover:border-white/40" title="클릭하여 날짜 수정">실착공일: {startDate} <Edit2 size={12} className="ml-1 opacity-70"/></button></h2>
                                     <div className="flex items-end"><span className="text-5xl font-bold mr-2">{accidentFreeDays}</span><span className="text-xl mb-2">일째</span><span className="ml-4 bg-white/20 px-3 py-1 rounded-full text-sm">목표: {targetDays}일</span></div>
                                 </div>
                                 <div className="flex space-x-8 text-center pr-12">
@@ -657,7 +678,7 @@
                             <p className="text-gray-400 text-sm font-medium">남화토건(주) 안전보건팀</p>
                             <div className="absolute right-4 flex space-x-2">
                                 <button onClick={handlePrint} className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-blue-700 transition shadow-sm whitespace-nowrap"><Printer size={16} className="mr-2" /> PDF 보고서 출력</button>
-                                <a href="https://nhs1033.netlify.app/status_b/suwon.html" target="_blank" className="flex items-center bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-purple-700 transition shadow-sm whitespace-nowrap"><LinkIcon size={16} className="mr-2" /> 예정공정표</a>
+                                <a href={currentSiteInfo.scheduleLink} target="_blank" className="flex items-center bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-purple-700 transition shadow-sm whitespace-nowrap"><LinkIcon size={16} className="mr-2" /> 예정공정표</a>
                                 <a href="index.html" className="flex items-center bg-gray-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-700 transition shadow-sm whitespace-nowrap">나가기</a>
                             </div>
                         </footer>
