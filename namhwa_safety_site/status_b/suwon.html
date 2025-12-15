@@ -125,7 +125,6 @@
         .btn-gray { background: #e0e0e0; color: #333; } .btn-navy { background: var(--navy); color: white; }
         
         .preview-box { margin-top: 10px; padding: 10px; border: 1px dashed #ccc; border-radius: 5px; text-align: center; background: #fafafa; display: none; position: relative; }
-        /* [수정됨] 미리보기 이미지/PDF 스타일 */
         .preview-img { max-width: 100%; max-height: 300px; border-radius: 5px; display: none; margin: 0 auto; }
         .preview-pdf { width: 100%; height: 350px; border: 1px solid #ddd; border-radius: 5px; display: none; }
         
@@ -193,7 +192,7 @@
 
     <div class="log-section">
         <div class="log-header">
-            <h3 style="margin:0;">📊 실시간 안전활동 등록 현황 (최신순)</h3>
+            <h3 style="margin:0;">📊 실시간 안전활동 등록 이력 (누적)</h3>
             <input type="text" id="logSearchInput" class="log-search" placeholder="공종명, 내용 검색..." onkeyup="renderActivityLog()">
         </div>
         <ul id="activityLogList" class="log-list">
@@ -287,7 +286,8 @@
             prepConst: {},
             prepSafety: {},
             comments: {},
-            taskDetails: {},
+            taskDetails: {}, // 각 공정의 '최신 상태' 저장 (팝업용)
+            activityLog: [], // ★ [수정] 누적 이력 저장용 배열
             kpiData: [], 
             safetyData: [
                 { title: "위험성평가", monthlyTags: { 1: ["최초평가|blue"] } },
@@ -336,6 +336,7 @@
                 globalData = { ...globalData, ...data };
                 if(!globalData.prepConst) globalData.prepConst = {};
                 if(!globalData.prepSafety) globalData.prepSafety = {};
+                if(!globalData.activityLog) globalData.activityLog = []; // 로그 배열 초기화 보장
                 if(globalData.kpiData) {
                     for(let i=0; i<16; i++) {
                         if(!globalData.kpiData[i]) globalData.kpiData[i] = { month: i+1, process:"", risk:"", activity:"", kpi:"", docs:"" };
@@ -442,10 +443,11 @@
 
         // --- 팝업 ---
         let currentTaskIndex = null;
-        let tempFileBase64 = null; // [수정됨] 변수명 변경 (Image->File)
+        let tempFileBase64 = null; 
 
         window.openModal = function(index) {
             currentTaskIndex = index;
+            // 팝업은 '가장 최신' 상태(taskDetails)를 보여줌 (수정 편의성)
             const savedDetail = (globalData.taskDetails && globalData.taskDetails[index]) || {};
             const defaultLabel = constructionData[index].label;
 
@@ -455,16 +457,14 @@
             document.getElementById('modalActivity').value = savedDetail.activity || "";
             
             document.getElementById('fileInput').value = "";
-            tempFileBase64 = savedDetail.imageData || null; // 예전 키값 유지(imageData)
+            tempFileBase64 = savedDetail.imageData || null; 
             
-            // [수정됨] 저장된 파일이 PDF인지 이미지인지 확인하여 표시
             const previewBox = document.getElementById('previewBox');
             const previewImg = document.getElementById('previewImg');
             const previewPdf = document.getElementById('previewPdf');
             
             if (tempFileBase64) {
                 previewBox.style.display = "block";
-                // 데이터 헤더로 타입 구분
                 if(tempFileBase64.startsWith("data:application/pdf")) {
                     previewImg.style.display = "none";
                     previewPdf.style.display = "block";
@@ -489,14 +489,11 @@
         window.handleFileSelect = function(input) {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
-                
-                // 파일 용량 체크 (예: 2MB 제한) - Base64 변환 시 용량 커짐 주의
                 if(file.size > 2 * 1024 * 1024) {
                     alert("파일 크기가 너무 큽니다. (2MB 이하만 가능)");
                     input.value = "";
                     return;
                 }
-
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     tempFileBase64 = e.target.result;
@@ -505,7 +502,6 @@
                     const previewPdf = document.getElementById('previewPdf');
                     
                     previewBox.style.display = "block";
-                    
                     if(file.type === "application/pdf") {
                         previewImg.style.display = "none";
                         previewPdf.style.display = "block";
@@ -530,19 +526,47 @@
             }
         };
 
-        // [수정] 저장 기능
+        // ★ [수정됨] 저장 로직: 누적 이력(activityLog)에도 추가
         window.saveTaskDetails = async function() {
             try {
+                const now = new Date().toISOString();
+                
+                // 1. 공정별 최신 상태 저장 (팝업 다시 열 때 보여주기 위함)
                 if(!globalData.taskDetails) globalData.taskDetails = {};
                 globalData.taskDetails[currentTaskIndex] = {
                     risk: document.getElementById('modalRisk').value,
                     kpi: document.getElementById('modalKPI').value,
                     activity: document.getElementById('modalActivity').value,
-                    imageData: tempFileBase64, // 변수값 저장
-                    lastUpdated: new Date().toISOString()
+                    imageData: tempFileBase64,
+                    lastUpdated: now
                 };
-                await updateDoc(docRef, { taskDetails: globalData.taskDetails });
-                alert("✅ [저장 완료]\n\n안전보건 활동 내역이 서버에 안전하게 저장되었습니다.\n화면 하단 목록에서 내역을 확인하실 수 있습니다.");
+
+                // 2. 활동 로그(History)에 추가 (누적용)
+                if(!globalData.activityLog) globalData.activityLog = [];
+                
+                const newLog = {
+                    id: Date.now(), // 고유 ID (삭제용)
+                    taskIndex: currentTaskIndex,
+                    taskName: constructionData[currentTaskIndex].label,
+                    risk: document.getElementById('modalRisk').value,
+                    kpi: document.getElementById('modalKPI').value,
+                    activity: document.getElementById('modalActivity').value,
+                    lastUpdated: now
+                };
+                
+                globalData.activityLog.push(newLog);
+
+                // 로그 데이터가 너무 커지지 않게 최근 100개만 유지
+                if (globalData.activityLog.length > 100) {
+                    globalData.activityLog = globalData.activityLog.slice(globalData.activityLog.length - 100);
+                }
+
+                await updateDoc(docRef, { 
+                    taskDetails: globalData.taskDetails,
+                    activityLog: globalData.activityLog
+                });
+                
+                alert("✅ [저장 완료]\n\n활동 내역이 이력 리스트에 추가되었습니다.");
                 closeModal();
             } catch(e) { 
                 alert("❌ 저장 실패: 인터넷 연결을 확인하거나 파일 용량을 줄여주세요."); 
@@ -642,48 +666,43 @@
             closeSafetyModal();
         };
 
-        window.deleteTaskDetail = async function(index) {
-            if(confirm("정말로 이 활동 내역을 삭제하시겠습니까?")) {
+        // ★ [수정됨] 삭제 로직: activityLog에서 해당 ID 삭제
+        window.deleteLogItem = async function(logId) {
+            if(confirm("이 이력 항목을 삭제하시겠습니까? (복구 불가)")) {
                 const pwd = prompt("관리자 비밀번호를 입력하세요:");
                 if(pwd === "1234") {
-                    delete globalData.taskDetails[index]; 
-                    await updateDoc(docRef, { taskDetails: globalData.taskDetails });
+                    // ID로 해당 로그 찾아서 삭제
+                    globalData.activityLog = globalData.activityLog.filter(log => log.id !== logId);
+                    await updateDoc(docRef, { activityLog: globalData.activityLog });
                     alert("삭제되었습니다.");
-                    renderActivityLog();
+                    renderActivityLog(); // 화면 갱신
                 } else {
                     if(pwd !== null) alert("비밀번호가 틀렸습니다.");
                 }
             }
         };
 
+        // ★ [수정됨] 렌더링 로직: activityLog(배열) 기반으로 변경
         window.renderActivityLog = function() {
             const listContainer = document.getElementById('activityLogList');
             const searchText = document.getElementById('logSearchInput').value.toLowerCase();
-            const details = globalData.taskDetails || {};
             
-            let logArray = Object.keys(details).map(index => {
-                return {
-                    index: index,
-                    taskName: constructionData[index].label,
-                    data: details[index]
-                };
-            });
+            // 기존 taskDetails 대신 activityLog 사용
+            let logArray = globalData.activityLog || [];
 
-            logArray = logArray.filter(item => 
-                (item.data.risk || item.data.kpi || item.data.activity)
-            );
-
+            // 검색 필터
             if(searchText) {
                 logArray = logArray.filter(item => 
                     item.taskName.toLowerCase().includes(searchText) ||
-                    (item.data.risk && item.data.risk.toLowerCase().includes(searchText)) ||
-                    (item.data.activity && item.data.activity.toLowerCase().includes(searchText))
+                    (item.risk && item.risk.toLowerCase().includes(searchText)) ||
+                    (item.activity && item.activity.toLowerCase().includes(searchText))
                 );
             }
 
+            // 최신순 정렬 (이미 푸시할때 뒤에 붙지만, 확실하게 정렬)
             logArray.sort((a, b) => {
-                const dateA = a.data.lastUpdated ? new Date(a.data.lastUpdated) : new Date(0);
-                const dateB = b.data.lastUpdated ? new Date(b.data.lastUpdated) : new Date(0);
+                const dateA = a.lastUpdated ? new Date(a.lastUpdated) : new Date(0);
+                const dateB = b.lastUpdated ? new Date(b.lastUpdated) : new Date(0);
                 return dateB - dateA; 
             });
 
@@ -693,8 +712,7 @@
             }
 
             listContainer.innerHTML = "";
-            logArray.forEach(item => {
-                const d = item.data;
+            logArray.forEach(d => {
                 let dateStr = "날짜 정보 없음";
                 if(d.lastUpdated) {
                     const dateObj = new Date(d.lastUpdated);
@@ -703,7 +721,8 @@
 
                 const li = document.createElement('li');
                 li.className = 'log-item';
-                li.onclick = function() { openModal(item.index); };
+                // 클릭하면 해당 공정의 팝업 열기
+                li.onclick = function() { openModal(d.taskIndex); };
 
                 let badges = "";
                 if(d.risk) badges += `<span class="log-badge badge-risk">핵심위험</span>`;
@@ -711,10 +730,10 @@
 
                 li.innerHTML = `
                     <div class="log-top">
-                        <span>No. ${Number(item.index)+1} &nbsp;&nbsp; 🕒 ${dateStr}</span>
-                        <button class="btn-log-delete" onclick="event.stopPropagation(); deleteTaskDetail('${item.index}')">삭제</button>
+                        <span>🕒 ${dateStr}</span>
+                        <button class="btn-log-delete" onclick="event.stopPropagation(); deleteLogItem(${d.id})">삭제</button>
                     </div>
-                    <div class="log-task">${item.taskName} ${badges}</div>
+                    <div class="log-task">${d.taskName} ${badges}</div>
                     <div class="log-content">${d.activity ? d.activity : '<span style="color:#ccc">(활동 내용 없음)</span>'}</div>
                     ${d.risk ? `<div style="font-size:12px; color:#d9534f; margin-top:5px;">⚠️ 위험: ${d.risk}</div>` : ''}
                 `;

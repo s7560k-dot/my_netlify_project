@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -43,33 +43,29 @@
         @media print {
             @page {
                 size: A4;
-                margin: 10mm;
+                /* 상단 30mm(3cm), 우하좌 10mm - 편철 고려 */
+                margin: 30mm 10mm 10mm 10mm;
             }
             body {
                 background-color: white !important;
-                -webkit-print-color-adjust: exact; /* 배경색 출력 강제 */
+                -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
-                font-size: 10pt; /* 인쇄 시 글자 크기 조정 */
+                font-size: 10pt;
             }
-            /* 화면에만 보이는 요소 숨김 */
             .no-print {
                 display: none !important;
             }
-            /* 인쇄 시에만 보이는 보고서 영역 표시 */
             .print-only {
                 display: block !important;
             }
-            /* 페이지 넘김 제어 */
             .page-break { page-break-before: always; }
             .avoid-break { page-break-inside: avoid; }
             
-            /* 인쇄용 테이블 스타일 */
             table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
             th, td { border: 1px solid #000; padding: 4px 8px; font-size: 9pt; }
             th { background-color: #f3f4f6 !important; text-align: center; font-weight: bold; }
         }
 
-        /* 화면에서는 보고서 영역 숨김 */
         .print-only {
             display: none;
         }
@@ -90,24 +86,19 @@
             appId: "1:152864778612:web:ecc482adce93a1534a2421"
         };
 
+        // Firebase 초기화 보장
         let db = null;
-        let isFirebaseActive = false;
-
-        if (firebaseConfig.apiKey) {
-            try {
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                }
-                db = firebase.firestore();
-                isFirebaseActive = true;
-                console.log("🔥 Firebase 연결 성공");
-            } catch (error) {
-                console.error("Firebase 초기화 실패:", error);
-                isFirebaseActive = false;
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
             }
+            db = firebase.firestore();
+            console.log("🔥 Firebase 연결 및 Firestore 초기화 완료");
+        } catch (error) {
+            console.error("Firebase 초기화 오류:", error);
         }
 
-        // --- 아이콘 컴포넌트 ---
+        // --- 아이콘 컴포넌트 (변경 없음) ---
         const Icon = ({ children, color = "currentColor", size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
         );
@@ -130,66 +121,44 @@
         const Upload = (props) => <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></Icon>;
         const Trash = (props) => <Icon {...props}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></Icon>;
         const Tool = (props) => <Icon {...props}><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></Icon>;
-        const Settings = (props) => <Icon {...props}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></Icon>;
+        const Settings = (props) => <Icon {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></Icon>;
         const ArrowRight = (props) => <Icon {...props}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></Icon>;
         const ClipboardCheck = (props) => <Icon {...props}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></Icon>;
         const LinkIcon = (props) => <Icon {...props}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></Icon>;
         const Printer = (props) => <Icon {...props}><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></Icon>;
 
-        const SITES_DB = {
-            'siteA': {
-                name: '대광 새마을금고 골프연습장',
-                scheduleUrl: 'https://nhs1033.netlify.app/status_a/index.html', 
-                riskWorks: [
-                    { id: '1', team: '골조 2팀', task: '203동 갱폼 인양 작업', risk: '상', status: '작업중', manager: '김철수', workerCount: 5, eduCompleted: 5, assessment: '크레인 인양 중 낙하 위험, 신호수 배치 및 하부 통제 철저' },
-                    { id: '2', team: '설비 1팀', task: '지하 2층 밀폐공간 용접', risk: '상', status: '예정', manager: '이영희', workerCount: 3, eduCompleted: 2, assessment: '질식 사고 예방을 위한 송풍기 가동 필수, 산소 농도 측정 기록' },
-                ],
-                notices: [
-                    { id: '1', type: '공지', title: '[현장A] 혹서기 근로자 휴게 시간 준수 안내', content: '최고 기온이 33도 이상인 폭염 주의보 발령 시 오후 2시~5시 사이 옥외작업 단축 및 휴식시간을 철저히 준수 바랍니다.', author: '안전팀장', date: '05.20' },
-                    { id: '2', type: '일정', title: '[현장A] 제5회 안전보건협의체 회의', content: '금일 14:00 현장 회의실에서 협의체 회의가 있습니다.', author: '현장소장', date: '05.21' },
-                ],
-                issueList: [
-                    { id: 101, loc: '105동 3층', desc: '개구부 덮개 미설치로 인한 추락 위험', finder: '안전과장', status: 'new' },
-                    { id: 102, loc: '지하 1층', desc: '가설 분전반 접지 누락', finder: '전기반장', status: 'processing' },
-                    { id: 103, loc: '야적장', desc: '자재 정리정돈 불량', finder: '관리자', status: 'done' },
-                ],
-                inspectionLog: [
-                    { id: 1, type: '장비', item: '이동식 크레인 (100t)', date: '05.20', status: '합격' },
-                    { id: 2, type: '기계', item: '용접기 A-102', date: '05.19', status: '합격' },
-                    { id: 3, type: '물질', item: '에폭시 프라이머', date: '05.18', status: '조건부승인' },
-                ],
-                workerDetails: [
-                    { id: 1, trade: '관리자', count: 12 },
-                    { id: 2, trade: '철근공', count: 45 },
-                    { id: 3, trade: '목공', count: 30 },
-                    { id: 4, trade: '일용직', count: 22 },
-                ]
-            },
-            'siteB': {
-                name: '수원 노유자시설 신축공사',
-                scheduleUrl: 'https://nhs1033.netlify.app/status_b/suwon.html',
-                riskWorks: [
-                    { id: 'b1', team: '전기 1팀', task: '임시 전력 인입', risk: '중', status: '작업중', manager: '박준호', workerCount: 3, eduCompleted: 3, assessment: '감전 방지 보호구 착용' },
-                ],
-                notices: [
-                    { id: 'b_n1', type: '공지', title: '[현장B] 우기 대비 점검', content: '배수로 점검 철저', author: '공사과장', date: '05.22' },
-                ],
-                issueList: [],
-                inspectionLog: [],
-                workerDetails: [
-                    { id: 1, trade: '관리자', count: 5 },
-                    { id: 2, trade: '내장목공', count: 15 },
-                ]
-            }
+        // 초기 데이터 (DB가 비어있을 때 사용)
+        const DEFAULT_SEED_DATA = {
+            riskWorks: [
+                { id: '1', team: '골조 2팀', task: '203동 갱폼 인양 작업', risk: '상', status: '작업중', manager: '김철수', workerCount: 5, eduCompleted: 5, assessment: '크레인 인양 중 낙하 위험, 신호수 배치 및 하부 통제 철저' },
+                { id: '2', team: '설비 1팀', task: '지하 2층 밀폐공간 용접', risk: '상', status: '예정', manager: '이영희', workerCount: 3, eduCompleted: 2, assessment: '질식 사고 예방을 위한 송풍기 가동 필수, 산소 농도 측정 기록' },
+            ],
+            notices: [
+                { id: 'n1', type: '공지', title: '[현장] 혹서기 근로자 휴게 시간 준수 안내', content: '최고 기온이 33도 이상인 폭염 주의보 발령 시 오후 2시~5시 사이 옥외작업 단축 및 휴식시간을 철저히 준수 바랍니다.', author: '안전팀장', date: '05.20' },
+                { id: 'n2', type: '일정', title: '[현장] 제5회 안전보건협의체 회의', content: '금일 14:00 현장 회의실에서 협의체 회의가 있습니다.', author: '현장소장', date: '05.21' },
+            ],
+            issueList: [
+                { id: 'i1', loc: '105동 3층', desc: '개구부 덮개 미설치로 인한 추락 위험', finder: '안전과장', status: 'new' },
+                { id: 'i2', loc: '지하 1층', desc: '가설 분전반 접지 누락', finder: '전기반장', status: 'processing' },
+                { id: 'i3', loc: '야적장', desc: '자재 정리정돈 불량', finder: '관리자', status: 'done' },
+            ],
+            inspectionLog: [
+                { id: 'ins1', type: '장비', item: '이동식 크레인 (100t)', date: '05.20', status: '합격' },
+                { id: 'ins2', type: '기계', item: '용접기 A-102', date: '05.19', status: '합격' },
+            ],
+            workerDetails: [
+                { id: 'w1', trade: '관리자', count: 12 },
+                { id: 'w2', trade: '철근공', count: 45 },
+                { id: 'w3', trade: '목공', count: 30 },
+            ]
         };
 
         // ==================================================================================
-        // [인쇄용 보고서 컴포넌트] : 화면에는 안보이고 출력시에만 보임
+        // [인쇄용 보고서 컴포넌트]
         // ==================================================================================
         const PrintReport = ({ data, siteName, currentDate, accidentFreeDays, targetDays }) => {
             return (
                 <div className="print-only p-4">
-                    {/* 보고서 헤더 */}
                     <div className="border-b-2 border-black pb-4 mb-6">
                         <h1 className="text-3xl font-bold text-center mb-2">안전보건 일일 리포트</h1>
                         <div className="flex justify-between text-sm">
@@ -198,174 +167,122 @@
                             <span>무재해: {accidentFreeDays}일 (목표: {targetDays}일)</span>
                         </div>
                     </div>
-
                     {/* 1. 금일 출력 현황 */}
                     <div className="mb-6 avoid-break">
                         <h2 className="text-xl font-bold border-l-4 border-black pl-2 mb-2">1. 금일 출력 현황</h2>
                         <table className="w-full text-center">
                             <thead>
-                                <tr className="bg-gray-100">
-                                    <th>공종</th><th>인원</th><th>공종</th><th>인원</th><th>공종</th><th>인원</th>
-                                </tr>
+                                <tr className="bg-gray-100"><th>공종</th><th>인원</th><th>공종</th><th>인원</th><th>공종</th><th>인원</th></tr>
                             </thead>
                             <tbody>
-                                {/* 3열씩 묶어서 출력하는 로직 */}
                                 {Array.from({ length: Math.ceil(data.workerList.length / 3) }).map((_, rowIndex) => (
                                     <tr key={rowIndex}>
                                         {[0, 1, 2].map(colIndex => {
                                             const item = data.workerList[rowIndex * 3 + colIndex];
-                                            return item ? (
-                                                <React.Fragment key={colIndex}>
-                                                    <td>{item.trade}</td>
-                                                    <td>{item.count}명</td>
-                                                </React.Fragment>
-                                            ) : (
-                                                <React.Fragment key={colIndex}><td></td><td></td></React.Fragment>
-                                            );
+                                            return item ? (<React.Fragment key={colIndex}><td>{item.trade}</td><td>{item.count}명</td></React.Fragment>) : (<React.Fragment key={colIndex}><td></td><td></td></React.Fragment>);
                                         })}
                                     </tr>
                                 ))}
-                                <tr className="font-bold bg-gray-50">
-                                    <td colSpan="5" className="text-right pr-4">총 출력 인원</td>
-                                    <td>{data.workerList.reduce((acc, cur) => acc + parseInt(cur.count||0), 0)}명</td>
-                                </tr>
+                                <tr className="font-bold bg-gray-50"><td colSpan="5" className="text-right pr-4">총 출력 인원</td><td>{data.workerList.reduce((acc, cur) => acc + parseInt(cur.count||0), 0)}명</td></tr>
                             </tbody>
                         </table>
                     </div>
-
-                    {/* 2. 고위험 작업 및 위험성 평가 */}
+                    {/* 2. 고위험 작업 */}
                     <div className="mb-6 avoid-break">
                         <h2 className="text-xl font-bold border-l-4 border-black pl-2 mb-2">2. 고위험 작업 및 TBM(위험성평가) 기록</h2>
                         <table className="w-full">
-                            <thead>
-                                <tr className="bg-gray-100">
-                                    <th width="15%">작업팀</th>
-                                    <th width="25%">작업명</th>
-                                    <th width="10%">위험도</th>
-                                    <th width="10%">인원/교육</th>
-                                    <th width="40%">위험성평가 및 중점 관리 대책</th>
-                                </tr>
-                            </thead>
+                            <thead><tr className="bg-gray-100"><th width="15%">작업팀</th><th width="25%">작업명</th><th width="10%">위험도</th><th width="10%">인원/교육</th><th width="40%">위험성평가 및 중점 관리 대책</th></tr></thead>
                             <tbody>
                                 {data.riskWorks.length > 0 ? data.riskWorks.map(work => (
-                                    <tr key={work.id}>
-                                        <td className="text-center">{work.team}</td>
-                                        <td>{work.task}</td>
-                                        <td className="text-center">{work.risk}</td>
-                                        <td className="text-center">{work.eduCompleted} / {work.workerCount}</td>
-                                        <td className="text-left text-xs">{work.assessment || '-'}</td>
-                                    </tr>
+                                    <tr key={work.id}><td className="text-center">{work.team}</td><td>{work.task}</td><td className="text-center">{work.risk}</td><td className="text-center">{work.eduCompleted} / {work.workerCount}</td><td className="text-left text-xs">{work.assessment || '-'}</td></tr>
                                 )) : <tr><td colSpan="5" className="text-center py-4">금일 고위험 작업 없음</td></tr>}
                             </tbody>
                         </table>
                     </div>
-
-                    {/* 3. 알림 게시판 */}
+                    {/* 3. 알림 */}
                     <div className="mb-6 avoid-break">
                         <h2 className="text-xl font-bold border-l-4 border-black pl-2 mb-2">3. 안전 공지사항</h2>
                         <table className="w-full">
-                            <thead>
-                                <tr className="bg-gray-100">
-                                    <th width="15%">구분</th>
-                                    <th width="60%">제목 및 내용</th>
-                                    <th width="15%">작성자</th>
-                                    <th width="10%">날짜</th>
-                                </tr>
-                            </thead>
+                            <thead><tr className="bg-gray-100"><th width="15%">구분</th><th width="60%">제목 및 내용</th><th width="15%">작성자</th><th width="10%">날짜</th></tr></thead>
                             <tbody>
                                 {data.noticeData.length > 0 ? data.noticeData.map(notice => (
-                                    <tr key={notice.id}>
-                                        <td className="text-center">{notice.type}</td>
-                                        <td>
-                                            <div className="font-bold">{notice.title}</div>
-                                            <div className="text-xs text-gray-500">{notice.content}</div>
-                                        </td>
-                                        <td className="text-center">{notice.author}</td>
-                                        <td className="text-center">{notice.date}</td>
-                                    </tr>
+                                    <tr key={notice.id}><td className="text-center">{notice.type}</td><td><div className="font-bold">{notice.title}</div><div className="text-xs text-gray-500">{notice.content}</div></td><td className="text-center">{notice.author}</td><td className="text-center">{notice.date}</td></tr>
                                 )) : <tr><td colSpan="4" className="text-center py-4">등록된 공지사항 없음</td></tr>}
                             </tbody>
                         </table>
                     </div>
-
                     <div className="page-break"></div>
-
-                    {/* 4. 안전 부적합 조치 (사진대지) */}
+                    {/* 4. 부적합 조치 */}
                     <div className="mb-6">
-                        <h2 className="text-xl font-bold border-l-4 border-black pl-2 mb-2">4. 안전 부적합 조치 현황 (Before / After)</h2>
+                        <h2 className="text-xl font-bold border-l-4 border-black pl-2 mb-2">4. 안전 부적합 조치 현황</h2>
                         <div className="grid grid-cols-2 gap-4">
                             {data.issueList.length > 0 ? data.issueList.map((issue, idx) => (
                                 <div key={issue.id} className="border border-black p-2 avoid-break">
-                                    <div className="flex justify-between border-b border-black mb-2 pb-1">
-                                        <span className="font-bold text-sm">#{idx+1}. {issue.loc}</span>
-                                        <span className="text-xs">상태: {issue.status === 'done' ? '조치완료' : '조치중'} | 발견: {issue.finder}</span>
-                                    </div>
+                                    <div className="flex justify-between border-b border-black mb-2 pb-1"><span className="font-bold text-sm">#{idx+1}. {issue.loc}</span><span className="text-xs">상태: {issue.status === 'done' ? '조치완료' : '조치중'} | 발견: {issue.finder}</span></div>
                                     <div className="text-sm mb-2 h-10 overflow-hidden">{issue.desc}</div>
-                                    <div className="flex gap-1 h-32">
-                                        <div className="w-1/2 border border-dashed border-gray-400 flex items-center justify-center bg-gray-50">
-                                            <span className="text-xs text-gray-400">조치 전 사진</span>
-                                        </div>
-                                        <div className="w-1/2 border border-dashed border-gray-400 flex items-center justify-center bg-gray-50">
-                                            <span className="text-xs text-gray-400">조치 후 사진</span>
-                                        </div>
-                                    </div>
+                                    <div className="flex gap-1 h-32"><div className="w-1/2 border border-dashed border-gray-400 flex items-center justify-center bg-gray-50"><span className="text-xs text-gray-400">조치 전 사진</span></div><div className="w-1/2 border border-dashed border-gray-400 flex items-center justify-center bg-gray-50"><span className="text-xs text-gray-400">조치 후 사진</span></div></div>
                                 </div>
                             )) : <div className="col-span-2 text-center py-4 border">금일 부적합 사항 없음</div>}
                         </div>
                     </div>
-
-                    {/* 5. 반입 점검 및 기타 점검 */}
+                    {/* 5. 점검 */}
                     <div className="mb-6 avoid-break">
                         <h2 className="text-xl font-bold border-l-4 border-black pl-2 mb-2">5. 반입 점검 및 기타 점검 기록</h2>
                         <table className="w-full">
-                            <thead>
-                                <tr className="bg-gray-100">
-                                    <th width="15%">구분</th>
-                                    <th width="40%">점검 대상 (장비/기계/물질)</th>
-                                    <th width="15%">점검일</th>
-                                    <th width="15%">결과</th>
-                                    <th width="15%">확인</th>
-                                </tr>
-                            </thead>
+                            <thead><tr className="bg-gray-100"><th width="15%">구분</th><th width="40%">점검 대상</th><th width="15%">점검일</th><th width="15%">결과</th><th width="15%">확인</th></tr></thead>
                             <tbody>
                                 {data.inspectionLog.length > 0 ? data.inspectionLog.map(log => (
-                                    <tr key={log.id}>
-                                        <td className="text-center">{log.type}</td>
-                                        <td>{log.item}</td>
-                                        <td className="text-center">{log.date}</td>
-                                        <td className="text-center font-bold">{log.status}</td>
-                                        <td className="text-center text-gray-400">(서명)</td>
-                                    </tr>
+                                    <tr key={log.id}><td className="text-center">{log.type}</td><td>{log.item}</td><td className="text-center">{log.date}</td><td className="text-center font-bold">{log.status}</td><td className="text-center text-gray-400">(서명)</td></tr>
                                 )) : <tr><td colSpan="5" className="text-center py-4">금일 점검 내역 없음</td></tr>}
                             </tbody>
                         </table>
                     </div>
 
-                    {/* 푸터 */}
-                    <div className="text-center text-xs text-gray-400 mt-8 border-t pt-4">
-                        남화토건(주) 스마트 안전보건 플랫폼 - Safety ON Output System
+                    {/* [추가] 결재 서명란 (5열 2행) - 작성, 검토, 검토, 조정, 승인 */}
+                    <div className="mt-12 flex justify-end avoid-break">
+                        <table className="text-center border-collapse" style={{width: '60%'}}>
+                            <tbody>
+                                <tr>
+                                    <td rowSpan="2" className="border border-black bg-gray-100 font-bold w-10">결<br/>재</td>
+                                    <td className="border border-black bg-gray-50 p-1 font-bold">작성</td>
+                                    <td className="border border-black bg-gray-50 p-1 font-bold">검토</td>
+                                    <td className="border border-black bg-gray-50 p-1 font-bold">검토</td>
+                                    <td className="border border-black bg-gray-50 p-1 font-bold">조정</td>
+                                    <td className="border border-black bg-gray-50 p-1 font-bold">승인</td>
+                                </tr>
+                                <tr>
+                                    <td className="border border-black h-20"></td>
+                                    <td className="border border-black h-20"></td>
+                                    <td className="border border-black h-20"></td>
+                                    <td className="border border-black h-20"></td>
+                                    <td className="border border-black h-20"></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
+
+                    <div className="text-center text-xs text-gray-400 mt-8 border-t pt-4">남화토건(주) 스마트 안전보건 플랫폼 - Safety ON Output System</div>
                 </div>
             );
         };
 
         const SafetyDashboard = () => {
             const [currentDate, setCurrentDate] = useState('');
-            
             const queryParams = new URLSearchParams(window.location.search);
-            const siteId = queryParams.get('siteId') || 'siteA'; 
-            const currentSiteData = SITES_DB[siteId] || SITES_DB['siteA'];
-
+            const siteId = queryParams.get('siteId') || 'siteA'; // URL로 현장 구분 가능
+            
             const [startDate, setStartDate] = useState('2024-01-01');
             const [targetDays, setTargetDays] = useState(500);
             const [accidentFreeDays, setAccidentFreeDays] = useState(0);
-            const [riskWorks, setRiskWorks] = useState(currentSiteData.riskWorks);
-            const [noticeData, setNoticeData] = useState(currentSiteData.notices);
-            const [issueList, setIssueList] = useState(currentSiteData.issueList); 
-            const [inspectionLog, setInspectionLog] = useState(currentSiteData.inspectionLog);
-            const [workerList, setWorkerList] = useState(currentSiteData.workerDetails);
+
+            // 초기 상태는 빈 배열 (DB에서 불러옴)
+            const [riskWorks, setRiskWorks] = useState([]);
+            const [noticeData, setNoticeData] = useState([]);
+            const [issueList, setIssueList] = useState([]); 
+            const [inspectionLog, setInspectionLog] = useState([]);
+            const [workerList, setWorkerList] = useState([]);
             
-            const [logoUrl, setLogoUrl] = useState(null);
+            // UI States
             const [showWorkerModal, setShowWorkerModal] = useState(false);
             const [showIssueModal, setShowIssueModal] = useState(false);
             const [selectedIssueType, setSelectedIssueType] = useState(null); 
@@ -375,6 +292,7 @@
             const [showSettingsModal, setShowSettingsModal] = useState(false); 
             const [selectedNotice, setSelectedNotice] = useState(null); 
 
+            // 1. 날짜 및 무재해 일수 계산 (startDate 변경 시 실행)
             useEffect(() => {
                 const today = new Date();
                 setCurrentDate(`${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`);
@@ -385,406 +303,495 @@
                 const diffTime = todayMidnight - startMidnight;
                 const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
                 setAccidentFreeDays(diffDays >= 0 ? diffDays + 1 : 0);
+            }, [startDate]);
 
-                if (isFirebaseActive && db) {
-                    const siteDocRef = db.collection('sites').doc(siteId);
-                    const unsubscribeRisk = siteDocRef.collection('riskWorks').onSnapshot(snapshot => {
-                        const works = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        if(works.length > 0) setRiskWorks(works);
+            // 2. DB 리스너 연결 (페이지 로드 시 한 번 실행)
+            useEffect(() => {
+                if (db) {
+                    const siteRef = db.collection('sites').doc(siteId);
+
+                    // [추가] 사이트 설정(실착공일, 목표일) 실시간 동기화
+                    const unsubSite = siteRef.onSnapshot(doc => {
+                        if (doc.exists) {
+                            const data = doc.data();
+                            if(data.startDate) setStartDate(data.startDate);
+                            if(data.targetDays) setTargetDays(data.targetDays);
+                        } else {
+                            // 문서가 없으면 기본 설정값 생성
+                            siteRef.set({ startDate: '2024-01-01', targetDays: 500 }, { merge: true });
+                        }
                     });
-                    return () => { unsubscribeRisk(); };
+
+                    // 1. 초기 데이터 시딩 (DB가 비어있으면 기본값 넣기)
+                    siteRef.collection('riskWorks').get().then(snap => {
+                        if(snap.empty) {
+                            console.log("DB 초기화: 샘플 데이터 입력 중...");
+                            const batch = db.batch();
+                            DEFAULT_SEED_DATA.riskWorks.forEach(d => batch.set(siteRef.collection('riskWorks').doc(d.id), d));
+                            DEFAULT_SEED_DATA.notices.forEach(d => batch.set(siteRef.collection('notices').doc(d.id), d));
+                            DEFAULT_SEED_DATA.issueList.forEach(d => batch.set(siteRef.collection('issues').doc(d.id), d));
+                            DEFAULT_SEED_DATA.inspectionLog.forEach(d => batch.set(siteRef.collection('inspections').doc(d.id), d));
+                            DEFAULT_SEED_DATA.workerDetails.forEach(d => batch.set(siteRef.collection('workers').doc(d.id), d));
+                            batch.commit().then(() => console.log("샘플 데이터 입력 완료"));
+                        }
+                    });
+
+                    // 2. 실시간 리스너 등록
+                    const unsubRisk = siteRef.collection('riskWorks').onSnapshot(snap => setRiskWorks(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+                    const unsubNotice = siteRef.collection('notices').orderBy('date', 'desc').onSnapshot(snap => setNoticeData(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+                    const unsubIssue = siteRef.collection('issues').onSnapshot(snap => setIssueList(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+                    const unsubInsp = siteRef.collection('inspections').orderBy('date', 'desc').onSnapshot(snap => setInspectionLog(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+                    const unsubWorker = siteRef.collection('workers').onSnapshot(snap => setWorkerList(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+
+                    return () => { 
+                        unsubSite(); // 설정 리스너 해제
+                        unsubRisk(); unsubNotice(); unsubIssue(); unsubInsp(); unsubWorker(); 
+                    };
                 }
-            }, [startDate, siteId]);
+            }, [siteId]);
 
             const issueCounts = {
                 new: issueList.filter(i => i.status === 'new').length,
                 processing: issueList.filter(i => i.status === 'processing').length,
                 done: issueList.filter(i => i.status === 'done').length
             };
-
-            // Handlers
-            const handleLogoUpload = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => setLogoUrl(reader.result); reader.readAsDataURL(file); } };
-            const handleWorkEdit = (id) => setEditingWorkId(id);
-            const handleWorkSave = async (id) => { setEditingWorkId(null); if (!isFirebaseActive) alert("✅ 저장되었습니다. (데모 모드)"); };
-            const handleWorkChange = (id, field, value) => { setRiskWorks(riskWorks.map(work => work.id === id ? { ...work, [field]: value } : work)); };
-            const handleAddWork = () => { const newWork = { id: Date.now().toString(), team: '', task: '', risk: '중', manager: '', status: '예정', workerCount: 0, eduCompleted: 0, assessment: '' }; setRiskWorks([...riskWorks, newWork]); setEditingWorkId(newWork.id); };
-            const handleWorkerChange = (id, field, value) => { setWorkerList(workerList.map(w => w.id === id ? { ...w, [field]: value } : w)); };
-            const handleAddWorker = () => setWorkerList([...workerList, { id: Date.now(), trade: '', count: 0 }]);
-            const handleDeleteWorker = (id) => setWorkerList(workerList.filter(w => w.id !== id));
-            const handleIssueChange = (id, field, value) => { setIssueList(issueList.map(issue => issue.id === id ? { ...issue, [field]: value } : issue)); };
-            const changeIssueStatus = (id, newStatus) => { setIssueList(issueList.map(issue => issue.id === id ? { ...issue, status: newStatus } : issue)); alert(newStatus === 'processing' ? '조치가 시작되었습니다.' : '조치가 완료되었습니다.'); };
-            const handleAddNotice = () => { const title = prompt("제목 입력"); if(title) setNoticeData([{ id: Date.now(), type: '공지', title, content: '', author: '관리자', date: new Date().toISOString().slice(5,10) }, ...noticeData]); };
-            const openInspectionModal = (type) => { setInspectionType(type); setShowInspectionModal(true); };
-            const handleSaveInspection = (e) => { e.preventDefault(); setInspectionLog([{ id: Date.now(), type: inspectionType, item: e.target.item.value, date: new Date().toISOString().slice(5,10), status: e.target.result.value }, ...inspectionLog]); setShowInspectionModal(false); };
-            const handleSaveSettings = (e) => { e.preventDefault(); setStartDate(e.target.startDate.value); setTargetDays(e.target.targetDays.value); setShowSettingsModal(false); };
-            const closeModal = (setter) => (e) => { if(e.target === e.currentTarget) setter(false); };
-            const getStatusColor = (status) => status === '합격' ? 'bg-green-100 text-green-600' : status === '불합격' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600';
             const filteredIssues = issueList.filter(i => i.status === selectedIssueType);
 
-            // [PDF 출력 함수]
-            const handlePrint = () => {
-                window.print();
+            // --- Handlers (DB Write) ---
+            
+            // 작업 관리
+            const handleWorkEdit = (id) => setEditingWorkId(id);
+            const handleWorkSave = (id) => { 
+                setEditingWorkId(null); 
+                // 변경된 내용은 handleWorkChange에서 이미 로컬 state에 반영됨. 
+                // 하지만 DB에는 반영 안됨. 여기서는 편의상 "Save" 버튼 누를 때 DB 업데이트 하도록 구현.
+                const workToSave = riskWorks.find(w => w.id === id);
+                if(workToSave && db) db.collection('sites').doc(siteId).collection('riskWorks').doc(id).update(workToSave);
             };
+            // Input Change -> Local State Update (UX 반응성)
+            const handleWorkChange = (id, field, value) => { setRiskWorks(riskWorks.map(work => work.id === id ? { ...work, [field]: value } : work)); };
+            
+            const handleAddWork = () => { 
+                const newWork = { team: '', task: '', risk: '중', manager: '', status: '예정', workerCount: 0, eduCompleted: 0, assessment: '' };
+                if(db) db.collection('sites').doc(siteId).collection('riskWorks').add(newWork);
+            };
+
+            // 출력 인원 관리
+            const handleWorkerChange = (id, field, value) => { 
+                // 로컬 업데이트 후 디바운싱 or 모달 닫을 때 저장 필요. 여기선 모달 닫을 때 일괄 저장.
+                setWorkerList(workerList.map(w => w.id === id ? { ...w, [field]: value } : w)); 
+            };
+            const handleAddWorker = () => setWorkerList([...workerList, { id: Date.now().toString(), trade: '', count: 0 }]);
+            const handleDeleteWorker = (id) => setWorkerList(workerList.filter(w => w.id !== id));
+            const saveWorkersToDB = () => {
+                if(!db) return;
+                const batch = db.batch();
+                const workerRef = db.collection('sites').doc(siteId).collection('workers');
+                // 기존꺼 다 지우고 새로 쓰거나, ID 맞춰서 업데이트. 간단하게 개별 업데이트
+                workerList.forEach(w => {
+                    const docRef = w.id.length < 10 ? workerRef.doc() : workerRef.doc(w.id); // 새 ID면 자동생성
+                    batch.set(docRef, { trade: w.trade, count: w.count }, { merge: true });
+                });
+                batch.commit().then(() => setShowWorkerModal(false));
+            };
+
+            // 부적합 조치
+            const handleIssueChange = (id, field, value) => { setIssueList(issueList.map(issue => issue.id === id ? { ...issue, [field]: value } : issue)); };
+            const saveIssueChanges = () => {
+                 // 모달 닫을 때 변경사항 일괄 저장
+                 if(!db) return;
+                 const batch = db.batch();
+                 filteredIssues.forEach(issue => {
+                     const ref = db.collection('sites').doc(siteId).collection('issues').doc(issue.id);
+                     batch.update(ref, { loc: issue.loc, finder: issue.finder, desc: issue.desc });
+                 });
+                 batch.commit().then(() => setShowIssueModal(false));
+            };
+            const changeIssueStatus = (id, newStatus) => { 
+                if(db) db.collection('sites').doc(siteId).collection('issues').doc(id).update({ status: newStatus });
+            };
+
+            // 공지사항
+            const handleAddNotice = () => { 
+                const title = prompt("제목 입력"); 
+                if(title && db) {
+                    db.collection('sites').doc(siteId).collection('notices').add({
+                        type: '공지', title, content: '', author: '관리자', date: new Date().toISOString().slice(5,10)
+                    });
+                }
+            };
+
+            // 점검
+            const openInspectionModal = (type) => { setInspectionType(type); setShowInspectionModal(true); };
+            const handleSaveInspection = (e) => { 
+                e.preventDefault(); 
+                if(db) {
+                    db.collection('sites').doc(siteId).collection('inspections').add({
+                        type: inspectionType, item: e.target.item.value, date: new Date().toISOString().slice(5,10), status: e.target.result.value
+                    });
+                }
+                setShowInspectionModal(false); 
+            };
+
+            // 설정 저장 (DB에 저장)
+            const handleSaveSettings = (e) => { 
+                e.preventDefault(); 
+                const newStartDate = e.target.startDate.value;
+                const newTargetDays = parseInt(e.target.targetDays.value);
+                
+                // 로컬 상태 즉시 업데이트
+                setStartDate(newStartDate); 
+                setTargetDays(newTargetDays); 
+                
+                // DB에 영구 저장
+                if (db) {
+                    db.collection('sites').doc(siteId).set({
+                        startDate: newStartDate,
+                        targetDays: newTargetDays
+                    }, { merge: true });
+                }
+                setShowSettingsModal(false); 
+            };
+            
+            const closeModal = (setter) => (e) => { if(e.target === e.currentTarget) setter(false); };
+            const getStatusColor = (status) => status === '합격' ? 'bg-green-100 text-green-600' : status === '불합격' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600';
+            const handlePrint = () => { window.print(); };
 
             return (
                 <div className="min-h-screen bg-gray-50 text-gray-800 font-sans relative pb-20">
-                
-                {/* [PrintReport 컴포넌트 삽입] */}
-                <PrintReport 
-                    data={{ workerList, riskWorks, noticeData, issueList, inspectionLog }} 
-                    siteName={currentSiteData.name}
-                    currentDate={currentDate}
-                    accidentFreeDays={accidentFreeDays}
-                    targetDays={targetDays}
-                />
-
-                {/* 화면에 보이는 대시보드 (no-print 클래스 추가) */}
-                <div className="no-print">
-                    <header className="bg-white shadow-sm sticky top-0 z-30">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-                            <div className="flex items-center w-1/4">
-                                <label className="cursor-pointer group relative flex flex-col items-center justify-center w-12 h-12 bg-gray-100 rounded-lg border border-gray-200 hover:bg-gray-200 transition overflow-hidden mr-3">
-                                    {logoUrl ? <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" /> : <div className="text-center"><span className="text-[10px] text-gray-500 font-bold">LOGO</span><div className="text-[8px] text-gray-400">업로드</div></div>}
-                                    <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
-                                </label>
-                                <div>
-                                    <h1 className="text-xl font-bold text-gray-900 leading-tight">Safety ON</h1>
-                                    <p className="text-xs text-gray-500">스마트 안전보건 플랫폼</p>
+                    <PrintReport data={{ workerList, riskWorks, noticeData, issueList, inspectionLog }} siteName="수원 노유자시설 신축공사" currentDate={currentDate} accidentFreeDays={accidentFreeDays} targetDays={targetDays} />
+                    <div className="no-print">
+                        <header className="bg-white shadow-sm sticky top-0 z-30">
+                            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+                                <div className="flex items-center w-1/4">
+                                    <div><h1 className="text-xl font-bold text-gray-900 leading-tight">Safety ON</h1><p className="text-xs text-gray-500">스마트 안전보건 플랫폼</p></div>
+                                </div>
+                                <div className="flex-1 text-center"><h2 className="text-4xl font-extrabold text-blue-900 tracking-widest font-['SeoulHangang'] drop-shadow-md">" 남화의 미래를 켜다 "</h2></div>
+                                <div className="flex items-center justify-end space-x-6 w-1/4">
+                                    <span className="text-sm font-medium text-gray-500 flex items-center hidden sm:flex"><CalendarIcon className="mr-2" size={16} /> {currentDate}</span>
+                                    <div className="relative cursor-pointer"><Bell className="text-gray-400 hover:text-gray-600" /><span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">3</span></div>
+                                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-bold text-gray-600 cursor-pointer">관리</div>
                                 </div>
                             </div>
-                            <div className="flex-1 text-center">
-                                <h2 className="text-4xl font-extrabold text-blue-900 tracking-widest font-['SeoulHangang'] drop-shadow-md">" 남화의 안전을 켜다 "</h2>
-                            </div>
-                            <div className="flex items-center justify-end space-x-6 w-1/4">
-                                <span className="text-sm font-medium text-gray-500 flex items-center hidden sm:flex"><CalendarIcon className="mr-2" size={16} /> {currentDate}</span>
-                                <div className="relative cursor-pointer"><Bell className="text-gray-400 hover:text-gray-600" /><span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">3</span></div>
-                                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-bold text-gray-600 cursor-pointer">관리</div>
-                            </div>
-                        </div>
-                    </header>
+                        </header>
 
-                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                            {/* Top Banner */}
+                            <div className="bg-gradient-to-r from-green-700 to-green-500 rounded-2xl shadow-lg p-6 mb-8 text-white flex flex-col md:flex-row items-center justify-between animate-fade-in relative">
+                                <button onClick={() => setShowSettingsModal(true)} className="absolute top-4 right-4 p-2 bg-white/20 rounded-full hover:bg-white/30 transition"><Settings size={20} className="text-white" /></button>
+                                <div className="mb-4 md:mb-0">
+                                    <h2 className="text-lg font-medium opacity-90 mb-1 flex items-center">우리 현장 무재해 기록 <button onClick={() => setShowSettingsModal(true)} className="ml-3 text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded flex items-center transition cursor-pointer border border-transparent hover:border-white/40" title="클릭하여 날짜 수정">실착공일: {startDate} <Edit2 size={12} className="ml-1 opacity-70"/></button></h2>
+                                    <div className="flex items-end"><span className="text-5xl font-bold mr-2">{accidentFreeDays}</span><span className="text-xl mb-2">일째</span><span className="ml-4 bg-white/20 px-3 py-1 rounded-full text-sm">목표: {targetDays}일</span></div>
+                                </div>
+                                <div className="flex space-x-8 text-center pr-12">
+                                    <div className="cursor-pointer hover:bg-white/10 p-2 rounded-lg transition" onClick={() => setShowWorkerModal(true)}>
+                                        <p className="text-sm opacity-75 mb-1 flex items-center justify-center">금일 출력 인원 <MoreHorizontal size={12} className="ml-1" /></p>
+                                        <p className="text-2xl font-bold flex items-center justify-center"><Users size={20} className="mr-1" /> {workerList.reduce((acc, cur) => acc + parseInt(cur.count || 0), 0)}명</p>
+                                    </div>
+                                    <div className="h-12 w-px bg-white/30"></div>
+                                    <div><p className="text-sm opacity-75 mb-1">고위험 작업</p><p className="text-2xl font-bold flex items-center justify-center text-yellow-300"><AlertTriangle size={20} className="mr-1" /> {riskWorks.length}건</p></div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <div className="lg:col-span-2 space-y-6">
+                                    {/* 1. 고위험 작업 현황 */}
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fade-in" style={{animationDelay: '0.1s'}}>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-lg font-bold text-gray-800 flex items-center"><AlertOctagon className="text-red-500 mr-2" size={20} /> 금일 고위험 작업 현황</h3>
+                                            <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded font-bold animate-pulse">● 실시간 동기화 중</span>
+                                        </div>
+                                        <div className="overflow-x-auto mb-2">
+                                            <table className="w-full text-sm text-left">
+                                                <thead className="bg-gray-50 text-gray-500"><tr><th className="px-3 py-3 rounded-l-lg">작업팀</th><th className="px-3 py-3">작업 내용</th><th className="px-3 py-3">위험도</th><th className="px-3 py-3">투입 인원</th><th className="px-3 py-3">감독자</th><th className="px-3 py-3">상태</th><th className="px-3 py-3 rounded-r-lg w-16">관리</th></tr></thead>
+                                                <tbody className="divide-y divide-gray-100">
+                                                    {riskWorks.map((work) => (
+                                                        <tr key={work.id} className="hover:bg-gray-50">
+                                                            {editingWorkId === work.id ? (
+                                                                <>
+                                                                    <td className="px-3 py-2"><input className="border rounded px-1 w-full" value={work.team} onChange={(e) => handleWorkChange(work.id, 'team', e.target.value)} /></td>
+                                                                    <td className="px-3 py-2"><input className="border rounded px-1 w-full" value={work.task} onChange={(e) => handleWorkChange(work.id, 'task', e.target.value)} /></td>
+                                                                    <td className="px-3 py-2"><select className="border rounded px-1" value={work.risk} onChange={(e) => handleWorkChange(work.id, 'risk', e.target.value)}><option value="상">상</option><option value="중">중</option><option value="하">하</option></select></td>
+                                                                    <td className="px-3 py-2"><input type="number" className="border rounded px-1 w-full" value={work.workerCount} onChange={(e) => handleWorkChange(work.id, 'workerCount', e.target.value)} /></td>
+                                                                    <td className="px-3 py-2"><input className="border rounded px-1 w-full" value={work.manager} onChange={(e) => handleWorkChange(work.id, 'manager', e.target.value)} /></td>
+                                                                    <td className="px-3 py-2"><select className="border rounded px-1" value={work.status} onChange={(e) => handleWorkChange(work.id, 'status', e.target.value)}><option value="예정">예정</option><option value="진행">진행</option><option value="완료">완료</option></select></td>
+                                                                    <td className="px-3 py-2 text-center"><button onClick={() => handleWorkSave(work.id)} className="text-green-600 bg-green-100 p-1 rounded"><Save size={16} /></button></td>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <td className="px-3 py-3 font-medium">{work.team}</td>
+                                                                    <td className="px-3 py-3">{work.task}</td>
+                                                                    <td className="px-3 py-3"><span className={`px-2 py-1 rounded text-xs font-bold ${work.risk === '상' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-600'}`}>{work.risk}</span></td>
+                                                                    <td className="px-3 py-3 font-bold text-blue-600">{work.workerCount}명</td>
+                                                                    <td className="px-3 py-3">{work.manager}</td>
+                                                                    <td className="px-3 py-3"><span className="flex items-center text-gray-500"><span className={`w-2 h-2 rounded-full mr-2 ${work.status === '진행' ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></span>{work.status}</span></td>
+                                                                    <td className="px-3 py-3 text-center"><button onClick={() => handleWorkEdit(work.id)} className="text-blue-500 p-1 rounded hover:bg-blue-50"><Edit2 size={16} /></button></td>
+                                                                </>
+                                                            )}
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <button onClick={handleAddWork} className="w-full py-2 border-2 border-dashed border-gray-200 rounded-lg text-gray-400 hover:border-blue-400 hover:text-blue-500 transition text-sm font-bold flex items-center justify-center"><Plus size={16} className="mr-1" /> 작업 추가하기</button>
+                                    </div>
+
+                                    {/* 2. 안전 교육 및 위험성평가 현황 */}
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fade-in" style={{animationDelay: '0.2s'}}>
+                                        <div className="flex items-center justify-between mb-6"><h3 className="text-lg font-bold text-gray-800 flex items-center"><ClipboardCheck className="text-blue-500 mr-2" size={20} /> 고위험 작업 안전 관리 (교육 & 위험성평가)</h3></div>
+                                        {riskWorks.length === 0 ? <div className="text-center py-8 text-gray-400 border-2 border-dashed rounded-lg">등록된 고위험 작업이 없습니다.</div> : (
+                                            <div className="space-y-6">
+                                                {riskWorks.map((work) => {
+                                                    const rate = work.workerCount > 0 ? Math.round((work.eduCompleted / work.workerCount) * 100) : 0;
+                                                    return (
+                                                        <div key={work.id} className="border border-gray-200 rounded-xl p-5 bg-gray-50 hover:bg-white transition hover:shadow-md">
+                                                            <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
+                                                                <div>
+                                                                    <div className="flex items-center gap-2 mb-1"><span className="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded font-bold">{work.team}</span><span className={`text-xs px-2 py-0.5 rounded font-bold ${work.risk === '상' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-600'}`}>위험도 {work.risk}</span></div>
+                                                                    <h4 className="font-bold text-gray-800 text-lg">{work.task}</h4>
+                                                                </div>
+                                                                <div className="flex-1 max-w-md bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+                                                                    <div className="flex justify-between items-center mb-2"><span className="text-sm font-bold text-gray-600">특별 안전 교육 이수 현황</span><span className={`text-sm font-bold ${rate === 100 ? 'text-green-600' : 'text-orange-500'}`}>{rate}% 달성</span></div>
+                                                                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2"><div className={`h-2.5 rounded-full transition-all duration-500 ${rate === 100 ? 'bg-green-500' : 'bg-blue-500'}`} style={{width: `${rate}%`}}></div></div>
+                                                                    <div className="flex justify-between items-center text-xs"><span className="text-gray-500">교육 대상: <strong className="text-gray-800">{work.workerCount}명</strong></span><div className="flex items-center gap-2"><span>이수 완료:</span><input type="number" min="0" max={work.workerCount} className="w-16 border rounded px-1 py-0.5 text-center font-bold" value={work.eduCompleted} onChange={(e) => handleWorkChange(work.id, 'eduCompleted', parseInt(e.target.value) || 0)} onBlur={() => handleWorkSave(work.id)} /><span>명</span></div></div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="mt-3">
+                                                                <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">사전 위험성평가 및 중점 관리 대책</label>
+                                                                <textarea className="w-full p-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 resize-none bg-white" rows="2" placeholder="주요 위험 요인과 안전 대책을 입력하세요." value={work.assessment} onChange={(e) => handleWorkChange(work.id, 'assessment', e.target.value)} onBlur={() => handleWorkSave(work.id)}></textarea>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* 3. 알림 게시판 */}
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fade-in" style={{animationDelay: '0.3s'}}>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-lg font-bold text-gray-800 flex items-center"><MessageSquare className="text-purple-500 mr-2" size={20} /> Safety 알림 게시판</h3>
+                                            <button onClick={handleAddNotice} className="text-sm px-3 py-1 bg-purple-50 text-purple-600 rounded hover:bg-purple-100 transition flex items-center"><Plus size={12} className="mr-1" /> 글쓰기</button>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {noticeData.map((notice) => (
+                                                <div key={notice.id} onClick={() => setSelectedNotice(notice)} className="flex items-center justify-between p-3 border-b border-gray-50 hover:bg-gray-50 transition cursor-pointer">
+                                                    <div className="flex items-center gap-3"><span className={`text-xs font-bold px-2 py-1 rounded ${notice.type === '공지' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>{notice.type}</span><span className="text-sm font-medium text-gray-800 hover:text-blue-600 transition">{notice.title}</span></div>
+                                                    <div className="flex items-center text-xs text-gray-400 gap-3"><span>{notice.author}</span><span>{notice.date}</span></div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
+                                    {/* 4. 부적합 조치 현황 */}
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fade-in" style={{animationDelay: '0.4s'}}>
+                                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center"><CheckCircle className="text-green-500 mr-2" size={20} /> 안전 부적합 조치</h3>
+                                        <div className="space-y-3">
+                                            <div onClick={() => { setSelectedIssueType('new'); setShowIssueModal(true); }} className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-100 cursor-pointer hover:-translate-y-1 transition"><div className="flex items-center"><div className="w-8 h-8 rounded-full bg-red-200 flex items-center justify-center text-red-600 mr-3"><AlertTriangle size={16} /></div><span className="text-sm font-bold text-gray-700">신규 발견 (접수 대기)</span></div><span className="text-xl font-bold text-red-600">{issueCounts.new}</span></div>
+                                            <div onClick={() => { setSelectedIssueType('processing'); setShowIssueModal(true); }} className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg border border-yellow-100 cursor-pointer hover:-translate-y-1 transition"><div className="flex items-center"><div className="w-8 h-8 rounded-full bg-yellow-200 flex items-center justify-center text-yellow-600 mr-3"><Activity size={16} /></div><span className="text-sm font-bold text-gray-700">조치 중 (진행)</span></div><span className="text-xl font-bold text-yellow-600">{issueCounts.processing}</span></div>
+                                            <div onClick={() => { setSelectedIssueType('done'); setShowIssueModal(true); }} className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-100 cursor-pointer hover:-translate-y-1 transition"><div className="flex items-center"><div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-600 mr-3"><CheckCircle size={16} /></div><span className="text-sm font-bold text-gray-700">조치 완료</span></div><span className="text-xl font-bold text-green-600">{issueCounts.done}</span></div>
+                                        </div>
+                                    </div>
+
+                                    {/* 5. 반입 점검 및 알림 */}
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fade-in" style={{animationDelay: '0.5s'}}>
+                                        <h3 className="text-lg font-bold text-gray-800 mb-4">반입 점검 및 알림</h3>
+                                        <div className="grid grid-cols-1 gap-2 mb-4">
+                                            <button onClick={() => openInspectionModal('건설장비')} className="py-2.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-bold hover:bg-blue-100 flex items-center justify-center border border-blue-100"><Truck size={16} className="mr-2"/> 건설장비 점검</button>
+                                            <button onClick={() => openInspectionModal('기계기구')} className="py-2.5 bg-orange-50 text-orange-700 rounded-lg text-sm font-bold hover:bg-orange-100 flex items-center justify-center border border-orange-100"><Tool size={16} className="mr-2"/> 기계기구 점검</button>
+                                            <button onClick={() => openInspectionModal('유해화학물질')} className="py-2.5 bg-purple-50 text-purple-700 rounded-lg text-sm font-bold hover:bg-purple-100 flex items-center justify-center border border-purple-100"><FlaskConical size={16} className="mr-2"/> 유해화학물질 점검</button>
+                                        </div>
+                                        <ul className="space-y-3 mt-4">
+                                            {inspectionLog.slice(0, 5).map(log => (
+                                                <li key={log.id} className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-100 text-sm">
+                                                    <div className="flex flex-col"><span className="font-medium text-gray-700">{log.item}</span><span className="text-xs text-gray-500">{log.type} | {log.date}</span></div>
+                                                    <span className={`text-xs px-2 py-1 rounded font-bold ${getStatusColor(log.status)}`}>{log.status}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
                         
-                        {/* Top Banner (무재해) */}
-                        <div className="bg-gradient-to-r from-green-700 to-green-500 rounded-2xl shadow-lg p-6 mb-8 text-white flex flex-col md:flex-row items-center justify-between animate-fade-in relative">
-                            <button onClick={() => setShowSettingsModal(true)} className="absolute top-4 right-4 p-2 bg-white/20 rounded-full hover:bg-white/30 transition"><Settings size={20} className="text-white" /></button>
-                            <div className="mb-4 md:mb-0">
-                                <h2 className="text-lg font-medium opacity-90 mb-1 flex items-center">
-                                    우리 현장 무재해 기록
-                                    <button onClick={() => setShowSettingsModal(true)} className="ml-3 text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded flex items-center transition cursor-pointer border border-transparent hover:border-white/40" title="클릭하여 날짜 수정">실착공일: {startDate} <Edit2 size={12} className="ml-1 opacity-70"/></button>
-                                </h2>
-                                <div className="flex items-end"><span className="text-5xl font-bold mr-2">{accidentFreeDays}</span><span className="text-xl mb-2">일째</span><span className="ml-4 bg-white/20 px-3 py-1 rounded-full text-sm">목표: {targetDays}일</span></div>
+                        {/* Footer */}
+                        <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 border-t border-gray-200 mt-8 relative flex justify-center items-center">
+                            <p className="text-gray-400 text-sm font-medium">남화토건(주) 안전보건팀</p>
+                            <div className="absolute right-4 flex space-x-2">
+                                <button onClick={handlePrint} className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-blue-700 transition shadow-sm whitespace-nowrap"><Printer size={16} className="mr-2" /> PDF 보고서 출력</button>
+                                <a href="https://nhs1033.netlify.app/status_b/suwon.html" target="_blank" className="flex items-center bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-purple-700 transition shadow-sm whitespace-nowrap"><LinkIcon size={16} className="mr-2" /> 예정공정표</a>
+                                <a href="index.html" className="flex items-center bg-gray-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-700 transition shadow-sm whitespace-nowrap">나가기</a>
                             </div>
-                            <div className="flex space-x-8 text-center pr-12">
-                                <div className="cursor-pointer hover:bg-white/10 p-2 rounded-lg transition" onClick={() => setShowWorkerModal(true)}>
-                                    <p className="text-sm opacity-75 mb-1 flex items-center justify-center">금일 출력 인원 <MoreHorizontal size={12} className="ml-1" /></p>
-                                    <p className="text-2xl font-bold flex items-center justify-center"><Users size={20} className="mr-1" /> {workerList.reduce((acc, cur) => acc + parseInt(cur.count || 0), 0)}명</p>
-                                </div>
-                                <div className="h-12 w-px bg-white/30"></div>
-                                <div>
-                                    <p className="text-sm opacity-75 mb-1">고위험 작업</p>
-                                    <p className="text-2xl font-bold flex items-center justify-center text-yellow-300"><AlertTriangle size={20} className="mr-1" /> {riskWorks.length}건</p>
+                        </footer>
+
+                        {/* Modals */}
+                        {showSettingsModal && (
+                            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={closeModal(setShowSettingsModal)}>
+                                <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
+                                    <div className="p-4 flex justify-between items-center bg-gray-800 text-white rounded-t-xl"><h3 className="font-bold">무재해 목표 설정</h3><button onClick={() => setShowSettingsModal(false)}><X size={24} /></button></div>
+                                    <form onSubmit={handleSaveSettings} className="p-6 space-y-4">
+                                        <div><label className="block text-sm font-bold text-gray-700 mb-1">실착공일</label><input name="startDate" type="date" defaultValue={startDate} className="w-full border rounded-lg p-2" required /></div>
+                                        <div><label className="block text-sm font-bold text-gray-700 mb-1">목표일수</label><input name="targetDays" type="number" defaultValue={targetDays} className="w-full border rounded-lg p-2" required /></div>
+                                        <button type="submit" className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-bold hover:bg-blue-700">설정 저장</button>
+                                    </form>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            {/* Left Column (2/3) */}
-                            <div className="lg:col-span-2 space-y-6">
-                                
-                                {/* 1. 고위험 작업 현황 */}
-                                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fade-in" style={{animationDelay: '0.1s'}}>
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-lg font-bold text-gray-800 flex items-center"><AlertOctagon className="text-red-500 mr-2" size={20} /> 금일 고위험 작업 현황</h3>
-                                        {isFirebaseActive && <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">실시간 동기화 중</span>}
+                        {showWorkerModal && (
+                            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center animate-fade-in" onClick={closeModal(setShowWorkerModal)}>
+                                <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
+                                    <div className="bg-green-600 p-4 flex justify-between items-center text-white"><h3 className="font-bold">금일 출력 인원 수정</h3><button onClick={() => setShowWorkerModal(false)}><X size={20} /></button></div>
+                                    <div className="p-4">
+                                        <div className="space-y-2 max-h-[60vh] overflow-y-auto mb-3">
+                                            {workerList.map((worker) => (
+                                                <div key={worker.id} className="flex items-center gap-2 mb-2">
+                                                    <input type="text" className="border p-2 rounded w-1/2 text-sm" value={worker.trade} onChange={(e) => handleWorkerChange(worker.id, 'trade', e.target.value)} placeholder="공종명"/>
+                                                    <input type="number" className="border p-2 rounded w-1/3 text-sm" value={worker.count} onChange={(e) => handleWorkerChange(worker.id, 'count', e.target.value)} placeholder="인원"/>
+                                                    <button onClick={() => handleDeleteWorker(worker.id)} className="text-red-400 hover:text-red-600"><Trash size={16} /></button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button onClick={handleAddWorker} className="w-full py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-bold hover:bg-gray-200">+ 공종 추가</button>
+                                        <button onClick={saveWorkersToDB} className="w-full mt-2 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700">저장 및 닫기</button>
                                     </div>
-                                    <div className="overflow-x-auto mb-2">
-                                        <table className="w-full text-sm text-left">
-                                            <thead className="bg-gray-50 text-gray-500">
-                                                <tr><th className="px-3 py-3 rounded-l-lg">작업팀</th><th className="px-3 py-3">작업 내용</th><th className="px-3 py-3">위험도</th><th className="px-3 py-3">투입 인원</th><th className="px-3 py-3">감독자</th><th className="px-3 py-3">상태</th><th className="px-3 py-3 rounded-r-lg w-16">관리</th></tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-100">
-                                                {riskWorks.map((work) => (
-                                                    <tr key={work.id} className="hover:bg-gray-50">
-                                                        {editingWorkId === work.id ? (
-                                                            <>
-                                                                <td className="px-3 py-2"><input className="border rounded px-1 w-full" value={work.team} onChange={(e) => handleWorkChange(work.id, 'team', e.target.value)} /></td>
-                                                                <td className="px-3 py-2"><input className="border rounded px-1 w-full" value={work.task} onChange={(e) => handleWorkChange(work.id, 'task', e.target.value)} /></td>
-                                                                <td className="px-3 py-2">
-                                                                    <select className="border rounded px-1" value={work.risk} onChange={(e) => handleWorkChange(work.id, 'risk', e.target.value)}><option value="상">상</option><option value="중">중</option><option value="하">하</option></select>
-                                                                </td>
-                                                                <td className="px-3 py-2"><input type="number" className="border rounded px-1 w-full" value={work.workerCount} onChange={(e) => handleWorkChange(work.id, 'workerCount', e.target.value)} /></td>
-                                                                <td className="px-3 py-2"><input className="border rounded px-1 w-full" value={work.manager} onChange={(e) => handleWorkChange(work.id, 'manager', e.target.value)} /></td>
-                                                                <td className="px-3 py-2">
-                                                                    <select className="border rounded px-1" value={work.status} onChange={(e) => handleWorkChange(work.id, 'status', e.target.value)}><option value="예정">예정</option><option value="진행">진행</option><option value="완료">완료</option></select>
-                                                                </td>
-                                                                <td className="px-3 py-2 text-center"><button onClick={() => handleWorkSave(work.id)} className="text-green-600 bg-green-100 p-1 rounded"><Save size={16} /></button></td>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <td className="px-3 py-3 font-medium">{work.team}</td>
-                                                                <td className="px-3 py-3">{work.task}</td>
-                                                                <td className="px-3 py-3"><span className={`px-2 py-1 rounded text-xs font-bold ${work.risk === '상' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-600'}`}>{work.risk}</span></td>
-                                                                <td className="px-3 py-3 font-bold text-blue-600">{work.workerCount}명</td>
-                                                                <td className="px-3 py-3">{work.manager}</td>
-                                                                <td className="px-3 py-3"><span className="flex items-center text-gray-500"><span className={`w-2 h-2 rounded-full mr-2 ${work.status === '진행' ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></span>{work.status}</span></td>
-                                                                <td className="px-3 py-3 text-center"><button onClick={() => handleWorkEdit(work.id)} className="text-blue-500 p-1 rounded hover:bg-blue-50"><Edit2 size={16} /></button></td>
-                                                            </>
-                                                        )}
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <button onClick={handleAddWork} className="w-full py-2 border-2 border-dashed border-gray-200 rounded-lg text-gray-400 hover:border-blue-400 hover:text-blue-500 transition text-sm font-bold flex items-center justify-center">
-                                        <Plus size={16} className="mr-1" /> 작업 추가하기
-                                    </button>
                                 </div>
+                            </div>
+                        )}
 
-                                {/* 2. 안전 교육 및 위험성평가 현황 */}
-                                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fade-in" style={{animationDelay: '0.2s'}}>
-                                    <div className="flex items-center justify-between mb-6">
-                                        <h3 className="text-lg font-bold text-gray-800 flex items-center">
-                                            <ClipboardCheck className="text-blue-500 mr-2" size={20} /> 고위험 작업 안전 관리 (교육 & 위험성평가)
-                                        </h3>
+                        {showIssueModal && (
+                            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={closeModal(setShowIssueModal)}>
+                                <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                                    {/* 모달 헤더 */}
+                                    <div className={`p-5 flex justify-between items-center text-white rounded-t-xl shrink-0 ${selectedIssueType === 'new' ? 'bg-red-500' : selectedIssueType === 'processing' ? 'bg-yellow-500' : 'bg-green-500'}`}>
+                                        <h3 className="font-bold text-lg">{selectedIssueType === 'new' ? '신규 발견 목록' : selectedIssueType === 'processing' ? '조치 중 목록' : '조치 완료 목록'}</h3>
+                                        <button onClick={() => setShowIssueModal(false)} className="hover:bg-white/20 rounded-full p-1 transition"><X size={24} /></button>
                                     </div>
                                     
-                                    {riskWorks.length === 0 ? (
-                                        <div className="text-center py-8 text-gray-400 border-2 border-dashed rounded-lg">등록된 고위험 작업이 없습니다.</div>
-                                    ) : (
-                                        <div className="space-y-6">
-                                            {riskWorks.map((work) => {
-                                                const rate = work.workerCount > 0 ? Math.round((work.eduCompleted / work.workerCount) * 100) : 0;
-                                                return (
-                                                    <div key={work.id} className="border border-gray-200 rounded-xl p-5 bg-gray-50 hover:bg-white transition hover:shadow-md">
-                                                        <div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
-                                                            <div>
-                                                                <div className="flex items-center gap-2 mb-1">
-                                                                    <span className="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded font-bold">{work.team}</span>
-                                                                    <span className={`text-xs px-2 py-0.5 rounded font-bold ${work.risk === '상' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-600'}`}>위험도 {work.risk}</span>
-                                                                </div>
-                                                                <h4 className="font-bold text-gray-800 text-lg">{work.task}</h4>
-                                                            </div>
-                                                            <div className="flex-1 max-w-md bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
-                                                                <div className="flex justify-between items-center mb-2">
-                                                                    <span className="text-sm font-bold text-gray-600">특별 안전 교육 이수 현황</span>
-                                                                    <span className={`text-sm font-bold ${rate === 100 ? 'text-green-600' : 'text-orange-500'}`}>{rate}% 달성</span>
-                                                                </div>
-                                                                <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
-                                                                    <div className={`h-2.5 rounded-full transition-all duration-500 ${rate === 100 ? 'bg-green-500' : 'bg-blue-500'}`} style={{width: `${rate}%`}}></div>
-                                                                </div>
-                                                                <div className="flex justify-between items-center text-xs">
-                                                                    <span className="text-gray-500">교육 대상 (투입 인원): <strong className="text-gray-800">{work.workerCount}명</strong></span>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span>이수 완료:</span>
-                                                                        <input 
-                                                                            type="number" 
-                                                                            min="0"
-                                                                            max={work.workerCount}
-                                                                            className="w-16 border rounded px-1 py-0.5 text-center font-bold"
-                                                                            value={work.eduCompleted} 
-                                                                            onChange={(e) => handleWorkChange(work.id, 'eduCompleted', parseInt(e.target.value) || 0)}
-                                                                        />
-                                                                        <span>명</span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div className="mt-3">
-                                                            <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">사전 위험성평가 및 중점 관리 대책</label>
-                                                            <textarea 
-                                                                className="w-full p-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 resize-none bg-white"
-                                                                rows="2"
-                                                                placeholder="해당 작업의 주요 위험 요인과 안전 대책을 입력하세요. (예: 2인 1조 작업 준수, 신호수 배치 확인 등)"
-                                                                value={work.assessment}
-                                                                onChange={(e) => handleWorkChange(work.id, 'assessment', e.target.value)}
-                                                            ></textarea>
-                                                        </div>
+                                    {/* 모달 바디 (스크롤 가능) */}
+                                    <div className="p-6 space-y-6 overflow-y-auto bg-gray-50 flex-1">
+                                        {filteredIssues.length > 0 ? filteredIssues.map(issue => (
+                                            <div key={issue.id} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200">
+                                                {/* 상단: 장소 및 발견자 */}
+                                                <div className="flex justify-between items-end mb-4 pb-2 border-b border-gray-100">
+                                                    <div className="flex-1 mr-4">
+                                                        <input 
+                                                            type="text" 
+                                                            className="w-full text-xl font-bold text-gray-800 bg-transparent placeholder-gray-300 focus:outline-none focus:placeholder-gray-200" 
+                                                            value={issue.loc} 
+                                                            onChange={(e) => handleIssueChange(issue.id, 'loc', e.target.value)} 
+                                                            placeholder="장소 입력 (예: 105동 3층)"
+                                                        />
                                                     </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* 3. 알림 게시판 */}
-                                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fade-in" style={{animationDelay: '0.3s'}}>
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-lg font-bold text-gray-800 flex items-center"><MessageSquare className="text-purple-500 mr-2" size={20} /> Safety 알림 게시판</h3>
-                                        <button onClick={handleAddNotice} className="text-sm px-3 py-1 bg-purple-50 text-purple-600 rounded hover:bg-purple-100 transition flex items-center"><Plus size={12} className="mr-1" /> 글쓰기</button>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {noticeData.map((notice) => (
-                                            <div key={notice.id} onClick={() => setSelectedNotice(notice)} className="flex items-center justify-between p-3 border-b border-gray-50 hover:bg-gray-50 transition cursor-pointer">
-                                                <div className="flex items-center gap-3">
-                                                    <span className={`text-xs font-bold px-2 py-1 rounded ${notice.type === '공지' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>{notice.type}</span>
-                                                    <span className="text-sm font-medium text-gray-800 hover:text-blue-600 transition">{notice.title}</span>
+                                                    <div className="flex items-center bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
+                                                        <span className="text-xs text-gray-500 mr-2 font-medium">발견자:</span>
+                                                        <input 
+                                                            type="text" 
+                                                            className="bg-transparent text-sm text-gray-700 font-medium focus:outline-none w-20 text-right border-b border-gray-300 focus:border-gray-500" 
+                                                            value={issue.finder} 
+                                                            onChange={(e) => handleIssueChange(issue.id, 'finder', e.target.value)}
+                                                        />
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center text-xs text-gray-400 gap-3"><span>{notice.author}</span><span>{notice.date}</span></div>
+
+                                                {/* 내용 입력 */}
+                                                <textarea 
+                                                    className="w-full border border-gray-200 rounded-lg p-4 text-gray-700 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 resize-none h-28 mb-5 placeholder-gray-300 leading-relaxed" 
+                                                    value={issue.desc} 
+                                                    onChange={(e) => handleIssueChange(issue.id, 'desc', e.target.value)} 
+                                                    placeholder="안전 부적합 사항을 상세히 입력하세요."
+                                                />
+
+                                                {/* 사진 업로드 영역 */}
+                                                <div className="grid grid-cols-2 gap-4 mb-6">
+                                                    <label className="group border-2 border-dashed border-gray-200 rounded-xl h-32 flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors bg-gray-50 hover:bg-white">
+                                                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-2 group-hover:bg-gray-200 transition">
+                                                            <Upload size={18} className="text-gray-400 group-hover:text-gray-600"/>
+                                                        </div>
+                                                        <span className="text-xs font-bold text-gray-400 group-hover:text-gray-600">조치 전 사진</span>
+                                                        <input type="file" className="hidden" accept="image/*" />
+                                                    </label>
+                                                    <label className="group border-2 border-dashed border-gray-200 rounded-xl h-32 flex flex-col items-center justify-center cursor-pointer hover:border-green-400 transition-colors bg-gray-50 hover:bg-white">
+                                                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-2 group-hover:bg-green-50 transition">
+                                                            <Upload size={18} className="text-gray-400 group-hover:text-green-500"/>
+                                                        </div>
+                                                        <span className="text-xs font-bold text-gray-400 group-hover:text-green-600">조치 후 사진</span>
+                                                        <input type="file" className="hidden" accept="image/*" />
+                                                    </label>
+                                                </div>
+
+                                                {/* 하단 버튼 그룹 */}
+                                                <div className="flex gap-3">
+                                                    <button 
+                                                        className="flex-1 bg-gray-100 text-gray-600 py-3.5 rounded-lg text-sm font-bold hover:bg-gray-200 transition-colors" 
+                                                        onClick={saveIssueChanges}
+                                                    >
+                                                        내용 저장
+                                                    </button>
+                                                    
+                                                    {selectedIssueType === 'new' && (
+                                                        <button className="flex-1 bg-yellow-500 text-white py-3.5 rounded-lg text-sm font-bold hover:bg-yellow-600 transition-colors flex items-center justify-center shadow-md hover:shadow-lg transform active:scale-95 duration-200" onClick={() => changeIssueStatus(issue.id, 'processing')}>
+                                                            조치 착수 <ArrowRight size={16} className="ml-2" />
+                                                        </button>
+                                                    )}
+                                                    
+                                                    {selectedIssueType === 'processing' && (
+                                                        <button className="flex-1 bg-green-500 text-white py-3.5 rounded-lg text-sm font-bold hover:bg-green-600 transition-colors flex items-center justify-center shadow-md hover:shadow-lg transform active:scale-95 duration-200" onClick={() => changeIssueStatus(issue.id, 'done')}>
+                                                            조치 완료 승인 <CheckCircle size={16} className="ml-2" />
+                                                        </button>
+                                                    )}
+                                                    
+                                                    {selectedIssueType === 'done' && (
+                                                        <div className="flex-1 bg-gray-50 border border-gray-200 text-green-600 py-3.5 rounded-lg text-sm font-bold flex items-center justify-center cursor-default">
+                                                            완료된 항목 <CheckCircle size={16} className="ml-2" />
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                        ))}
+                                        )) : (
+                                            <div className="text-center text-gray-400 py-20 flex flex-col items-center">
+                                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-300">
+                                                    <AlertTriangle size={32} />
+                                                </div>
+                                                <p>{selectedIssueType === 'new' ? '신규 발견된 항목이 없습니다.' : selectedIssueType === 'processing' ? '조치 중인 항목이 없습니다.' : '완료된 항목이 없습니다.'}</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
+                        )}
 
-                            {/* Right Column (1/3) */}
-                            <div className="space-y-6">
-                                {/* 4. 부적합 조치 현황 */}
-                                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fade-in" style={{animationDelay: '0.4s'}}>
-                                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center"><CheckCircle className="text-green-500 mr-2" size={20} /> 안전 부적합 조치</h3>
-                                    <div className="space-y-3">
-                                        <div onClick={() => { setSelectedIssueType('new'); setShowIssueModal(true); }} className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-100 cursor-pointer hover:-translate-y-1 transition">
-                                            <div className="flex items-center"><div className="w-8 h-8 rounded-full bg-red-200 flex items-center justify-center text-red-600 mr-3"><AlertTriangle size={16} /></div><span className="text-sm font-bold text-gray-700">신규 발견 (접수 대기)</span></div><span className="text-xl font-bold text-red-600">{issueCounts.new}</span>
-                                        </div>
-                                        <div onClick={() => { setSelectedIssueType('processing'); setShowIssueModal(true); }} className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg border border-yellow-100 cursor-pointer hover:-translate-y-1 transition">
-                                            <div className="flex items-center"><div className="w-8 h-8 rounded-full bg-yellow-200 flex items-center justify-center text-yellow-600 mr-3"><Activity size={16} /></div><span className="text-sm font-bold text-gray-700">조치 중 (진행)</span></div><span className="text-xl font-bold text-yellow-600">{issueCounts.processing}</span>
-                                        </div>
-                                        <div onClick={() => { setSelectedIssueType('done'); setShowIssueModal(true); }} className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-100 cursor-pointer hover:-translate-y-1 transition">
-                                            <div className="flex items-center"><div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-600 mr-3"><CheckCircle size={16} /></div><span className="text-sm font-bold text-gray-700">조치 완료</span></div><span className="text-xl font-bold text-green-600">{issueCounts.done}</span>
-                                        </div>
+                        {showInspectionModal && (
+                            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={closeModal(setShowInspectionModal)}>
+                                <div className="bg-white rounded-xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+                                    <div className="p-4 flex justify-between items-center bg-blue-600 text-white rounded-t-xl"><h3 className="font-bold">{inspectionType} 점검 등록</h3><button onClick={() => setShowInspectionModal(false)}><X size={24} /></button></div>
+                                    <form onSubmit={handleSaveInspection} className="p-6 space-y-4">
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">품목명 / 장비명</label><input name="item" type="text" className="w-full border rounded-lg p-2" required placeholder="예: 이동식 크레인, 에폭시 등" /></div>
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-2">점검 결과</label><div className="flex gap-4"><label className="flex items-center cursor-pointer"><input type="radio" name="result" value="합격" className="mr-2" defaultChecked /><span className="text-sm font-bold text-green-600">합격</span></label><label className="flex items-center cursor-pointer"><input type="radio" name="result" value="불합격" className="mr-2" /><span className="text-sm font-bold text-red-600">불합격</span></label></div></div>
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">세부 점검 내용</label><textarea className="w-full border rounded-lg p-2 h-20" placeholder="특이사항 및 점검 결과를 입력하세요"></textarea></div>
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-2">점검 사진 / 서류 첨부</label><label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50"><div className="flex flex-col items-center justify-center pt-5 pb-6"><Upload className="w-8 h-8 text-gray-400 mb-2" /><p className="text-sm text-gray-500"><span className="font-semibold">클릭하여 업로드</span></p></div><input type="file" className="hidden" /></label></div>
+                                        <button type="submit" className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-bold hover:bg-blue-700">저장 하기</button>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
+
+                        {selectedNotice && (
+                            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={closeModal(() => setSelectedNotice(null))}>
+                                <div className="bg-white rounded-xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+                                    <div className="p-4 flex justify-between items-center bg-purple-600 text-white rounded-t-xl"><h3 className="font-bold">공지사항 상세</h3><button onClick={() => setSelectedNotice(null)}><X size={24} /></button></div>
+                                    <div className="p-6">
+                                        <div className="flex items-center gap-2 mb-4"><span className={`text-xs font-bold px-2 py-1 rounded ${selectedNotice.type === '공지' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>{selectedNotice.type}</span><span className="text-sm text-gray-500">{selectedNotice.date} | {selectedNotice.author}</span></div>
+                                        <h4 className="text-xl font-bold text-gray-800 mb-4">{selectedNotice.title}</h4>
+                                        <div className="bg-gray-50 p-4 rounded-lg text-gray-700 text-sm min-h-[150px] whitespace-pre-wrap leading-relaxed">{selectedNotice.content}</div>
+                                        <button onClick={() => setSelectedNotice(null)} className="w-full mt-4 bg-gray-200 text-gray-700 py-2 rounded-lg font-bold hover:bg-gray-300 transition">닫기</button>
                                     </div>
                                 </div>
-
-                                {/* 5. 반입 점검 및 알림 */}
-                                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fade-in" style={{animationDelay: '0.5s'}}>
-                                    <h3 className="text-lg font-bold text-gray-800 mb-4">반입 점검 및 알림</h3>
-                                    <div className="grid grid-cols-1 gap-2 mb-4">
-                                        <button onClick={() => openInspectionModal('건설장비')} className="py-2.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-bold hover:bg-blue-100 flex items-center justify-center border border-blue-100"><Truck size={16} className="mr-2"/> 건설장비 점검</button>
-                                        <button onClick={() => openInspectionModal('기계기구')} className="py-2.5 bg-orange-50 text-orange-700 rounded-lg text-sm font-bold hover:bg-orange-100 flex items-center justify-center border border-orange-100"><Tool size={16} className="mr-2"/> 기계기구 점검</button>
-                                        <button onClick={() => openInspectionModal('유해화학물질')} className="py-2.5 bg-purple-50 text-purple-700 rounded-lg text-sm font-bold hover:bg-purple-100 flex items-center justify-center border border-purple-100"><FlaskConical size={16} className="mr-2"/> 유해화학물질 점검</button>
-                                    </div>
-                                    <ul className="space-y-3 mt-4">
-                                        {inspectionLog.slice(0, 5).map(log => (
-                                            <li key={log.id} className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-100 text-sm">
-                                                <div className="flex flex-col"><span className="font-medium text-gray-700">{log.item}</span><span className="text-xs text-gray-500">{log.type} | {log.date}</span></div>
-                                                <span className={`text-xs px-2 py-1 rounded font-bold ${getStatusColor(log.status)}`}>{log.status}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
                             </div>
-                        </div>
-                    </main>
-                    
-                    {/* Footer */}
-                    <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 border-t border-gray-200 mt-8 relative flex justify-center items-center">
-                        <p className="text-gray-400 text-sm font-medium">남화토건(주) 안전보건팀</p>
-                        <div className="absolute right-4 flex space-x-2">
-                            {/* [추가됨] PDF 출력 버튼 */}
-                            <button onClick={handlePrint} className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-blue-700 transition shadow-sm whitespace-nowrap">
-                                <Printer size={16} className="mr-2" />
-                                PDF 보고서 출력
-                            </button>
-
-                            {currentSiteData.scheduleUrl && (
-                                <a href={currentSiteData.scheduleUrl} target="_blank" className="flex items-center bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-purple-700 transition shadow-sm whitespace-nowrap">
-                                    <LinkIcon size={16} className="mr-2" />
-                                    예정공정표
-                                </a>
-                            )}
-                            <a href="index.html" className="flex items-center bg-gray-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-700 transition shadow-sm whitespace-nowrap">
-                                나가기
-                            </a>
-                        </div>
-                    </footer>
-
-                    {/* Modals */}
-                    {showSettingsModal && (
-                        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={closeModal(setShowSettingsModal)}>
-                            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
-                                <div className="p-4 flex justify-between items-center bg-gray-800 text-white rounded-t-xl"><h3 className="font-bold">무재해 목표 설정</h3><button onClick={() => setShowSettingsModal(false)}><X size={24} /></button></div>
-                                <form onSubmit={handleSaveSettings} className="p-6 space-y-4">
-                                    <div><label className="block text-sm font-bold text-gray-700 mb-1">실착공일</label><input name="startDate" type="date" defaultValue={startDate} className="w-full border rounded-lg p-2" required /></div>
-                                    <div><label className="block text-sm font-bold text-gray-700 mb-1">목표일수</label><input name="targetDays" type="number" defaultValue={targetDays} className="w-full border rounded-lg p-2" required /></div>
-                                    <button type="submit" className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-bold hover:bg-blue-700">설정 저장</button>
-                                </form>
-                            </div>
-                        </div>
-                    )}
-
-                    {showWorkerModal && (
-                        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center animate-fade-in" onClick={closeModal(setShowWorkerModal)}>
-                            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
-                                <div className="bg-green-600 p-4 flex justify-between items-center text-white"><h3 className="font-bold">금일 출력 인원 수정</h3><button onClick={() => setShowWorkerModal(false)}><X size={20} /></button></div>
-                                <div className="p-4">
-                                    <div className="space-y-2 max-h-[60vh] overflow-y-auto mb-3">
-                                        {workerList.map((worker) => (
-                                            <div key={worker.id} className="flex items-center gap-2 mb-2">
-                                                <input type="text" className="border p-2 rounded w-1/2 text-sm" value={worker.trade} onChange={(e) => handleWorkerChange(worker.id, 'trade', e.target.value)} placeholder="공종명"/>
-                                                <input type="number" className="border p-2 rounded w-1/3 text-sm" value={worker.count} onChange={(e) => handleWorkerChange(worker.id, 'count', e.target.value)} placeholder="인원"/>
-                                                <button onClick={() => handleDeleteWorker(worker.id)} className="text-red-400 hover:text-red-600"><Trash size={16} /></button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <button onClick={handleAddWorker} className="w-full py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-bold hover:bg-gray-200">+ 공종 추가</button>
-                                    <button onClick={() => setShowWorkerModal(false)} className="w-full mt-2 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700">저장 및 닫기</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {showIssueModal && (
-                        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={closeModal(setShowIssueModal)}>
-                            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-                                <div className="p-4 flex justify-between items-center bg-red-500 text-white rounded-t-xl">
-                                    <h3 className="font-bold">{selectedIssueType === 'new' ? '신규 발견 목록' : selectedIssueType === 'processing' ? '조치 중 목록' : '조치 완료 목록'}</h3>
-                                    <button onClick={() => setShowIssueModal(false)}><X size={24} /></button>
-                                </div>
-                                <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
-                                    {filteredIssues.length > 0 ? filteredIssues.map(issue => (
-                                        <div key={issue.id} className="border rounded-lg p-4 bg-white shadow-sm">
-                                            <div className="flex justify-between mb-2 items-center">
-                                                <input type="text" className="font-bold text-lg bg-transparent border-b border-dashed border-gray-300 focus:border-blue-500 outline-none w-1/2" value={issue.loc} onChange={(e) => handleIssueChange(issue.id, 'loc', e.target.value)} placeholder="장소 입력"/>
-                                                <div className="flex items-center text-sm bg-gray-100 px-2 py-1 rounded"><span className="text-gray-500 mr-2 text-xs">발견자:</span><input type="text" className="bg-transparent border-b border-gray-400 focus:border-blue-500 outline-none w-20 text-gray-700 font-medium text-xs" value={issue.finder} onChange={(e) => handleIssueChange(issue.id, 'finder', e.target.value)}/></div>
-                                            </div>
-                                            <textarea className="w-full text-gray-600 mb-4 bg-gray-50 border border-gray-200 rounded p-2 text-sm focus:border-blue-500 outline-none resize-none h-20" value={issue.desc} onChange={(e) => handleIssueChange(issue.id, 'desc', e.target.value)} placeholder="부적합 내용을 입력하세요"/>
-                                            <div className="grid grid-cols-2 gap-3 mb-4">
-                                                <label className="border-2 border-dashed h-24 flex flex-col items-center justify-center text-gray-400 text-xs cursor-pointer hover:border-blue-400 hover:text-blue-500 transition"><Upload size={20} className="mb-1"/><span>조치 전 사진</span><input type="file" className="hidden" accept="image/*" /></label>
-                                                <label className="border-2 border-dashed h-24 flex flex-col items-center justify-center text-gray-400 text-xs cursor-pointer hover:border-green-400 hover:text-green-500 transition"><Upload size={20} className="mb-1"/><span>조치 후 사진</span><input type="file" className="hidden" accept="image/*" /></label>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <button className="flex-1 bg-gray-200 text-gray-700 py-2 rounded text-sm hover:bg-gray-300 font-bold" onClick={() => setShowIssueModal(false)}>내용 저장</button>
-                                                {selectedIssueType === 'new' && (<button className="flex-1 bg-yellow-500 text-white py-2 rounded text-sm hover:bg-yellow-600 font-bold flex items-center justify-center" onClick={() => changeIssueStatus(issue.id, 'processing')}>조치 착수 <ArrowRight size={14} className="ml-1" /></button>)}
-                                                {selectedIssueType === 'processing' && (<button className="flex-1 bg-green-600 text-white py-2 rounded text-sm hover:bg-green-700 font-bold flex items-center justify-center" onClick={() => changeIssueStatus(issue.id, 'done')}>조치 완료 승인 <CheckCircle size={14} className="ml-1" /></button>)}
-                                            </div>
-                                        </div>
-                                    )) : (<div className="text-center text-gray-400 py-10">{selectedIssueType === 'new' ? '신규 발견된 항목이 없습니다.' : selectedIssueType === 'processing' ? '조치 중인 항목이 없습니다.' : '완료된 항목이 없습니다.'}</div>)}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {showInspectionModal && (
-                        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={closeModal(setShowInspectionModal)}>
-                            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-                                <div className="p-4 flex justify-between items-center bg-blue-600 text-white rounded-t-xl"><h3 className="font-bold">{inspectionType} 점검 등록</h3><button onClick={() => setShowInspectionModal(false)}><X size={24} /></button></div>
-                                <form onSubmit={handleSaveInspection} className="p-6 space-y-4">
-                                    <div><label className="block text-sm font-medium text-gray-700 mb-1">품목명 / 장비명</label><input name="item" type="text" className="w-full border rounded-lg p-2" required placeholder="예: 이동식 크레인, 에폭시 등" /></div>
-                                    <div><label className="block text-sm font-medium text-gray-700 mb-2">점검 결과</label><div className="flex gap-4"><label className="flex items-center cursor-pointer"><input type="radio" name="result" value="합격" className="mr-2" defaultChecked /><span className="text-sm font-bold text-green-600">합격</span></label><label className="flex items-center cursor-pointer"><input type="radio" name="result" value="불합격" className="mr-2" /><span className="text-sm font-bold text-red-600">불합격</span></label></div></div>
-                                    <div><label className="block text-sm font-medium text-gray-700 mb-1">세부 점검 내용</label><textarea className="w-full border rounded-lg p-2 h-20" placeholder="특이사항 및 점검 결과를 입력하세요"></textarea></div>
-                                    <div><label className="block text-sm font-medium text-gray-700 mb-2">점검 사진 / 서류 첨부</label><label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50"><div className="flex flex-col items-center justify-center pt-5 pb-6"><Upload className="w-8 h-8 text-gray-400 mb-2" /><p className="text-sm text-gray-500"><span className="font-semibold">클릭하여 업로드</span></p></div><input type="file" className="hidden" /></label></div>
-                                    <button type="submit" className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-bold hover:bg-blue-700">저장 하기</button>
-                                </form>
-                            </div>
-                        </div>
-                    )}
-
-                    {selectedNotice && (
-                        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={closeModal(() => setSelectedNotice(null))}>
-                            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-                                <div className="p-4 flex justify-between items-center bg-purple-600 text-white rounded-t-xl"><h3 className="font-bold">공지사항 상세</h3><button onClick={() => setSelectedNotice(null)}><X size={24} /></button></div>
-                                <div className="p-6">
-                                    <div className="flex items-center gap-2 mb-4"><span className={`text-xs font-bold px-2 py-1 rounded ${selectedNotice.type === '공지' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>{selectedNotice.type}</span><span className="text-sm text-gray-500">{selectedNotice.date} | {selectedNotice.author}</span></div>
-                                    <h4 className="text-xl font-bold text-gray-800 mb-4">{selectedNotice.title}</h4>
-                                    <div className="bg-gray-50 p-4 rounded-lg text-gray-700 text-sm min-h-[150px] whitespace-pre-wrap leading-relaxed">{selectedNotice.content}</div>
-                                    <button onClick={() => setSelectedNotice(null)} className="w-full mt-4 bg-gray-200 text-gray-700 py-2 rounded-lg font-bold hover:bg-gray-300 transition">닫기</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div> 
-                {/* End of no-print div */}
-
+                        )}
+                    </div> 
                 </div>
             );
         };
