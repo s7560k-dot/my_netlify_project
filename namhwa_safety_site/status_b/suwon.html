@@ -192,7 +192,7 @@
 
     <div class="log-section">
         <div class="log-header">
-            <h3 style="margin:0;">📊 실시간 안전활동 등록 이력 (누적)</h3>
+            <h3 style="margin:0;">📊 실시간 안전활동 등록 현황 (최신순)</h3>
             <input type="text" id="logSearchInput" class="log-search" placeholder="공종명, 내용 검색..." onkeyup="renderActivityLog()">
         </div>
         <ul id="activityLogList" class="log-list">
@@ -255,7 +255,9 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        // ★ [추가] 스토리지 함수
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
         // ============================================
         // [파이어베이스 설정]
@@ -271,6 +273,7 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const storage = getStorage(app); // ★ 스토리지 초기화
         
         // ★ [중요] 수원 현장용 DB 문서 ID ★
         const SITE_ID = "suwon_senior_center"; 
@@ -286,8 +289,8 @@
             prepConst: {},
             prepSafety: {},
             comments: {},
-            taskDetails: {}, // 각 공정의 '최신 상태' 저장 (팝업용)
-            activityLog: [], // ★ [수정] 누적 이력 저장용 배열
+            taskDetails: {},
+            activityLog: [], 
             kpiData: [], 
             safetyData: [
                 { title: "위험성평가", monthlyTags: { 1: ["최초평가|blue"] } },
@@ -330,23 +333,47 @@
         ];
 
         // 1. Firebase 읽기 (Real-time)
+        // (1) 메인 문서 읽기
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                globalData = { ...globalData, ...data };
-                if(!globalData.prepConst) globalData.prepConst = {};
-                if(!globalData.prepSafety) globalData.prepSafety = {};
-                if(!globalData.activityLog) globalData.activityLog = []; // 로그 배열 초기화 보장
-                if(globalData.kpiData) {
-                    for(let i=0; i<16; i++) {
-                        if(!globalData.kpiData[i]) globalData.kpiData[i] = { month: i+1, process:"", risk:"", activity:"", kpi:"", docs:"" };
-                    }
-                }
+                if(data.headerInfo) globalData.headerInfo = data.headerInfo;
+                if(data.prepConst) globalData.prepConst = data.prepConst;
+                if(data.prepSafety) globalData.prepSafety = data.prepSafety;
+                if(data.kpiData) globalData.kpiData = data.kpiData;
+                if(data.safetyData) globalData.safetyData = data.safetyData;
+                if(data.comments) globalData.comments = data.comments;
+                // taskDetails, activityLog는 별도 컬렉션에서 로드
             } else {
-                setDoc(docRef, globalData); // 문서 생성
+                setDoc(docRef, { 
+                    headerInfo: globalData.headerInfo,
+                    kpiData: globalData.kpiData,
+                    safetyData: globalData.safetyData
+                }, { merge: true });
             }
             renderAll();
             document.getElementById('loading').style.display = 'none';
+        });
+
+        // (2) 활동 로그 컬렉션 읽기 (activityLogs)
+        const logsRef = collection(db, "projects", SITE_ID, "activityLogs");
+        const q = query(logsRef, orderBy("lastUpdated", "desc"), limit(50));
+        
+        onSnapshot(q, (snapshot) => {
+            globalData.activityLog = [];
+            snapshot.forEach((doc) => {
+                globalData.activityLog.push({ id: doc.id, ...doc.data() });
+            });
+            renderActivityLog(); // 로그 UI 갱신
+        });
+
+        // (3) 공정별 상세 정보 (taskDetails) 읽기
+        const detailsRef = collection(db, "projects", SITE_ID, "taskDetails");
+        onSnapshot(detailsRef, (snapshot) => {
+            globalData.taskDetails = {};
+            snapshot.forEach((doc) => {
+                globalData.taskDetails[doc.id] = doc.data();
+            });
         });
 
         // 2. 렌더링
@@ -443,11 +470,12 @@
 
         // --- 팝업 ---
         let currentTaskIndex = null;
-        let tempFileBase64 = null; 
+        let selectedFile = null; // ★ 파일 객체 저장용
+        let currentFileUrl = null; // ★ 기존 URL 저장용
 
         window.openModal = function(index) {
             currentTaskIndex = index;
-            // 팝업은 '가장 최신' 상태(taskDetails)를 보여줌 (수정 편의성)
+            // taskDetails는 실시간 리스너에 의해 이미 최신 상태임
             const savedDetail = (globalData.taskDetails && globalData.taskDetails[index]) || {};
             const defaultLabel = constructionData[index].label;
 
@@ -457,23 +485,27 @@
             document.getElementById('modalActivity').value = savedDetail.activity || "";
             
             document.getElementById('fileInput').value = "";
-            tempFileBase64 = savedDetail.imageData || null; 
+            selectedFile = null;
+            currentFileUrl = savedDetail.imageData || null; // URL 로드
             
+            // 프리뷰 설정
             const previewBox = document.getElementById('previewBox');
             const previewImg = document.getElementById('previewImg');
             const previewPdf = document.getElementById('previewPdf');
             
-            if (tempFileBase64) {
+            if (currentFileUrl) {
                 previewBox.style.display = "block";
-                if(tempFileBase64.startsWith("data:application/pdf")) {
+                // URL에 .pdf가 포함되어 있거나 이미지가 로드되지 않으면 PDF로 간주하는 로직
+                // 여기서는 간단히 항상 이미지로 시도하고 에러나면 PDF로 전환
+                previewImg.style.display = "block";
+                previewPdf.style.display = "none";
+                previewImg.src = currentFileUrl;
+                
+                previewImg.onerror = function() {
                     previewImg.style.display = "none";
                     previewPdf.style.display = "block";
-                    previewPdf.src = tempFileBase64;
-                } else {
-                    previewPdf.style.display = "none";
-                    previewImg.style.display = "block";
-                    previewImg.src = tempFileBase64;
-                }
+                    previewPdf.src = currentFileUrl;
+                };
             } else {
                 previewBox.style.display = "none";
                 previewImg.src = "";
@@ -485,31 +517,37 @@
 
         window.closeModal = function() { document.getElementById('modal').style.display = 'none'; };
 
-        // [수정됨] 파일 처리 (PDF 지원)
+        // ★ [파일 선택 핸들러]
         window.handleFileSelect = function(input) {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
-                if(file.size > 2 * 1024 * 1024) {
-                    alert("파일 크기가 너무 큽니다. (2MB 이하만 가능)");
+                
+                // 용량 체크 (Storage는 넉넉하지만 10MB 권장)
+                if(file.size > 10 * 1024 * 1024) {
+                    alert("파일 크기는 10MB 이하여야 합니다.");
                     input.value = "";
                     return;
                 }
+                
+                selectedFile = file; // 업로드 대기
+                currentFileUrl = null; // 새 파일이므로 기존 URL 무효화
+
+                // 로컬 프리뷰
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    tempFileBase64 = e.target.result;
-                    const previewBox = document.getElementById('previewBox');
+                    const result = e.target.result;
+                    document.getElementById('previewBox').style.display = "block";
                     const previewImg = document.getElementById('previewImg');
                     const previewPdf = document.getElementById('previewPdf');
-                    
-                    previewBox.style.display = "block";
-                    if(file.type === "application/pdf") {
+
+                    if(file.type.includes("pdf")) {
                         previewImg.style.display = "none";
                         previewPdf.style.display = "block";
-                        previewPdf.src = tempFileBase64;
+                        previewPdf.src = result;
                     } else {
                         previewPdf.style.display = "none";
                         previewImg.style.display = "block";
-                        previewImg.src = tempFileBase64;
+                        previewImg.src = result;
                     }
                 };
                 reader.readAsDataURL(file);
@@ -518,7 +556,8 @@
 
         window.deleteFile = function() {
             if(confirm("첨부파일을 삭제하시겠습니까?")) {
-                tempFileBase64 = null;
+                selectedFile = null;
+                currentFileUrl = null;
                 document.getElementById('previewBox').style.display = "none";
                 document.getElementById('previewImg').src = "";
                 document.getElementById('previewPdf').src = "";
@@ -526,51 +565,54 @@
             }
         };
 
-        // ★ [수정됨] 저장 로직: 누적 이력(activityLog)에도 추가
+        // ★ [핵심] 저장 로직: Storage 업로드 -> URL 획득 -> Firestore 저장
         window.saveTaskDetails = async function() {
+            const btn = document.querySelector('.modal-footer .btn-navy');
+            const originalText = btn.innerText;
+            btn.innerText = "저장 중...";
+            btn.disabled = true;
+
             try {
                 const now = new Date().toISOString();
-                
-                // 1. 공정별 최신 상태 저장 (팝업 다시 열 때 보여주기 위함)
-                if(!globalData.taskDetails) globalData.taskDetails = {};
-                globalData.taskDetails[currentTaskIndex] = {
-                    risk: document.getElementById('modalRisk').value,
-                    kpi: document.getElementById('modalKPI').value,
-                    activity: document.getElementById('modalActivity').value,
-                    imageData: tempFileBase64,
-                    lastUpdated: now
-                };
+                let finalImageUrl = currentFileUrl; // 기본: 기존 URL
 
-                // 2. 활동 로그(History)에 추가 (누적용)
-                if(!globalData.activityLog) globalData.activityLog = [];
-                
-                const newLog = {
-                    id: Date.now(), // 고유 ID (삭제용)
-                    taskIndex: currentTaskIndex,
+                // 1. 새 파일이 있으면 Storage 업로드
+                if (selectedFile) {
+                    const storageRef = ref(storage, `site_attachments/${Date.now()}_${selectedFile.name}`);
+                    await uploadBytes(storageRef, selectedFile);
+                    finalImageUrl = await getDownloadURL(storageRef);
+                }
+
+                const taskData = {
                     taskName: constructionData[currentTaskIndex].label,
                     risk: document.getElementById('modalRisk').value,
                     kpi: document.getElementById('modalKPI').value,
                     activity: document.getElementById('modalActivity').value,
+                    imageData: finalImageUrl, // URL 저장
                     lastUpdated: now
                 };
-                
-                globalData.activityLog.push(newLog);
 
-                // 로그 데이터가 너무 커지지 않게 최근 100개만 유지
-                if (globalData.activityLog.length > 100) {
-                    globalData.activityLog = globalData.activityLog.slice(globalData.activityLog.length - 100);
-                }
+                // 2. 공정별 상세 정보 저장 (덮어쓰기) -> taskDetails 컬렉션
+                // ID를 공정 인덱스로 사용하여 중복 방지 및 최신 상태 유지
+                const taskDocRef = doc(db, "projects", SITE_ID, "taskDetails", String(currentTaskIndex));
+                await setDoc(taskDocRef, taskData);
 
-                await updateDoc(docRef, { 
-                    taskDetails: globalData.taskDetails,
-                    activityLog: globalData.activityLog
-                });
-                
-                alert("✅ [저장 완료]\n\n활동 내역이 이력 리스트에 추가되었습니다.");
+                // 3. 활동 로그 저장 (누적) -> activityLogs 컬렉션
+                const logData = {
+                    ...taskData,
+                    taskIndex: currentTaskIndex
+                };
+                const logsCollectionRef = collection(db, "projects", SITE_ID, "activityLogs");
+                await addDoc(logsCollectionRef, logData);
+
+                alert("✅ [저장 완료]\n\n안전보건 활동 내역이 서버에 안전하게 저장되었습니다.");
                 closeModal();
             } catch(e) { 
-                alert("❌ 저장 실패: 인터넷 연결을 확인하거나 파일 용량을 줄여주세요."); 
+                alert("❌ 저장 실패: " + e.message); 
                 console.error(e); 
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
         };
 
@@ -666,16 +708,18 @@
             closeSafetyModal();
         };
 
-        // ★ [수정됨] 삭제 로직: activityLog에서 해당 ID 삭제
+        // ★ [수정됨] 삭제 로직: 하위 컬렉션 문서 삭제
         window.deleteLogItem = async function(logId) {
             if(confirm("이 이력 항목을 삭제하시겠습니까? (복구 불가)")) {
                 const pwd = prompt("관리자 비밀번호를 입력하세요:");
                 if(pwd === "1234") {
-                    // ID로 해당 로그 찾아서 삭제
-                    globalData.activityLog = globalData.activityLog.filter(log => log.id !== logId);
-                    await updateDoc(docRef, { activityLog: globalData.activityLog });
-                    alert("삭제되었습니다.");
-                    renderActivityLog(); // 화면 갱신
+                    try {
+                        const logDocRef = doc(db, "projects", SITE_ID, "activityLogs", logId);
+                        await deleteDoc(logDocRef);
+                        alert("삭제되었습니다.");
+                    } catch(e) {
+                        alert("삭제 실패: " + e.message);
+                    }
                 } else {
                     if(pwd !== null) alert("비밀번호가 틀렸습니다.");
                 }
@@ -687,10 +731,8 @@
             const listContainer = document.getElementById('activityLogList');
             const searchText = document.getElementById('logSearchInput').value.toLowerCase();
             
-            // 기존 taskDetails 대신 activityLog 사용
             let logArray = globalData.activityLog || [];
 
-            // 검색 필터
             if(searchText) {
                 logArray = logArray.filter(item => 
                     item.taskName.toLowerCase().includes(searchText) ||
@@ -699,7 +741,6 @@
                 );
             }
 
-            // 최신순 정렬 (이미 푸시할때 뒤에 붙지만, 확실하게 정렬)
             logArray.sort((a, b) => {
                 const dateA = a.lastUpdated ? new Date(a.lastUpdated) : new Date(0);
                 const dateB = b.lastUpdated ? new Date(b.lastUpdated) : new Date(0);
@@ -721,7 +762,6 @@
 
                 const li = document.createElement('li');
                 li.className = 'log-item';
-                // 클릭하면 해당 공정의 팝업 열기
                 li.onclick = function() { openModal(d.taskIndex); };
 
                 let badges = "";
@@ -731,7 +771,7 @@
                 li.innerHTML = `
                     <div class="log-top">
                         <span>🕒 ${dateStr}</span>
-                        <button class="btn-log-delete" onclick="event.stopPropagation(); deleteLogItem(${d.id})">삭제</button>
+                        <button class="btn-log-delete" onclick="event.stopPropagation(); deleteLogItem('${d.id}')">삭제</button>
                     </div>
                     <div class="log-task">${d.taskName} ${badges}</div>
                     <div class="log-content">${d.activity ? d.activity : '<span style="color:#ccc">(활동 내용 없음)</span>'}</div>
