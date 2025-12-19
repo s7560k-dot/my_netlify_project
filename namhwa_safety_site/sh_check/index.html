@@ -60,80 +60,9 @@
             transition: transform 0.3s ease;
         }
 
-        /* [오류 수정] 사진 대지 이미지 컨테이너 (안정적인 비율 고정 방식) */
-        .report-photo-container {
-            position: relative;
-            width: 100%;
-            padding-top: 75%; /* 4:3 비율 (3 / 4 * 100) */
-            overflow: hidden;
-            border-radius: 0.5rem;
-            background-color: #f3f4f6;
-        }
-        .report-photo {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* 이미지를 컨테이너에 맞춰 채움 */
-        }
-
         /* 인쇄용 스타일 */
         @media print {
-            @page {
-                size: landscape; /* 가로 인쇄 설정 */
-                margin: 1cm;
-            }
-
-            body.printing-report .no-print-report,
-            body:not(.printing-report) .print-only-report {
-                display: none;
-            }
-
-            body.printing-report #photo-report-modal-content {
-                display: block !important;
-                box-shadow: none;
-                border: none;
-                padding: 0;
-            }
-             body.printing-report, body.printing-report #photo-report-modal {
-                background: white;
-            }
-            
-            /* [오류 수정] 사진 대지 인쇄 레이아웃 */
-            body.printing-report #report-container {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 1cm;
-            }
-
-            body.printing-report .photo-entry {
-                page-break-inside: avoid;
-                border: 1px solid #ccc;
-                border-radius: 0;
-                box-shadow: none;
-            }
-
-            body.printing-report .photo-entry:nth-child(4n) {
-                page-break-after: always;
-            }
-
-            body.printing-report .photo-entry-header { padding: 0.25cm; }
-            body.printing-report .photo-entry-body { padding: 0.25cm; }
-            body.printing-report .photo-entry h3 { font-size: 10pt; font-weight: bold; }
-            
-            body.printing-report .report-photo-container {
-                padding-top: 65%; /* 인쇄 시 높이를 살짝 줄여 안정적으로 4장 배치 */
-                margin-bottom: 0.25cm;
-            }
-            
-            body.printing-report .photo-entry textarea {
-                height: 3cm !important;
-                font-size: 8pt;
-                padding: 0.2cm;
-            }
-            
-            body:not(.printing-report) { font-size: 8px; }
+            body { font-size: 8px; }
             .no-print { display: none; }
             .responsive-table-container { overflow: visible; }
             table { width: 100% !important; min-width: 0 !important; table-layout: fixed; }
@@ -152,16 +81,14 @@
                 resize: none; width: 100%; height: auto; padding: 1px;
             }
             tfoot { display: table-footer-group; }
-            
-            .header-logo { max-height: 20px !important; }
+            img { max-height: 20px !important; }
             .photo-thumbnail { max-width: 60px !important; max-height: 60px !important; border: 1px solid #ccc; }
-            .report-photo { max-height: none !important; }
         }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-    <div class="container mx-auto p-4 sm:p-6 lg:p-8 no-print-report">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
         <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
             <div class="flex justify-between items-end mb-8 border-b pb-1">
                 <div>
@@ -181,7 +108,7 @@
                 <div>
                     <img src="https://github.com/s7560k-dot/my-image/blob/main/remove_background.webp?raw=true" 
                          alt="회사 로고" 
-                         class="h-6 header-logo"
+                         class="h-6"
                          onerror="this.style.display='none'">
                 </div>
             </div>
@@ -240,7 +167,7 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-4 w-full sm:w-auto">
-                        <button onclick="openPhotoReportModal()" class="w-1/3 sm:w-auto text-center bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition">사진 대지</button>
+                         <a href="photo_report.html" class="w-1/3 sm:w-auto text-center bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition">사진 대지 출력</a>
                         <button onclick="resetAllPhotos()" class="w-1/3 sm:w-auto bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 transition">초기화</button>
                         <button onclick="window.print()" class="w-1/3 sm:w-auto bg-gray-700 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-800 transition">인쇄</button>
                     </div>
@@ -250,7 +177,7 @@
     </div>
 
     <!-- 사진 첨부 Modal -->
-    <div id="photo-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden modal-overlay opacity-0 no-print-report" onclick="closePhotoModal()">
+    <div id="photo-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden modal-overlay opacity-0" onclick="closePhotoModal()">
         <div class="bg-white p-8 rounded-xl shadow-lg text-center w-full max-w-md mx-4 modal-container transform scale-95" onclick="event.stopPropagation()">
             <h1 class="text-2xl font-bold text-gray-900 mb-4">사진 첨부</h1>
             <p class="text-gray-600 mb-2">지적사항에 대한 사진을 촬영하거나 앨범에서 선택해 주세요.</p>
@@ -276,29 +203,6 @@
             </div>
         </div>
     </div>
-
-    <!-- 사진 대지 Modal -->
-    <div id="photo-report-modal" class="fixed inset-0 bg-white w-full h-full z-40 hidden overflow-y-auto print-only-report">
-        <div id="photo-report-modal-content" class="container mx-auto p-4 sm:p-8">
-            <header class="bg-white p-6 rounded-xl mb-8 no-print">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900">사진 대지 보고서</h1>
-                        <p class="text-gray-500 mt-1">점검표에 첨부된 사진 목록입니다.</p>
-                    </div>
-                    <div class="flex gap-4">
-                        <button onclick="closePhotoReportModal()" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition">닫기</button>
-                        <button onclick="printPhotoReport()" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">인쇄하기</button>
-                    </div>
-                </div>
-            </header>
-
-            <main id="report-container" class="grid grid-cols-1 md:grid-cols-2 gap-12">
-                <!-- 사진 대지가 여기에 동적으로 생성됩니다. -->
-            </main>
-        </div>
-    </div>
-
 
     <script>
         const checklistData = [
@@ -621,71 +525,6 @@
             const icon = document.getElementById('summary-toggle-icon');
             const isHidden = details.classList.toggle('hidden');
             icon.textContent = isHidden ? '▼' : '▲';
-        }
-
-        // Photo Report Modal Functions
-        function openPhotoReportModal() {
-            const reportContainer = document.getElementById('report-container');
-            reportContainer.innerHTML = ''; // Clear previous content
-            let photoFound = false;
-            const totalItems = checklistData.reduce((acc, val) => acc + val.count, 0);
-
-            for (let i = 0; i < totalItems; i++) {
-                const photoData = localStorage.getItem('photo_' + i);
-                const photoInfoData = localStorage.getItem('photo_info_' + i);
-
-                if (photoData && photoInfoData) {
-                    photoFound = true;
-                    const photoInfo = JSON.parse(photoInfoData);
-                    const savedComment = localStorage.getItem('photo_comment_' + i) || '';
-
-                    const entry = document.createElement('div');
-                    entry.className = 'bg-white rounded-xl shadow-lg overflow-hidden photo-entry';
-                    
-                    entry.innerHTML = `
-                        <div class="p-4 bg-gray-50 border-b photo-entry-header">
-                            <h3 class="font-bold text-gray-800">${photoInfo.category}</h3>
-                        </div>
-                        <div class="p-4 photo-entry-body">
-                            <div class="report-photo-container mb-4">
-                               <img src="${photoData}" class="report-photo" alt="점검 사진">
-                            </div>
-                            <textarea
-                                data-index="${i}"
-                                class="w-full h-24 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50"
-                                placeholder="사진에 대한 설명을 입력하세요..."
-                                oninput="saveComment(this)"
-                            >${savedComment}</textarea>
-                        </div>
-                    `;
-                    reportContainer.appendChild(entry);
-                }
-            }
-
-            if (!photoFound) {
-                reportContainer.innerHTML = `
-                    <div class="col-span-1 md:col-span-2 text-center bg-white p-12 rounded-xl shadow-lg">
-                        <p class="text-gray-500">점검표에 추가된 사진이 없습니다.</p>
-                    </div>
-                `;
-            }
-            
-            document.getElementById('photo-report-modal').classList.remove('hidden');
-        }
-
-        function closePhotoReportModal() {
-            document.getElementById('photo-report-modal').classList.add('hidden');
-        }
-
-        function saveComment(textarea) {
-            const index = textarea.dataset.index;
-            localStorage.setItem('photo_comment_' + index, textarea.value);
-        }
-
-        function printPhotoReport() {
-            document.body.classList.add('printing-report');
-            window.print();
-            document.body.classList.remove('printing-report');
         }
     </script>
 </body>
