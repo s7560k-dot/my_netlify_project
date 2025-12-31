@@ -48,15 +48,15 @@
                     SOP & 점검표 (SOPs & Checklists)
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <a href="/shm_system/" class="category-button bg-amber-500 hover:bg-amber-600">안전보건 경영시스템<br>(SHM System Check)</a>
+                    <a href="shm_system/" class="category-button bg-amber-500 hover:bg-amber-600">안전보건 경영시스템<br>(SHM System Check)</a>
                     <a href="#" class="category-button bg-gray-400 text-gray-800 cursor-not-allowed opacity-70" onclick="event.preventDefault();">표준작업절차서 (SOP) (준비중)</a>
-                    <a href="/pre_check/" class="category-button bg-amber-500 hover:bg-amber-600">신규 착공 현장 체크리스트</a>
-                    <a href="/daily_arch/" class="category-button bg-amber-500 hover:bg-amber-600">건축공사 일일 안전점검표</a>
-                    <a href="/daily_ce/" class="category-button bg-amber-500 hover:bg-amber-600">토목공사 일일 안전점검표</a>
-                    <a href="/sh_check/" class="category-button bg-amber-500 hover:bg-amber-600">현장 안전보건 점검 (SH Check)</a>
-                    <a href="/AHA/" class="category-button bg-amber-500 hover:bg-amber-600">위험성 평가표 (AHA)</a>
-                    <a href="/PTW/" class="category-button bg-amber-500 hover:bg-amber-600">작업허가서 (PTW)</a>
-                    <a href="/WSHCC/" class="category-button bg-amber-500 hover:bg-amber-600">주간 안전보건 이행 점검표 (WSHCC)</a>
+                    <a href="pre_check/" class="category-button bg-amber-500 hover:bg-amber-600">신규 착공 현장 체크리스트</a>
+                    <a href="daily_arch/" class="category-button bg-amber-500 hover:bg-amber-600">건축공사 일일 안전점검표</a>
+                    <a href="daily_ce/" class="category-button bg-amber-500 hover:bg-amber-600">토목공사 일일 안전점검표</a>
+                    <a href="sh_check/" class="category-button bg-amber-500 hover:bg-amber-600">현장 안전보건 점검 (SH Check)</a>
+                    <a href="AHA/" class="category-button bg-amber-500 hover:bg-amber-600">위험성 평가표 (AHA)</a>
+                    <a href="PTW/" class="category-button bg-amber-500 hover:bg-amber-600">작업허가서 (PTW)</a>
+                    <a href="WSHCC/" class="category-button bg-amber-500 hover:bg-amber-600">주간 안전보건 이행 점검표 (WSHCC)</a>
                 </div>
             </div>
 
@@ -65,8 +65,8 @@
                     안전 계산기 (Safety Calculators)
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <a href="/work/" class="category-button bg-emerald-600 hover:bg-emerald-700">중량물취급 안전율 계산기</a>
-                    <a href="/OUT/" class="category-button bg-emerald-600 hover:bg-emerald-700">아웃트리거 받침철판 규격 계산기</a>
+                    <a href="work/" class="category-button bg-emerald-600 hover:bg-emerald-700">중량물취급 안전율 계산기</a>
+                    <a href="OUT/" class="category-button bg-emerald-600 hover:bg-emerald-700">아웃트리거 받침철판 규격 계산기</a>
                 </div>
             </div>
 
@@ -76,17 +76,55 @@
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <a href="#" class="category-button bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-lg shadow-md flex items-center justify-center text-center transition duration-300">현장 목록 전체보기</a>
-                    <a href="safetydashboard.html?siteId=status_a" class="category-button bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-lg shadow-md flex items-center justify-center text-center transition duration-300">대광 새마을금고 골프연습장</a>
-                    <a href="safetydashboard.html?siteId=status_b" class="category-button bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-lg shadow-md flex items-center justify-center text-center transition duration-300">수원 노유자시설 신축공사</a>
+                    
+                    <!-- siteId 파라미터를 대시보드 코드의 설정(siteA, siteB)과 일치시킴 -->
+                    <a href="safetydashboard.html?siteId=siteA" class="category-button bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-lg shadow-md flex items-center justify-center text-center transition duration-300">대광 새마을금고 골프연습장</a>
+                    <a href="safetydashboard.html?siteId=siteB" class="category-button bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-lg shadow-md flex items-center justify-center text-center transition duration-300">수원 노유자시설 신축공사</a>
                 </div>
             </div>
         </div>
     </div>
 
     <script type="module">
-        import { auth } from "./firebase.js";
-        import { onAuthStateChanged, signOut } 
-          from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        // Import Firebase functions directly from CDN
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDbVG3iL3FBJe6alPLZnhFW_QAGpzeqFoY",
+            authDomain: "namhwa-safety-dashboard.firebaseapp.com",
+            projectId: "namhwa-safety-dashboard",
+            storageBucket: "namhwa-safety-dashboard.firebasestorage.app",
+            messagingSenderId: "152864778612",
+            appId: "1:152864778612:web:ecc482adce93a1534a2421"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // [Fix] Robust Redirect Handler for Preview Environments
+        const redirectToLogin = () => {
+            const destination = "index.html";
+            try {
+                // Try standard navigation
+                window.location.href = destination;
+            } catch (e) {
+                console.warn("Automatic redirect failed (likely due to preview environment). Showing manual link.");
+                // Fallback UI to prevent crash and blank screen
+                document.body.innerHTML = `
+                    <div class="flex items-center justify-center min-h-screen bg-gray-100">
+                        <div class="bg-white p-8 rounded-lg shadow-md text-center max-w-sm mx-auto">
+                            <svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            <h2 class="text-xl font-bold text-gray-900 mb-2">로그인이 필요합니다</h2>
+                            <p class="text-gray-600 mb-6">안전보건 자료실에 접근하려면 로그인이 필요합니다.</p>
+                            <a href="${destination}" class="inline-block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-200">로그인 페이지로 이동</a>
+                        </div>
+                    </div>
+                `;
+                document.body.style.display = "block";
+            }
+        };
 
         // 1. 보안 검사 (로그인 안 했으면 쫓아냄)
         onAuthStateChanged(auth, (user) => {
@@ -94,9 +132,9 @@
                 // 로그인 확인됨: 화면을 보여줌
                 document.body.style.display = "block";
             } else {
-                // 로그인 안 됨: 로그인 페이지로 이동
-                alert("로그인이 필요합니다.");
-                window.location.href = "index.html";
+                // 로그인 안 됨: 로그인 페이지로 이동 처리
+                console.log("No user, redirecting...");
+                redirectToLogin();
             }
         });
 
@@ -104,7 +142,9 @@
         document.getElementById('logout-btn').addEventListener('click', () => {
             if(confirm("로그아웃 하시겠습니까?")) {
                 signOut(auth).then(() => {
-                    window.location.href = "index.html";
+                    redirectToLogin();
+                }).catch((error) => {
+                    console.error("Logout error:", error);
                 });
             }
         });
