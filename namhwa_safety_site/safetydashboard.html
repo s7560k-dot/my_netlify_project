@@ -219,7 +219,14 @@
                                 <div key={issue.id} className="border border-black p-2 avoid-break">
                                     <div className="flex justify-between border-b border-black mb-2 pb-1"><span className="font-bold text-sm">#{idx+1}. {issue.loc}</span><span className="text-xs">상태: {issue.status === 'done' ? '조치완료' : '조치중'} | 발견: {issue.finder}</span></div>
                                     <div className="text-sm mb-2 h-10 overflow-hidden">{issue.desc}</div>
-                                    <div className="flex gap-1 h-32"><div className="w-1/2 border border-dashed border-gray-400 flex items-center justify-center bg-gray-50"><span className="text-xs text-gray-400">조치 전 사진</span></div><div className="w-1/2 border border-dashed border-gray-400 flex items-center justify-center bg-gray-50"><span className="text-xs text-gray-400">조치 후 사진</span></div></div>
+                                    <div className="flex gap-1 h-32">
+                                        <div className="w-1/2 border border-dashed border-gray-400 flex items-center justify-center bg-gray-50 overflow-hidden relative">
+                                            {issue.beforeImg ? <img src={issue.beforeImg} className="w-full h-full object-contain" /> : <span className="text-xs text-gray-400">조치 전 사진</span>}
+                                        </div>
+                                        <div className="w-1/2 border border-dashed border-gray-400 flex items-center justify-center bg-gray-50 overflow-hidden relative">
+                                            {issue.afterImg ? <img src={issue.afterImg} className="w-full h-full object-contain" /> : <span className="text-xs text-gray-400">조치 후 사진</span>}
+                                        </div>
+                                    </div>
                                 </div>
                             )) : <div className="col-span-2 text-center py-4 border">금일 부적합 사항 없음</div>}
                         </div>
@@ -268,29 +275,34 @@
         const SafetyDashboard = () => {
             const [currentDate, setCurrentDate] = useState('');
             const queryParams = new URLSearchParams(window.location.search);
+            // [수정됨] 기본값을 'siteB'(수원 노유자시설)로 설정
+            const siteId = queryParams.get('siteId') || 'siteB'; 
             
-            // [수정] URL 파라미터가 없으면 'status_b'(수원)를 기본값으로 설정
-            const siteId = queryParams.get('siteId') || 'status_b'; 
-            
-            // [추가] 현장 ID에 따른 이름 및 링크 매핑 정보 (폴더 구조 기반)
-            const SITE_INFO = {
-                'status_a': { 
-                    name: '대광 새마을금고 골프연습장', 
-                    scheduleLink: './status_a/index.html' // status_a 폴더 내부의 파일 경로 (추정)
+            // =================================================================
+            // [폴더 구조 연동 로직] - siteConfig 확장 (테마 색상 추가)
+            // =================================================================
+            const siteConfig = {
+                'siteA': {
+                    name: '대광새마을금고 신축공사',
+                    link: './status_a/index.html',
+                    theme: 'blue',
+                    gradient: 'from-blue-700 to-blue-500',
+                    text: 'text-blue-900',
+                    bg: 'bg-blue-600'
                 },
-                'status_b': { 
-                    name: '수원 노유자시설 신축공사', 
-                    scheduleLink: './status_b/suwon.html' // status_b 폴더 내부의 파일 경로
-                },
-                'default': { 
-                    name: '미지정 현장', 
-                    scheduleLink: '#' 
+                'siteB': {
+                    name: '수원 노유자시설 신축공사',
+                    link: './status_b/index.html',
+                    theme: 'purple',
+                    gradient: 'from-purple-700 to-purple-500',
+                    text: 'text-purple-900',
+                    bg: 'bg-purple-600'
                 }
             };
 
-            // 현재 현장 정보 가져오기
-            const currentSiteInfo = SITE_INFO[siteId] || SITE_INFO['default'];
-            
+            // 현재 siteId에 맞는 정보 가져오기 (잘못된 ID면 siteB 기본)
+            const currentSiteInfo = siteConfig[siteId] || siteConfig['siteB'];
+
             const [startDate, setStartDate] = useState('2024-01-01');
             const [targetDays, setTargetDays] = useState(500);
             const [accidentFreeDays, setAccidentFreeDays] = useState(0);
@@ -312,6 +324,9 @@
             const [inspectionType, setInspectionType] = useState('');
             const [showSettingsModal, setShowSettingsModal] = useState(false); 
             const [selectedNotice, setSelectedNotice] = useState(null); 
+            
+            // [수정됨] 점검 이미지 상태 - 다중 이미지 지원을 위해 배열로 변경
+            const [inspectionImages, setInspectionImages] = useState([]);
 
             // 1. 날짜 및 무재해 일수 계산 (startDate 변경 시 실행)
             useEffect(() => {
@@ -405,6 +420,13 @@
                 if(db) db.collection('sites').doc(siteId).collection('riskWorks').add(newWork);
             };
 
+            // [추가] 고위험 작업 삭제 함수
+            const handleDeleteWork = (id) => {
+                if(confirm("정말로 이 작업을 삭제하시겠습니까?")) {
+                    if(db) db.collection('sites').doc(siteId).collection('riskWorks').doc(id).delete();
+                }
+            };
+
             // [수정됨] 출력 인원 관리 (ID 중복 문제 해결 + 동기화)
             const handleWorkerChange = (id, field, value) => { 
                 setWorkerList(workerList.map(w => w.id === id ? { ...w, [field]: value } : w)); 
@@ -441,17 +463,121 @@
 
             // 부적합 조치
             const handleIssueChange = (id, field, value) => { setIssueList(issueList.map(issue => issue.id === id ? { ...issue, [field]: value } : issue)); };
+            
+            // [추가] 부적합 신규 등록 함수
+            const handleAddIssue = () => {
+                const newIssue = { 
+                    loc: '', 
+                    desc: '', 
+                    finder: '관리자', 
+                    status: 'new', 
+                    beforeImg: null, 
+                    afterImg: null, 
+                    date: new Date().toISOString().slice(0, 10) 
+                };
+                if(db) {
+                    db.collection('sites').doc(siteId).collection('issues').add(newIssue);
+                } else {
+                    const tempId = Date.now().toString();
+                    setIssueList([...issueList, { id: tempId, ...newIssue }]);
+                }
+            };
+
+            // [수정됨] 부적합 조치 사진 업로드 핸들러 - 이미지 압축 (자동 상태 전환 제거)
+            const handleIssueImageUpload = (id, type, e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    // 이미지 압축 로직 추가
+                    const reader = new FileReader();
+                    reader.onload = (readerEvent) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const MAX_WIDTH = 800; // 최대 너비 제한
+                            const MAX_HEIGHT = 600; // 최대 높이 제한
+                            let width = img.width;
+                            let height = img.height;
+
+                            if (width > height) {
+                                if (width > MAX_WIDTH) {
+                                    height *= MAX_WIDTH / width;
+                                    width = MAX_WIDTH;
+                                }
+                            } else {
+                                if (height > MAX_HEIGHT) {
+                                    width *= MAX_HEIGHT / height;
+                                    height = MAX_HEIGHT;
+                                }
+                            }
+
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            
+                            // 압축된 데이터 URL (JPEG, 품질 0.7)
+                            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+                            // 상태 업데이트 및 DB 저장 (자동 상태 전환 로직 제거)
+                            setIssueList(prevList => {
+                                return prevList.map(issue => {
+                                    if (issue.id === id) {
+                                        // DB 업데이트 (압축된 이미지 사용)
+                                        if(db) {
+                                            const updateData = { [type]: dataUrl };
+                                            db.collection('sites').doc(siteId).collection('issues').doc(id).update(updateData)
+                                                .catch(err => {
+                                                    console.error("Error updating document: ", err);
+                                                    alert("사진 저장 중 오류가 발생했습니다. 용량이 너무 클 수 있습니다.");
+                                                });
+                                        }
+                                        return { ...issue, [type]: dataUrl };
+                                    }
+                                    return issue;
+                                });
+                            });
+                        };
+                        img.src = readerEvent.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
             const saveIssueChanges = () => {
                  if(!db) return;
                  const batch = db.batch();
                  filteredIssues.forEach(issue => {
                      const ref = db.collection('sites').doc(siteId).collection('issues').doc(issue.id);
-                     batch.update(ref, { loc: issue.loc, finder: issue.finder, desc: issue.desc });
+                     batch.update(ref, { 
+                        loc: issue.loc, 
+                        finder: issue.finder, 
+                        desc: issue.desc,
+                        beforeImg: issue.beforeImg || null, // 이미지 필드 추가
+                        afterImg: issue.afterImg || null
+                     });
                  });
                  batch.commit().then(() => setShowIssueModal(false));
             };
+            
+            // [수정됨] 상태 변경 시 현재 데이터 전체 업데이트 (내용, 사진 보존 강화)
             const changeIssueStatus = (id, newStatus) => { 
-                if(db) db.collection('sites').doc(siteId).collection('issues').doc(id).update({ status: newStatus });
+                const targetIssue = issueList.find(i => i.id === id);
+                if (!targetIssue) return;
+
+                // 로컬 상태 즉시 반영 (Optimistic Update)
+                setIssueList(prev => prev.map(issue => issue.id === id ? { ...issue, status: newStatus } : issue));
+                
+                // DB 업데이트 (전체 필드 업데이트하여 내용/사진 동기화 보장)
+                if(db) {
+                    db.collection('sites').doc(siteId).collection('issues').doc(id).set({
+                        ...targetIssue,
+                        status: newStatus
+                    }, { merge: true }) // merge: true로 덮어쓰기
+                      .catch(err => {
+                          console.error("상태 업데이트 실패:", err);
+                          alert("상태 변경 저장에 실패했습니다.");
+                      });
+                }
             };
 
             // 공지사항
@@ -476,12 +602,73 @@
             };
 
             // 점검
-            const openInspectionModal = (type) => { setInspectionType(type); setShowInspectionModal(true); };
+            const openInspectionModal = (type) => { 
+                setInspectionType(type); 
+                setInspectionImages([]); // 이미지 배열 초기화
+                setShowInspectionModal(true); 
+            };
+
+            // [수정됨] 점검 이미지 업로드 핸들러 - 다중 파일 처리 및 압축
+            const handleInspectionImageUpload = async (e) => {
+                const files = Array.from(e.target.files);
+                if (files.length === 0) return;
+
+                const processFile = (file) => {
+                    return new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (readerEvent) => {
+                            const img = new Image();
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                const MAX_WIDTH = 800;
+                                const MAX_HEIGHT = 600;
+                                let width = img.width;
+                                let height = img.height;
+
+                                if (width > height) {
+                                    if (width > MAX_WIDTH) {
+                                        height *= MAX_WIDTH / width;
+                                        width = MAX_WIDTH;
+                                    }
+                                } else {
+                                    if (height > MAX_HEIGHT) {
+                                        width *= MAX_HEIGHT / height;
+                                        height = MAX_HEIGHT;
+                                    }
+                                }
+
+                                canvas.width = width;
+                                canvas.height = height;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0, width, height);
+                                
+                                resolve(canvas.toDataURL('image/jpeg', 0.7));
+                            };
+                            img.src = readerEvent.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                };
+
+                // 모든 파일 비동기 처리
+                const newImages = await Promise.all(files.map(processFile));
+                setInspectionImages(prev => [...prev, ...newImages]);
+            };
+
+            // [추가] 점검 이미지 개별 삭제 핸들러
+            const handleRemoveInspectionImage = (index) => {
+                setInspectionImages(prev => prev.filter((_, i) => i !== index));
+            };
+
             const handleSaveInspection = (e) => { 
                 e.preventDefault(); 
                 if(db) {
                     db.collection('sites').doc(siteId).collection('inspections').add({
-                        type: inspectionType, item: e.target.item.value, date: new Date().toISOString().slice(5,10), status: e.target.result.value
+                        type: inspectionType, 
+                        item: e.target.item.value, 
+                        date: new Date().toISOString().slice(5,10), 
+                        status: e.target.result.value,
+                        images: inspectionImages || [] // 이미지 배열 저장
                     });
                 }
                 setShowInspectionModal(false); 
@@ -515,26 +702,32 @@
                 <div className="min-h-screen bg-gray-50 text-gray-800 font-sans relative pb-20">
                     <PrintReport data={{ workerList, riskWorks, noticeData, issueList, inspectionLog }} siteName={currentSiteInfo.name} currentDate={currentDate} accidentFreeDays={accidentFreeDays} targetDays={targetDays} />
                     <div className="no-print">
-                        <header className="bg-white shadow-sm sticky top-0 z-30">
+                        {/* 헤더 배경색을 siteConfig에 따라 동적으로 변경 */}
+                        <header className={`bg-white shadow-sm sticky top-0 z-30 border-b-4 ${siteId === 'siteA' ? 'border-blue-500' : 'border-purple-500'}`}>
                             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
                                 <div className="flex items-center w-1/4">
                                     <div><h1 className="text-xl font-bold text-gray-900 leading-tight">Safety ON</h1><p className="text-xs text-gray-500">스마트 안전보건 플랫폼</p></div>
                                 </div>
-                                <div className="flex-1 text-center"><h2 className="text-4xl font-extrabold text-blue-900 tracking-widest font-['SeoulHangang'] drop-shadow-md">" 남화의 미래를 켜다 "</h2></div>
+                                <div className="flex-1 text-center">
+                                    {/* 제목 색상 동적 적용 */}
+                                    <h2 className={`text-2xl font-extrabold tracking-wide font-['SeoulHangang'] drop-shadow-sm ${currentSiteInfo.text}`}>{currentSiteInfo.name}</h2>
+                                    <p className="text-xs text-gray-400 mt-1">" 남화의 미래를 켜다 "</p>
+                                </div>
                                 <div className="flex items-center justify-end space-x-6 w-1/4">
                                     <span className="text-sm font-medium text-gray-500 flex items-center hidden sm:flex"><CalendarIcon className="mr-2" size={16} /> {currentDate}</span>
                                     <div className="relative cursor-pointer"><Bell className="text-gray-400 hover:text-gray-600" /><span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">3</span></div>
-                                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-bold text-gray-600 cursor-pointer">관리</div>
+                                    {/* 관리 아이콘 색상 동적 적용 */}
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white cursor-pointer ${currentSiteInfo.bg}`}>관리</div>
                                 </div>
                             </div>
                         </header>
 
                         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                            {/* Top Banner */}
-                            <div className="bg-gradient-to-r from-green-700 to-green-500 rounded-2xl shadow-lg p-6 mb-8 text-white flex flex-col md:flex-row items-center justify-between animate-fade-in relative">
+                            {/* Top Banner: 배경 그라데이션 동적 적용 */}
+                            <div className={`bg-gradient-to-r ${currentSiteInfo.gradient} rounded-2xl shadow-lg p-6 mb-8 text-white flex flex-col md:flex-row items-center justify-between animate-fade-in relative`}>
                                 <button onClick={() => setShowSettingsModal(true)} className="absolute top-4 right-4 p-2 bg-white/20 rounded-full hover:bg-white/30 transition"><Settings size={20} className="text-white" /></button>
                                 <div className="mb-4 md:mb-0">
-                                    <h2 className="text-lg font-medium opacity-90 mb-1 flex items-center">{currentSiteInfo.name} 무재해 기록 <button onClick={() => setShowSettingsModal(true)} className="ml-3 text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded flex items-center transition cursor-pointer border border-transparent hover:border-white/40" title="클릭하여 날짜 수정">실착공일: {startDate} <Edit2 size={12} className="ml-1 opacity-70"/></button></h2>
+                                    <h2 className="text-lg font-medium opacity-90 mb-1 flex items-center">우리 현장 무재해 기록 <button onClick={() => setShowSettingsModal(true)} className="ml-3 text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded flex items-center transition cursor-pointer border border-transparent hover:border-white/40" title="클릭하여 날짜 수정">실착공일: {startDate} <Edit2 size={12} className="ml-1 opacity-70"/></button></h2>
                                     <div className="flex items-end"><span className="text-5xl font-bold mr-2">{accidentFreeDays}</span><span className="text-xl mb-2">일째</span><span className="ml-4 bg-white/20 px-3 py-1 rounded-full text-sm">목표: {targetDays}일</span></div>
                                 </div>
                                 <div className="flex space-x-8 text-center pr-12">
@@ -579,7 +772,11 @@
                                                                     <td className="px-3 py-3 font-bold text-blue-600">{work.workerCount}명</td>
                                                                     <td className="px-3 py-3">{work.manager}</td>
                                                                     <td className="px-3 py-3"><span className="flex items-center text-gray-500"><span className={`w-2 h-2 rounded-full mr-2 ${work.status === '진행' ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></span>{work.status}</span></td>
-                                                                    <td className="px-3 py-3 text-center"><button onClick={() => handleWorkEdit(work.id)} className="text-blue-500 p-1 rounded hover:bg-blue-50"><Edit2 size={16} /></button></td>
+                                                                    <td className="px-3 py-3 text-center">
+                                                                        <button onClick={() => handleWorkEdit(work.id)} className="text-blue-500 p-1 rounded hover:bg-blue-50"><Edit2 size={16} /></button>
+                                                                        {/* [추가] 삭제 버튼 */}
+                                                                        <button onClick={() => handleDeleteWork(work.id)} className="text-red-500 p-1 rounded hover:bg-red-50 ml-1"><Trash size={16} /></button>
+                                                                    </td>
                                                                 </>
                                                             )}
                                                         </tr>
@@ -678,7 +875,8 @@
                             <p className="text-gray-400 text-sm font-medium">남화토건(주) 안전보건팀</p>
                             <div className="absolute right-4 flex space-x-2">
                                 <button onClick={handlePrint} className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-blue-700 transition shadow-sm whitespace-nowrap"><Printer size={16} className="mr-2" /> PDF 보고서 출력</button>
-                                <a href={currentSiteInfo.scheduleLink} target="_blank" className="flex items-center bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-purple-700 transition shadow-sm whitespace-nowrap"><LinkIcon size={16} className="mr-2" /> 예정공정표</a>
+                                {/* [수정됨] 예정공정표 링크가 siteId에 따라 동적으로 변경됨 */}
+                                <a href={currentSiteInfo.link} target="_blank" className="flex items-center bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-purple-700 transition shadow-sm whitespace-nowrap"><LinkIcon size={16} className="mr-2" /> 예정공정표</a>
                                 <a href="index.html" className="flex items-center bg-gray-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-700 transition shadow-sm whitespace-nowrap">나가기</a>
                             </div>
                         </footer>
@@ -729,6 +927,13 @@
                                     
                                     {/* 모달 바디 (스크롤 가능) */}
                                     <div className="p-6 space-y-6 overflow-y-auto bg-gray-50 flex-1">
+                                        {/* [추가] 신규 등록 버튼 (신규 발견 목록일 때만 표시) */}
+                                        {selectedIssueType === 'new' && (
+                                            <button onClick={handleAddIssue} className="w-full py-3 bg-red-50 text-red-600 rounded-lg border-2 border-dashed border-red-200 font-bold mb-4 hover:bg-red-100 transition flex items-center justify-center">
+                                                <Plus size={18} className="mr-2"/> + 신규 부적합 사항 등록
+                                            </button>
+                                        )}
+
                                         {filteredIssues.length > 0 ? filteredIssues.map(issue => (
                                             <div key={issue.id} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200">
                                                 {/* 상단: 장소 및 발견자 */}
@@ -763,19 +968,31 @@
 
                                                 {/* 사진 업로드 영역 */}
                                                 <div className="grid grid-cols-2 gap-4 mb-6">
-                                                    <label className="group border-2 border-dashed border-gray-200 rounded-xl h-32 flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors bg-gray-50 hover:bg-white">
-                                                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-2 group-hover:bg-gray-200 transition">
-                                                            <Upload size={18} className="text-gray-400 group-hover:text-gray-600"/>
-                                                        </div>
-                                                        <span className="text-xs font-bold text-gray-400 group-hover:text-gray-600">조치 전 사진</span>
-                                                        <input type="file" className="hidden" accept="image/*" />
+                                                    <label className="group border-2 border-dashed border-gray-200 rounded-xl h-32 flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors bg-gray-50 hover:bg-white overflow-hidden relative">
+                                                        {issue.beforeImg ? (
+                                                            <img src={issue.beforeImg} alt="조치 전" className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <>
+                                                                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-2 group-hover:bg-gray-200 transition">
+                                                                    <Upload size={18} className="text-gray-400 group-hover:text-gray-600"/>
+                                                                </div>
+                                                                <span className="text-xs font-bold text-gray-400 group-hover:text-gray-600">조치 전 사진</span>
+                                                            </>
+                                                        )}
+                                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleIssueImageUpload(issue.id, 'beforeImg', e)} />
                                                     </label>
-                                                    <label className="group border-2 border-dashed border-gray-200 rounded-xl h-32 flex flex-col items-center justify-center cursor-pointer hover:border-green-400 transition-colors bg-gray-50 hover:bg-white">
-                                                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-2 group-hover:bg-green-50 transition">
-                                                            <Upload size={18} className="text-gray-400 group-hover:text-green-500"/>
-                                                        </div>
-                                                        <span className="text-xs font-bold text-gray-400 group-hover:text-green-600">조치 후 사진</span>
-                                                        <input type="file" className="hidden" accept="image/*" />
+                                                    <label className="group border-2 border-dashed border-gray-200 rounded-xl h-32 flex flex-col items-center justify-center cursor-pointer hover:border-green-400 transition-colors bg-gray-50 hover:bg-white overflow-hidden relative">
+                                                        {issue.afterImg ? (
+                                                            <img src={issue.afterImg} alt="조치 후" className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <>
+                                                                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-2 group-hover:bg-green-50 transition">
+                                                                    <Upload size={18} className="text-gray-400 group-hover:text-green-500"/>
+                                                                </div>
+                                                                <span className="text-xs font-bold text-gray-400 group-hover:text-green-600">조치 후 사진</span>
+                                                            </>
+                                                        )}
+                                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleIssueImageUpload(issue.id, 'afterImg', e)} />
                                                     </label>
                                                 </div>
 
@@ -828,7 +1045,34 @@
                                         <div><label className="block text-sm font-medium text-gray-700 mb-1">품목명 / 장비명</label><input name="item" type="text" className="w-full border rounded-lg p-2" required placeholder="예: 이동식 크레인, 에폭시 등" /></div>
                                         <div><label className="block text-sm font-medium text-gray-700 mb-2">점검 결과</label><div className="flex gap-4"><label className="flex items-center cursor-pointer"><input type="radio" name="result" value="합격" className="mr-2" defaultChecked /><span className="text-sm font-bold text-green-600">합격</span></label><label className="flex items-center cursor-pointer"><input type="radio" name="result" value="불합격" className="mr-2" /><span className="text-sm font-bold text-red-600">불합격</span></label></div></div>
                                         <div><label className="block text-sm font-medium text-gray-700 mb-1">세부 점검 내용</label><textarea className="w-full border rounded-lg p-2 h-20" placeholder="특이사항 및 점검 결과를 입력하세요"></textarea></div>
-                                        <div><label className="block text-sm font-medium text-gray-700 mb-2">점검 사진 / 서류 첨부</label><label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50"><div className="flex flex-col items-center justify-center pt-5 pb-6"><Upload className="w-8 h-8 text-gray-400 mb-2" /><p className="text-sm text-gray-500"><span className="font-semibold">클릭하여 업로드</span></p></div><input type="file" className="hidden" /></label></div>
+                                        
+                                        {/* [수정됨] 점검 사진 첨부 UI - 다중 이미지 지원 */}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">점검 사진 / 서류 첨부</label>
+                                            
+                                            {/* 미리보기 영역 (그리드 형태) */}
+                                            <div className="flex flex-wrap gap-2 mb-2">
+                                                {inspectionImages.map((img, idx) => (
+                                                    <div key={idx} className="relative w-20 h-20 border rounded-lg overflow-hidden group">
+                                                        <img src={img} className="w-full h-full object-cover" />
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => handleRemoveInspectionImage(idx)} 
+                                                            className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-bl-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        >
+                                                            <X size={12}/>
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                                {/* 업로드 버튼 (추가) */}
+                                                <label className="flex flex-col items-center justify-center w-20 h-20 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                                    <Plus className="w-6 h-6 text-gray-400" />
+                                                    <input type="file" multiple className="hidden" accept="image/*" onChange={handleInspectionImageUpload} />
+                                                </label>
+                                            </div>
+                                            <p className="text-xs text-gray-400">* 사진을 여러 장 선택하거나 추가할 수 있습니다.</p>
+                                        </div>
+
                                         <button type="submit" className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-bold hover:bg-blue-700">저장 하기</button>
                                     </form>
                                 </div>
