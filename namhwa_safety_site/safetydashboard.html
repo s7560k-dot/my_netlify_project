@@ -5,19 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Safety ON - 스마트 안전보건 플랫폼</title>
     
-    <!-- 1. Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 2. React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     
-    <!-- 3. Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- 4. Firebase SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -87,12 +84,15 @@
 
         // Firebase 초기화 보장
         let db = null;
+        let storage = null; // [수정됨] 스토리지 변수
+
         try {
             if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
             }
             db = firebase.firestore();
-            console.log("🔥 Firebase 연결 및 Firestore 초기화 완료");
+            storage = firebase.storage(); // [수정됨] 스토리지 초기화
+            console.log("🔥 Firebase 연결 및 Firestore/Storage 초기화 완료");
         } catch (error) {
             console.error("Firebase 초기화 오류:", error);
         }
@@ -483,64 +483,36 @@
                 }
             };
 
-            // [수정됨] 부적합 조치 사진 업로드 핸들러 - 이미지 압축 (자동 상태 전환 제거)
+            // [수정됨] 부적합 조치 사진 업로드 핸들러 - (스토리지 정식 업로드 버전)
             const handleIssueImageUpload = (id, type, e) => {
                 const file = e.target.files[0];
-                if (file) {
-                    // 이미지 압축 로직 추가
-                    const reader = new FileReader();
-                    reader.onload = (readerEvent) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            const MAX_WIDTH = 800; // 최대 너비 제한
-                            const MAX_HEIGHT = 600; // 최대 높이 제한
-                            let width = img.width;
-                            let height = img.height;
+                if (!file || !storage) return;
 
-                            if (width > height) {
-                                if (width > MAX_WIDTH) {
-                                    height *= MAX_WIDTH / width;
-                                    width = MAX_WIDTH;
-                                }
-                            } else {
-                                if (height > MAX_HEIGHT) {
-                                    width *= MAX_HEIGHT / height;
-                                    height = MAX_HEIGHT;
-                                }
-                            }
+                // 1. 저장 경로 설정
+                const storageRef = storage.ref(`images/${siteId}/issues/${id}_${type}_${Date.now()}`);
 
-                            canvas.width = width;
-                            canvas.height = height;
-                            const ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0, width, height);
-                            
-                            // 압축된 데이터 URL (JPEG, 품질 0.7)
-                            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                // 2. 업로드
+                const uploadTask = storageRef.put(file);
 
-                            // 상태 업데이트 및 DB 저장 (자동 상태 전환 로직 제거)
-                            setIssueList(prevList => {
-                                return prevList.map(issue => {
-                                    if (issue.id === id) {
-                                        // DB 업데이트 (압축된 이미지 사용)
-                                        if(db) {
-                                            const updateData = { [type]: dataUrl };
-                                            db.collection('sites').doc(siteId).collection('issues').doc(id).update(updateData)
-                                                .catch(err => {
-                                                    console.error("Error updating document: ", err);
-                                                    alert("사진 저장 중 오류가 발생했습니다. 용량이 너무 클 수 있습니다.");
-                                                });
-                                        }
-                                        return { ...issue, [type]: dataUrl };
-                                    }
-                                    return issue;
-                                });
-                            });
-                        };
-                        img.src = readerEvent.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                }
+                // 3. 완료 후 URL 획득
+                uploadTask.then(snapshot => snapshot.ref.getDownloadURL())
+                    .then(downloadURL => {
+                        console.log("업로드 완료:", downloadURL);
+                        
+                        // 화면 갱신
+                        setIssueList(prev => prev.map(issue => 
+                            issue.id === id ? { ...issue, [type]: downloadURL } : issue
+                        ));
+                        
+                        // DB 업데이트
+                        if(db) {
+                            db.collection('sites').doc(siteId).collection('issues').doc(id).update({ [type]: downloadURL });
+                        }
+                    })
+                    .catch(error => {
+                        console.error("업로드 실패:", error);
+                        alert("사진 업로드 실패! (권한 문제일 수 있습니다)");
+                    });
             };
 
             const saveIssueChanges = () => {
@@ -554,7 +526,7 @@
                         desc: issue.desc,
                         beforeImg: issue.beforeImg || null, // 이미지 필드 추가
                         afterImg: issue.afterImg || null
-                     });
+                      });
                  });
                  batch.commit().then(() => setShowIssueModal(false));
             };
@@ -608,51 +580,24 @@
                 setShowInspectionModal(true); 
             };
 
-            // [수정됨] 점검 이미지 업로드 핸들러 - 다중 파일 처리 및 압축
+            // [수정됨] 점검 이미지 업로드 핸들러 - (스토리지 다중 업로드 버전)
             const handleInspectionImageUpload = async (e) => {
                 const files = Array.from(e.target.files);
-                if (files.length === 0) return;
+                if (files.length === 0 || !storage) return;
 
-                const processFile = (file) => {
-                    return new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = (readerEvent) => {
-                            const img = new Image();
-                            img.onload = () => {
-                                const canvas = document.createElement('canvas');
-                                const MAX_WIDTH = 800;
-                                const MAX_HEIGHT = 600;
-                                let width = img.width;
-                                let height = img.height;
-
-                                if (width > height) {
-                                    if (width > MAX_WIDTH) {
-                                        height *= MAX_WIDTH / width;
-                                        width = MAX_WIDTH;
-                                    }
-                                } else {
-                                    if (height > MAX_HEIGHT) {
-                                        width *= MAX_HEIGHT / height;
-                                        height = MAX_HEIGHT;
-                                    }
-                                }
-
-                                canvas.width = width;
-                                canvas.height = height;
-                                const ctx = canvas.getContext('2d');
-                                ctx.drawImage(img, 0, 0, width, height);
-                                
-                                resolve(canvas.toDataURL('image/jpeg', 0.7));
-                            };
-                            img.src = readerEvent.target.result;
-                        };
-                        reader.readAsDataURL(file);
+                try {
+                    const uploadPromises = files.map(file => {
+                        const storageRef = storage.ref(`images/${siteId}/inspections/${Date.now()}_${file.name}`);
+                        return storageRef.put(file).then(snapshot => snapshot.ref.getDownloadURL());
                     });
-                };
 
-                // 모든 파일 비동기 처리
-                const newImages = await Promise.all(files.map(processFile));
-                setInspectionImages(prev => [...prev, ...newImages]);
+                    const newImageUrls = await Promise.all(uploadPromises);
+                    setInspectionImages(prev => [...prev, ...newImageUrls]);
+
+                } catch (error) {
+                    console.error("점검 사진 업로드 실패:", error);
+                    alert("사진 업로드 실패!");
+                }
             };
 
             // [추가] 점검 이미지 개별 삭제 핸들러
