@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>안전보건 경영 지표 계산기 (현장/전사 통합)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f9;
+        }
+        .card {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        /* 인쇄 시 불필요한 요소 숨기기 */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background-color: white;
+            }
+            #app {
+                max-width: none !important;
+            }
+            .card {
+                box-shadow: none;
+                border: 1px solid #ccc; /* 카드 경계 표시 */
+            }
+            header {
+                text-align: left !important;
+            }
+            h1 {
+                font-size: 1.5rem !important;
+            }
+            .text-lg {
+                font-size: 1rem !important;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div id="app" class="max-w-7xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="4xl font-extrabold text-blue-800">안전보건 경영 지표 계산기 (현장/전사 통합)</h1>
+            <p class="text-lg text-gray-600 mt-2">상시 근로자수 기반의 **재해율(%)**로 지표를 산출하며, 재해율 계산 시 **사망 5배 가중치**를 적용합니다.</p>
+        </header>
+
+        <!-- Input Section -->
+        <div class="bg-white p-6 rounded-xl card mb-8 no-print">
+            <h2 class="text-2xl font-semibold text-blue-600 mb-4 border-b pb-2">새로운 현장 데이터 입력</h2>
+            <form id="dataForm">
+                <!-- 1. 연간 총계 데이터 입력 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 rounded-lg border">
+                    <div class="col-span-1">
+                        <label for="year" class="block text-sm font-medium text-gray-700">연도 (노무 데이터 반영)</label>
+                        <input type="number" id="year" placeholder="예: 2024" class="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                        <p class="text-xs text-gray-500 mt-1" id="laborDataInfo">2024년 노무 정보 로드됨</p>
+                    </div>
+                    <div class="col-span-1">
+                        <label for="revenue" class="block text-sm font-medium text-gray-700"><span id="yearDisplay">연간 총</span> 실적액 (백만원 단위)</label>
+                        <input type="number" id="revenue" placeholder="예: 47367" class="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required min="0">
+                    </div>
+                    
+                    <!-- 평가용 전사 근로자수 자동 계산 결과 표시 -->
+                    <div class="col-span-1 bg-blue-100 p-3 rounded-xl border-2 border-blue-300">
+                        <label class="block text-sm font-medium text-blue-700">평가용 전사 상시 근로자수</label>
+                        <div class="mt-1 flex justify-between items-center">
+                            <span id="calculatedWorkersDisplay" class="text-3xl font-extrabold text-blue-800">0</span>
+                            <span class="text-sm text-blue-600">명</span>
+                        </div>
+                        <p class="text-xs text-blue-500 mt-1">
+                            (모든 재해율 계산의 분모로 사용됨)
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 2. 현장별 상세 데이터 입력 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="col-span-1">
+                        <label for="siteName" class="block text-sm font-medium text-gray-700">현장명</label>
+                        <input type="text" id="siteName" placeholder="예: 강남 신축 현장" class="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required>
+                    </div>
+                    
+                    <!-- 현장 재해자수 (휴업 3일 이상) -->
+                    <div class="col-span-1">
+                        <label for="injuries" class="block text-sm font-medium text-gray-700">현장 재해자수 (부상)</label>
+                        <input type="number" id="injuries" value="0" class="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required min="0">
+                    </div>
+
+                    <!-- 현장 사망자수 -->
+                    <div class="col-span-1">
+                        <label for="fatalities" class="block text-sm font-medium text-gray-700">현장 사망자수</label>
+                        <input type="number" id="fatalities" value="0" class="mt-1 block w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" required min="0">
+                    </div>
+                </div>
+                
+                <div class="md:col-span-4 pt-4">
+                    <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition duration-150">
+                        현장 데이터 추가 및 계산
+                    </button>
+                </div>
+            </form>
+            <p id="error-message" class="text-red-500 mt-3 hidden text-center font-medium"></p>
+        </div>
+
+        <!-- Print Button -->
+        <div class="mb-6 no-print">
+            <button id="printButton" class="w-full bg-gray-500 text-white p-3 rounded-lg font-bold hover:bg-gray-600 transition duration-150 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="P9 17.25 3.375 7.5l5.25-5.25m-1.5 5.25h12M18 17.25v2.25H6v-2.25M10.5 17.25v2.25h3v-2.25M18 17.25h1.5a1.5 1.5 0 001.5-1.5v-9a1.5 1.5 0 00-1.5-1.5H4.5A1.5 1.5 0 003 6.75v9a1.5 1.5 0 001.5 1.5H6" />
+                </svg>
+                보고서 인쇄하기
+            </button>
+        </div>
+
+        <!-- Calculated Results and Data Table -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Summary Card 1: Total Revenue -->
+            <div class="bg-white p-6 rounded-xl card border-t-4 border-blue-500 text-center">
+                <h3 class="text-xl font-bold text-gray-800 mb-2"><span id="totalAccumulatedRevenueDisplay">총 누계</span> 실적액</h3>
+                <p class="text-4xl font-extrabold text-blue-600" id="totalRevenue">0</p>
+                <p class="text-sm text-gray-500 mt-1">백만원</p>
+            </div>
+            
+            <!-- Summary Card 2: Total Fatal Man-In-Ten Thousand Rate (사고사망만인율) -->
+            <div class="bg-white p-6 rounded-xl card border-t-4 border-red-500 text-center">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">전사 사고사망만인율 (만인율)</h3>
+                <p class="text-4xl font-extrabold text-red-600" id="fatalityRate">0.00</p>
+                <p class="text-sm text-gray-500 mt-1">평가용 전사 근로자 기준 사망 만인율</p>
+            </div>
+
+            <!-- Summary Card 3: Total Weighted Accident Rate (전사 환산재해율 - 5배 가중치 적용) -->
+            <div class="bg-white p-6 rounded-xl card border-t-4 border-yellow-500 text-center">
+                <h3 class="text-xl font-bold text-gray-800 mb-2">전사 환산재해율 (%)</h3>
+                <p class="4xl font-extrabold text-yellow-600" id="totalWeightedInjuryRate">0.00</p>
+                <p class="text-sm text-gray-500 mt-1">평가용 전사 근로자 기준 (부상 + 사망*5) 백분율</p>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="bg-white p-6 rounded-xl card overflow-x-auto">
+            <h2 class="text-2xl font-semibold text-blue-600 mb-2 border-b pb-2">연도별/현장별 통계 및 결과</h2>
+            <p class="text-sm text-gray-600 mb-4">
+                현장 환산재해율은 **전사 평가용 근로자수**를 분모로, **사망 5배 가중치**를 적용하여 백분율로 계산됩니다.
+            </p>
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                    <tr class="bg-gray-100 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-3 py-3 text-left">연도</th>
+                        <th class="px-3 py-3 text-left">현장명</th>
+                        <th class="px-3 py-3 text-right">전사 근로자수(분모)</th>
+                        <th class="px-3 py-3 text-right">현장 부상자수</th>
+                        <th class="px-3 py-3 text-right">현장 사망자수</th>
+                        <th class="px-6 py-3 text-right font-bold text-green-700">현장 환산재해율 (%)</th>
+                        <th class="px-6 py-3 text-right font-bold text-red-700">사고사망만인율 (만인율)</th>
+                        <th class="px-3 py-3 text-right no-print">삭제</th>
+                    </tr>
+                </thead>
+                <tbody id="dataBody" class="bg-white divide-y divide-gray-200">
+                    <!-- Data rows will be inserted here -->
+                </tbody>
+            </table>
+            <p id="no-data-message" class="text-center text-gray-500 py-4 hidden">아직 입력된 데이터가 없습니다.</p>
+        </div>
+    </div>
+
+    <script type="module">
+        "use strict";
+
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, query, onSnapshot, orderBy, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        setLogLevel('debug'); // Set log level for debugging
+
+        // === 1. 외부 데이터 및 상수 정의 ===
+        
+        // 건설업 노무비율 및 월평균 임금 (가상 데이터)
+        // 실제 데이터로 반드시 교체해야 합니다.
+        const laborData = {
+            // avgMonthlyWage: 월평균 임금 (천원), laborRatio: 노무비율 (%)
+            '2024': { laborRatio: 27, avgMonthlyWage: 4786.62 }, 
+            '2023': { laborRatio: 27, avgMonthlyWage: 4647.165 }, 
+            '2022': { laborRatio: 27, avgMonthlyWage: 4438.528 },
+        };
+
+        // 사망 사고에 대한 가중치 (1 사망 = 5 재해)
+        const FATALITY_WEIGHT = 5;
+
+        // 전역 데이터 배열 (현장별 항목으로 저장)
+        let performanceData = [
+            // 샘플 데이터 (초기 로딩 시 companyWorkers는 재계산됨)
+            // 2023년: 실적액 200,000 기준, 부상 2, 사망 0. companyWorkers는 약 219명 (자동 계산)
+            { id: 1700000000001, year: 2023, siteName: "Site A", revenue: 200000, siteWorkers: 0, injuries: 2, fatalities: 0, companyWorkers: 0 },
+            // 2024년: 실적액 47,367 백만원 기준, 부상 7, 사망 1. companyWorkers는 223명 (자동 계산)
+            // (부상 7 + 사망 1*5) / 223 * 100 = 5.39%
+            { id: 1700000000002, year: 2024, siteName: "오동지구", revenue: 47367, siteWorkers: 0, injuries: 7, fatalities: 1, companyWorkers: 0 }
+        ];
+
+        // Firebase Global Variables
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        let db = null;
+        let auth = null;
+        let userId = null;
+        let isAuthReady = false;
+
+        // === 2. Firebase 및 인증 처리 ===
+
+        /**
+         * Firebase 앱 초기화 및 인증 처리
+         */
+        const initFirebase = async () => {
+            if (!firebaseConfig) {
+                console.error("Firebase config is missing. Data persistence will not work.");
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // 사용자 인증 처리
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // 인증 상태 리스너 설정
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                    } else {
+                        // 익명 로그인 또는 토큰 로그인 실패 시의 처리 (이미 위에서 시도했으므로 userId는 설정되어야 함)
+                        userId = auth.currentUser?.uid || 'anonymous'; 
+                    }
+                    isAuthReady = true;
+                    // 인증 완료 후 데이터 로드
+                    setupRealtimeListener();
+                });
+            } catch (error) {
+                console.error("Firebase initialization or sign-in failed:", error);
+                document.getElementById('error-message').textContent = 'Firebase 초기화 실패. 콘솔을 확인하세요.';
+                document.getElementById('error-message').classList.remove('hidden');
+            }
+        };
+
+        /**
+         * Firestore 실시간 리스너 설정
+         */
+        const setupRealtimeListener = () => {
+            if (!db || !userId) {
+                console.warn("Firestore or UserId not ready for listener setup.");
+                return;
+            }
+
+            const collectionPath = `artifacts/${appId}/users/${userId}/performanceData`;
+            const q = collection(db, collectionPath);
+            
+            // 실시간 리스너 설정
+            onSnapshot(q, (snapshot) => {
+                const updatedData = [];
+                snapshot.forEach((doc) => {
+                    // Firestore ID를 데이터 객체의 id로 사용
+                    const data = doc.data();
+                    data.id = doc.id; 
+                    // Number 타입으로 저장되지 않는 경우가 있어 명시적 변환
+                    data.year = Number(data.year);
+                    data.revenue = Number(data.revenue);
+                    data.injuries = Number(data.injuries);
+                    data.fatalities = Number(data.fatalities);
+                    data.companyWorkers = Number(data.companyWorkers);
+                    updatedData.push(data);
+                });
+
+                performanceData = updatedData;
+                // 연도별 및 현장명으로 정렬 (가독성 향상)
+                performanceData.sort((a, b) => {
+                    if (a.year !== b.year) return a.year - b.year;
+                    return a.siteName.localeCompare(b.siteName);
+                });
+                
+                updateDisplay();
+                updateCalculatedWorkersDisplay(); // 초기 로드 시 노무 정보 안내 표시
+            }, (error) => {
+                console.error("Error setting up real-time listener:", error);
+                document.getElementById('error-message').textContent = '데이터 로드 실패. 콘솔을 확인하세요.';
+                document.getElementById('error-message').classList.remove('hidden');
+            });
+        };
+
+        /**
+         * Firestore에 데이터를 저장합니다.
+         */
+        const saveData = async (data) => {
+            if (!isAuthReady || !db || !userId) {
+                console.warn("Authentication not ready. Cannot save data.");
+                document.getElementById('error-message').textContent = '인증이 완료되지 않아 데이터를 저장할 수 없습니다.';
+                document.getElementById('error-message').classList.remove('hidden');
+                return;
+            }
+
+            const collectionPath = `artifacts/${appId}/users/${userId}/performanceData`;
+            
+            try {
+                // 새로운 데이터는 addDoc 대신 setDoc을 사용하여 ID를 명시적으로 부여합니다.
+                // FireStore의 document ID를 Number 타입의 id로 사용할 수 없어,
+                // setDoc을 사용하여 Date.now()로 생성된 id를 FireStore document ID로 사용합니다.
+                const docRef = doc(collection(db, collectionPath), String(data.id));
+                // Firestore에 저장할 때는 id 필드를 제거하거나 string으로 변환
+                const dataToSave = { ...data };
+                delete dataToSave.id; // Firestore document ID는 별도로 사용
+                
+                // setDoc으로 덮어쓰거나 새로 생성
+                await setDoc(docRef, dataToSave);
+            } catch (error) {
+                console.error("Error saving data:", error);
+                document.getElementById('error-message').textContent = '데이터 저장 실패. 콘솔을 확인하세요.';
+                document.getElementById('error-message').classList.remove('hidden');
+            }
+        };
+
+        /**
+         * Firestore에서 데이터를 삭제합니다.
+         */
+        window.deleteData = async (id) => { // 전역으로 노출
+            if (!isAuthReady || !db || !userId) {
+                console.warn("Authentication not ready. Cannot delete data.");
+                return;
+            }
+            
+            const collectionPath = `artifacts/${appId}/users/${userId}/performanceData`;
+            const docRef = doc(collection(db, collectionPath), String(id));
+
+            try {
+                await deleteDoc(docRef);
+                // onSnapshot 리스너가 자동으로 UI를 업데이트하므로 별도 updateDisplay 호출 불필요
+            } catch (error) {
+                console.error("Error deleting data:", error);
+                document.getElementById('error-message').textContent = '데이터 삭제 실패. 콘솔을 확인하세요.';
+                document.getElementById('error-message').classList.remove('hidden');
+            }
+        };
+
+
+        // === 3. 유틸리티 및 계산 함수 (변동 없음) ===
+
+        /**
+         * 숫자를 콤마 형식으로 포맷하는 함수
+         */
+        const formatNumber = (num) => {
+            if (num === null || isNaN(num)) return '0';
+            return new Intl.NumberFormat('ko-KR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(num);
+        };
+
+        /**
+         * 실적액과 노무 데이터를 기반으로 전사 상시 근로자수 (평가용)를 계산합니다.
+         * @param {number} year - 연도
+         * @param {number} revenue - 연간 총 실적액 (백만원)
+         * @returns {{workers: number, info: string}} 계산 결과 및 정보
+         */
+        const calculateAverageWorkersData = (year, revenue) => {
+            const data = laborData[String(year)]; // 연도를 문자열 키로 접근
+            
+            if (!data || revenue <= 0) {
+                return {
+                    workers: 0, 
+                    info: data ? `실적액을 입력해주세요.` : `${year}년 노무 데이터 없음`
+                };
+            }
+
+            const laborRatio = data.laborRatio / 100; // % -> 소수점
+            // 월평균 임금 (천원) * 12개월 * 1000(원) = 연간 평균 임금 (원)
+            const avgAnnualWage = data.avgMonthlyWage * 12 * 1000; 
+            
+            // 총 노무비 (원) = revenue(백만원) * 1,000,000 * laborRatio
+            const totalLaborCost = revenue * 1000000 * laborRatio; 
+
+            // 상시 근로자수 (평가용) = 총 노무비 (원) / 연간 평균 임금 (원)
+            const workers = Math.round(totalLaborCost / avgAnnualWage);
+
+            const info = `${year}년 (노무비율 ${data.laborRatio}%, 월평균 임금 ${formatNumber(data.avgMonthlyWage)}천원)`;
+            
+            return { workers, info };
+        };
+
+        /**
+         * 현장 환산재해율 (%)을 계산합니다. (백분율, x100)
+         * @param {number} injuries - 부상 재해자수
+         * @param {number} fatalities - 사망자수
+         * @param {number} workerCount - 근로자수 (분모)
+         * @param {boolean} isWeighted - 사망 가중치 (x5) 적용 여부
+         * @returns {string} 계산된 재해율 (소수점 2자리)
+         */
+        const calculateWeightedManInTenThousandRate = (injuries, fatalities, workerCount, isWeighted = true) => {
+            if (workerCount === 0 || isNaN(workerCount)) return 'N/A';
+            
+            let numerator = injuries + fatalities; // 기본: 재해자수 합계
+            
+            if (isWeighted) {
+                // 가중치 적용: 부상자수 + (사망자수 * 5)
+                numerator = injuries + (fatalities * FATALITY_WEIGHT);
+            }
+            
+            // 환산재해율 (%) = (분자 / 근로자수) * 100
+            const rate = (numerator / workerCount) * 100;
+            return rate.toFixed(2);
+        };
+        
+        /**
+         * 전사 사고사망만인율 (만인율)을 계산합니다. (만인율, x10000)
+         * @param {number} fatalities - 총 사망자수
+         * @param {number} workerCount - 총 근로자수 (분모)
+         * @returns {string} 계산된 사망 만인율 (소수점 2자리)
+         */
+        const calculateFatalityManInTenThousandRate = (fatalities, workerCount) => {
+            if (workerCount === 0 || isNaN(workerCount)) return 'N/A';
+            
+            // 사망 만인율 = (사망자수 / 근로자수) * 10,000
+            const rate = (fatalities / workerCount) * 10000;
+            return rate.toFixed(2);
+        };
+        
+        /**
+         * 사고사망만인율 (Man-In-Ten Thousand Rate)을 계산합니다. (만인율, x10000)
+         * @param {number} fatalities - 현장 사망자수
+         * @param {number} workerCount - 근로자수 (분모)
+         * @returns {string} 계산된 만인율 (소수점 2자리)
+         */
+        const calculateFatalManInTenThousandRate = (fatalities, workerCount) => {
+            if (workerCount === 0 || isNaN(workerCount)) return 'N/A';
+            
+            // 사고사망만인율 = (사망자수 / 근로자수) * 10,000
+            const rate = (fatalities / workerCount) * 10000;
+            return rate.toFixed(2);
+        };
+
+
+        // === 4. 이벤트 핸들러 및 UI 로직 ===
+
+        /**
+         * 연도나 실적액 변경 시 전사 상시 근로자수 자동 계산 및 표시
+         */
+        const updateCalculatedWorkersDisplay = () => {
+            const yearInput = document.getElementById('year');
+            const revenueInput = document.getElementById('revenue');
+            const yearDisplayElement = document.getElementById('yearDisplay'); 
+            const totalAccumulatedRevenueDisplay = document.getElementById('totalAccumulatedRevenueDisplay'); 
+            const totalRevenueElement = document.getElementById('totalRevenue'); 
+            
+            const year = parseInt(yearInput.value) || 0;
+            const revenue = parseFloat(revenueInput.value) || 0;
+
+            const displayElement = document.getElementById('calculatedWorkersDisplay');
+            const dataInfoElement = document.getElementById('laborDataInfo');
+
+            // --- UI 텍스트 업데이트 ---
+            if (year > 0) {
+                 yearDisplayElement.textContent = `${year}년 건설공사`;
+                 totalAccumulatedRevenueDisplay.textContent = `${year}년 총 누계`;
+            } else {
+                 yearDisplayElement.textContent = `연간 총`;
+                 totalAccumulatedRevenueDisplay.textContent = `총 누계`;
+            }
+
+            // --- 총 누계 실적액 카드 값 업데이트 ---
+            const totalHistoricalRevenue = performanceData.reduce((sum, data) => sum + data.revenue, 0);
+
+            if (revenue > 0) {
+                // Active input - show the current input value
+                totalRevenueElement.textContent = formatNumber(revenue);
+            } else {
+                // Input is 0/empty - show the historical total
+                totalRevenueElement.textContent = formatNumber(totalHistoricalRevenue);
+            }
+            // ---------------------------------------------------
+
+
+            if (year === 0 || revenue <= 0) {
+                displayElement.textContent = '0';
+                dataInfoElement.textContent = '연도와 실적액을 입력해야 전사 근로자수가 계산됩니다.';
+                return;
+            }
+            
+            const result = calculateAverageWorkersData(year, revenue);
+            
+            displayElement.textContent = formatNumber(result.workers);
+            dataInfoElement.textContent = result.info;
+        };
+
+        /**
+         * 데이터 입력 폼 제출 처리
+         */
+        document.getElementById('dataForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // 입력값 파싱 시 NaN 방지
+            const year = parseInt(document.getElementById('year').value) || 0;
+            const revenue = parseFloat(document.getElementById('revenue').value) || 0;
+            const siteName = document.getElementById('siteName').value.trim();
+            const injuries = parseInt(document.getElementById('injuries').value) || 0;
+            const fatalities = parseInt(document.getElementById('fatalities').value) || 0;
+            
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.classList.add('hidden');
+
+            const calculatedCompanyData = calculateAverageWorkersData(year, revenue);
+            
+            if (siteName === '') {
+                errorMessage.textContent = '현장명을 입력해주세요.';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            if (calculatedCompanyData.workers <= 0) {
+                errorMessage.textContent = '전사 실적액 기반 근로자수가 0이므로 현장 데이터를 추가할 수 없습니다. 연도와 실적액을 확인하세요.';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            const siteWorkersValue = calculatedCompanyData.workers; 
+            
+            const newData = {
+                id: Date.now(), // Firestore Document ID로 사용
+                year,
+                revenue, 
+                siteName,
+                siteWorkers: siteWorkersValue, // 현장 근로자수 (전사 근로자수와 동일)
+                injuries,
+                fatalities,
+                companyWorkers: calculatedCompanyData.workers, // 전사 평가용 근로자수 (분모)
+            };
+
+            // performanceData.push(newData); // onSnapshot이 처리함
+            saveData(newData);
+            
+            // 현장 데이터 입력 필드 초기화
+            document.getElementById('siteName').value = '';
+            document.getElementById('injuries').value = '0';
+            document.getElementById('fatalities').value = '0';
+        });
+
+        // 연도 및 실적액 입력 시 자동 업데이트 이벤트 리스너 추가
+        document.getElementById('year').addEventListener('input', updateCalculatedWorkersDisplay);
+        document.getElementById('revenue').addEventListener('input', updateCalculatedWorkersDisplay);
+        
+        // 인쇄 버튼 이벤트 리스너
+        document.getElementById('printButton').addEventListener('click', () => {
+            window.print();
+        });
+
+
+        /**
+         * 전사 총계 지표를 계산하고 결과를 업데이트합니다.
+         */
+        const calculateTotalMetrics = () => {
+            const totalFatalities = performanceData.reduce((sum, data) => sum + data.fatalities, 0);
+            const totalInjuries = performanceData.reduce((sum, data) => sum + data.injuries, 0);
+
+            let totalCompanyWorkers = 0;
+            const uniqueYearWorkers = {}; // { year: companyWorkers }
+            
+            performanceData.forEach(data => {
+                if (data.year && data.companyWorkers > 0) {
+                    // 동일 연도의 데이터 중복 입력 시 가장 큰 값으로 대표
+                    if (!uniqueYearWorkers[data.year] || data.companyWorkers > uniqueYearWorkers[data.year]) {
+                        uniqueYearWorkers[data.year] = data.companyWorkers;
+                    }
+                }
+            });
+            
+            // 유니크한 연도의 전사 근로자수 합계
+            totalCompanyWorkers = Object.values(uniqueYearWorkers).reduce((sum, workers) => sum + workers, 0);
+            
+            if (totalCompanyWorkers === 0) {
+                 document.getElementById('fatalityRate').textContent = '0.00';
+                 document.getElementById('totalWeightedInjuryRate').textContent = '0.00 %';
+                 return;
+            }
+
+            // 1. 전사 사고사망만인율 (만인율, x10000)
+            const fatalityRate = calculateFatalityManInTenThousandRate(totalFatalities, totalCompanyWorkers);
+
+
+            // 2. 전사 환산재해율 (가중치 적용, 백분율, x100)
+            const totalWeightedInjuryRate = calculateWeightedManInTenThousandRate(totalInjuries, totalFatalities, totalCompanyWorkers, true);
+            
+            
+            document.getElementById('fatalityRate').textContent = fatalityRate; // 만인율이므로 % 제거
+            document.getElementById('totalWeightedInjuryRate').textContent = totalWeightedInjuryRate + ' %';
+        };
+
+        /**
+         * 테이블과 요약 결과를 모두 업데이트합니다.
+         */
+        const updateDisplay = () => {
+            const dataBody = document.getElementById('dataBody');
+            dataBody.innerHTML = '';
+
+            // 초기 로딩 시 샘플 데이터의 workers 값을 재계산하여 totalMetrics 계산에 포함
+            performanceData = performanceData.map(data => {
+                // Firestore에서 companyWorkers가 0으로 저장되었거나 누락된 경우 재계산
+                if (data.companyWorkers === 0 || isNaN(data.companyWorkers) || data.companyWorkers === undefined) {
+                    const calculatedData = calculateAverageWorkersData(data.year, data.revenue);
+                    data.companyWorkers = calculatedData.workers;
+                }
+                data.siteWorkers = data.companyWorkers; 
+                return data;
+            });
+
+
+            if (performanceData.length === 0) {
+                document.getElementById('no-data-message').classList.remove('hidden');
+            } else {
+                document.getElementById('no-data-message').classList.add('hidden');
+                
+                performanceData.forEach(data => {
+                    // 1. 현장 환산재해율 계산: (부상자수 + 사망자수*5) / 전사 근로자수 * 100
+                    const convertedAccidentRate = calculateWeightedManInTenThousandRate(data.injuries, data.fatalities, data.companyWorkers, true);
+                    
+                    // 2. 사고사망만인율 계산: 사망자수 / 전사 근로자수 * 10,000
+                    const fatalManInTenThousandRate = calculateFatalManInTenThousandRate(data.fatalities, data.companyWorkers);
+
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">${data.year}</td>
+                        <td class="px-3 py-3 whitespace-nowrap text-sm text-left text-gray-800 font-medium">${data.siteName}</td>
+                        <td class="px-3 py-3 whitespace-nowrap text-sm text-right text-gray-500 font-bold">${formatNumber(data.siteWorkers)}</td>
+                        <td class="px-3 py-3 whitespace-nowrap text-sm text-right text-gray-500">${data.injuries}</td>
+                        <td class="px-3 py-3 whitespace-nowrap text-sm text-right text-gray-500">${data.fatalities}</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-sm text-right font-bold ${parseFloat(convertedAccidentRate) > 0 ? 'text-red-600' : 'text-green-600'}">${convertedAccidentRate} %</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-sm text-right text-red-700 font-bold">${fatalManInTenThousandRate}</td>
+                        <td class="px-3 py-3 whitespace-nowrap text-right no-print">
+                            <button onclick="deleteData('${data.id}')" class="text-red-500 hover:text-red-700 transition duration-150">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 6h6v10H7V6z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </td>
+                    `;
+                    dataBody.appendChild(row);
+                });
+            }
+
+            // 전사 총계 지표 계산 및 업데이트
+            calculateTotalMetrics();
+        };
+
+        // DOMContentLoaded 이벤트에서 Firebase 초기화 및 인증 시작
+        document.addEventListener('DOMContentLoaded', initFirebase);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>위험성 평가</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* [수정] 모바일 뷰에서 입력란이 100% 너비를 갖도록 보장 */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            color: #333;
+            background-color: #f0f2f5;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 14px;
+            word-break: keep-all;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+        }
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 16px;
+        }
+        
+        .approval-table-container {
+            width: 33%;
+            flex-shrink: 0;
+        }
+        .approval-table th, .approval-table td {
+            padding: 4px;
+            font-size: 12px;
+        }
+        .approval-table input[type="date"] {
+            width: 100%;
+            border: none;
+            text-align: center;
+            font-size: 12px;
+        }
+        .main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .main-title select {
+            width: auto;
+            font-size: 14px;
+            font-weight: normal;
+            margin-right: 10px;
+            padding: 2px 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        input, textarea, select {
+            width: 100%;
+        }
+        
+        /* 입력란 스타일 */
+        td input, td textarea, td select {
+            border: 1px solid #ccc;
+            padding: 4px;
+            border-radius: 4px;
+        }
+        /* PC/태블릿 뷰에서 높이 통일 */
+        @media screen and (min-width: 769px) {
+            td input, td textarea, td select {
+                 min-height: 50px;
+            }
+             /* 너비가 좁은 열은 높이 통일 제외 */
+            .col-narrow input {
+                min-height: auto;
+            }
+        }
+        /* 상단 정보 테이블은 높이 통일 제외 */
+        .info-table td input {
+            min-height: auto;
+            border: 1px solid #ccc;
+        }
+        
+        textarea {
+            resize: vertical;
+        }
+        .overflow-x-auto::-webkit-scrollbar { height: 8px; }
+        .overflow-x-auto::-webkit-scrollbar-track { background: #f1f1f1; }
+        .overflow-x-auto::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        .overflow-x-auto::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        .action-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 16px;
+            text-align: center;
+            font-size: 14px;
+            margin: 10px 0;
+            cursor: pointer;
+            border-radius: 4px;
+            border: none;
+        }
+
+        /* 저장/초기화 버튼 색상 추가 */
+        .bg-blue-500 { background-color: #3b82f6; }
+        .hover\:bg-blue-600:hover { background-color: #2563eb; }
+        .bg-red-500 { background-color: #ef4444; }
+        .hover\:bg-red-600:hover { background-color: #dc2626; }
+        
+        /* 삭제 버튼 스타일 */
+        .delete-btn {
+            background-color: #ef4444;
+            color: white;
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+        .delete-btn:hover {
+            background-color: #dc2626;
+        }
+
+
+        .print-btn-container {
+            text-align: right;
+            max-width: 1600px;
+            margin: 20px auto 0;
+            padding: 0 20px;
+        }
+        .image-preview-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 5px;
+        }
+        .image-preview {
+            max-width: 100%;
+            max-height: 80px;
+            object-fit: contain;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            display: block;
+        }
+        .image-placeholder {
+            width: 100%;
+            height: 80px;
+            background-color: #f9f9f9;
+            border: 1px dashed #ccc;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            font-size: 12px;
+        }
+
+        /* 인쇄용 스타일 */
+        @media print {
+            @page {
+                size: landscape;
+                margin: 1cm;
+            }
+            body {
+                background-color: #fff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .container {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+            .overflow-x-auto {
+                overflow: visible !important;
+            }
+            table {
+                width: 100% !important;
+                table-layout: fixed !important; /* 너비를 강제하기 위해 fixed 레이아웃 사용 */
+                page-break-inside: auto;
+            }
+            th, td {
+                font-size: 9pt;
+                padding: 5px;
+                word-wrap: break-word; /* 긴 텍스트 줄바꿈 */
+            }
+            thead {
+                display: table-header-group;
+            }
+            tbody tr {
+                page-break-inside: avoid;
+            }
+            .header-section {
+                page-break-after: avoid;
+            }
+            h1, h2 {
+                page-break-after: avoid;
+            }
+            th {
+                background-color: #f2f2f2 !important;
+            }
+            .main-title {
+                font-size: 20pt;
+            }
+            .image-preview {
+                max-height: 70px;
+                border: 1px solid #ccc !important;
+            }
+            input, textarea, select {
+                border: none !important;
+                background-color: transparent !important;
+                box-shadow: none !important;
+                padding: 1px;
+                font-size: 9pt;
+                height: auto; 
+                min-height: auto;
+            }
+            textarea {
+                resize: none;
+                overflow: hidden; /* 스크롤바 숨김 */
+            }
+            /* --- [수정됨] Table 1 인쇄 너비 --- */
+            #risk-table-1 th:nth-child(1), #risk-table-1 td:nth-child(1) { width: 4% !important; } /* NO */
+            #risk-table-1 th:nth-child(2), #risk-table-1 td:nth-child(2) { width: 28% !important; } /* 위험요인 + */
+            #risk-table-1 th:nth-child(3), #risk-table-1 td:nth-child(3) { width: 8% !important; }  /* 장소 - */
+            #risk-table-1 th:nth-child(4), #risk-table-1 td:nth-child(4) { width: 4% !important; }  /* 빈도 - */
+            #risk-table-1 th:nth-child(5), #risk-table-1 td:nth-child(5) { width: 4% !important; }  /* 강도 - */
+            #risk-table-1 th:nth-child(6), #risk-table-1 td:nth-child(6) { width: 4% !important; }  /* 등급 - */
+            #risk-table-1 th:nth-child(7), #risk-table-1 td:nth-child(7) { width: 28% !important; } /* 개선대책 + */
+            #risk-table-1 th:nth-child(8), #risk-table-1 td:nth-child(8) { width: 8% !important; }  /* 조치기한 */
+            #risk-table-1 th:nth-child(9), #risk-table-1 td:nth-child(9) { width: 6% !important; }  /* 담당자 - */
+            #risk-table-1 th:nth-child(10), #risk-table-1 td:nth-child(10) { width: 6% !important; }  /* 조치일 */
+            
+            /* --- [수정됨] Table 2 인쇄 너비 --- */
+            #risk-table-2 th:nth-child(1), #risk-table-2 td:nth-child(1) { width: 5% !important; }  /* NO */
+            #risk-table-2 th:nth-child(2), #risk-table-2 td:nth-child(2) { width: 28% !important; } /* 위험요인 + */
+            #risk-table-2 th:nth-child(3), #risk-table-2 td:nth-child(3) { width: 28% !important; } /* 조치사항 + */
+            #risk-table-2 th:nth-child(4), #risk-table-2 td:nth-child(4) { width: 8% !important; }  /* 조치일 - */
+            #risk-table-2 th:nth-child(5), #risk-table-2 td:nth-child(5) { width: 8% !important; }  /* 조치상태 - */
+            #risk-table-2 th:nth-child(6), #risk-table-2 td:nth-child(6) { width: 11.5% !important; } /* 조치 전 사진 */
+            #risk-table-2 th:nth-child(7), #risk-table-2 td:nth-child(7) { width: 11.5% !important; } /* 조치 후 사진 */
+        }
+        
+        /* [수정] 모바일 반응형 스타일 (768px 이하) */
+        @media screen and (max-width: 768px) {
+            body {
+                background-color: white;
+            }
+            .container {
+                max-width: 100%;
+                margin: 0;
+                padding: 10px;
+                border: none;
+                box-shadow: none;
+            }
+
+            .print-btn-container {
+                padding: 0 10px;
+                text-align: center;
+                margin: 10px auto;
+                display: flex;
+                flex-wrap: wrap; /* 버튼 많을 시 줄바꿈 */
+                justify-content: space-around;
+                gap: 5px;
+            }
+
+            .action-button {
+                padding: 10px;
+                font-size: 14px;
+                margin: 0;
+                flex-grow: 1; /* 버튼들이 공간을 채움 */
+            }
+
+            /* 헤더 수직 정렬 */
+            .header-section {
+                flex-direction: column; /* 수직으로 쌓기 */
+                align-items: stretch;  /* 양쪽으로 꽉 차게 */
+            }
+
+            .header-section > div:first-child {
+                width: 100%;
+            }
+            
+            #site-name {
+                width: 100%;
+                font-size: 16px;
+            }
+
+            /* 결재란 100% 너비 */
+            .approval-table-container {
+                width: 100%;
+                margin-top: 20px;
+                margin-left: 0;
+            }
+
+            .main-title {
+                font-size: 20px;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            h2.main-title {
+                font-size: 18px;
+            }
+
+            /* --- 테이블 반응형 (카드 스택) --- */
+            .overflow-x-auto {
+                overflow-x: visible; 
+            }
+
+            /* [수정] 모든 테이블을 반응형으로 */
+            table.info-table,
+            #risk-table-1, 
+            #risk-table-2 {
+                table-layout: auto;
+            }
+
+            table.info-table thead,
+            #risk-table-1 thead, 
+            #risk-table-2 thead { 
+                display: none; /* 헤더 숨기기 */
+            }
+            
+            table.info-table tbody,
+            #risk-table-1 tbody, 
+            #risk-table-2 tbody,
+            table.info-table tr,
+            #risk-table-1 tr, 
+            #risk-table-2 tr { 
+                display: block; 
+            }
+
+            /* [수정] 상단 정보 테이블도 카드 형식으로 */
+            table.info-table tr {
+                 border: none;
+                 margin-bottom: 0;
+            }
+            
+            #risk-table-1 tr, #risk-table-2 tr {
+                border: 1px solid #ccc;
+                margin-bottom: 15px;
+                border-radius: 8px;
+                overflow: hidden; /* 자식 요소가 둥근 모서리를 넘지 않도록 */
+            }
+            
+            table.info-table td,
+            #risk-table-1 td, 
+            #risk-table-2 td { 
+                display: block;
+                border: none;
+                border-bottom: 1px solid #eee; 
+                position: relative;
+                padding: 10px;
+                text-align: left; /* 왼쪽 정렬로 변경 */
+                min-height: 50px;
+            }
+            
+            table.info-table td:last-child,
+            #risk-table-1 td:last-child, 
+            #risk-table-2 td:last-child {
+                border-bottom: none; /* 마지막 셀 하단선 제거 */
+            }
+
+            /* [수정] 라벨을 상단에 배치 (라벨-입력란 수직 구조) */
+            table.info-table td[data-label]:before,
+            #risk-table-1 td[data-label]:before, 
+            #risk-table-2 td[data-label]:before { 
+                content: attr(data-label);
+                display: block;
+                font-weight: bold;
+                margin-bottom: 5px;
+                font-size: 13px;
+                color: #555;
+            }
+            
+            /* [수정] 상단 정보 테이블 th 대신 data-label 사용 */
+            table.info-table th {
+                display: none;
+            }
+            
+            /* 첫 번째 'NO' 셀 */
+            #risk-table-1 td:first-child, 
+            #risk-table-2 td:first-child {
+                background-color: #f2f2f2;
+                font-weight: bold;
+                font-size: 1.2em;
+                text-align: left;
+                padding-left: 10px;
+            }
+            #risk-table-1 td:first-child:before, 
+            #risk-table-2 td:first-child:before {
+                display: inline-block; /* "NO" 라벨을 숫자 옆에 표시 */
+                margin-right: 5px;
+                font-size: 0.8em;
+            }
+            
+            /* 삭제 버튼 셀 */
+            td.delete-cell {
+                background-color: #fef2f2;
+            }
+            .delete-btn {
+                width: 100%;
+                padding: 10px;
+                font-size: 14px;
+            }
+            
+            /* [수정] 입력란 스타일 모바일 최적화 */
+            td input, td textarea, td select {
+                font-size: 16px; /* 모바일에서 잘 보이도록 */
+                width: 100%; /* 너비 100% 보장 */
+                padding: 8px;
+            }
+            
+            /* [수정] 위험요인/개선대책 높이 확보 */
+            textarea.risk-input, textarea.measure-input {
+                min-height: 150px; /* 최소 높이 증가 */
+            }
+            
+            td input[type="file"] {
+                font-size: 12px;
+                padding: 0;
+                border: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <div class="print-btn-container no-print">
+        <!-- [수정] onclick 제거, id 추가 -->
+        <button id="save-btn" class="action-button bg-blue-500 hover:bg-blue-600">내용 저장</button>
+        <button id="clear-btn" class="action-button bg-red-500 hover:bg-red-600">초기화</button>
+        <button id="print-btn" class="action-button">인쇄</button>
+    </div>
+
+    <!-- =============== 평가표 작성 뷰 =============== -->
+    <div id="assessment-view" class="container bg-white p-6 rounded-lg border-2 border-green-500 shadow-lg">
+        <div class="header-section">
+            <div>
+                <div class="text-sm text-gray-600 no-print">
+                    * 본 문서는 가로방향으로 출력해 주세요.
+                </div>
+                <div class="mt-4 flex items-center">
+                    <label for="site-name" class="font-bold mr-2 whitespace-nowrap text-lg">현장명:</label>
+                    <input type="text" id="site-name" value="" class="w-[400px] p-2 border border-gray-300 rounded-md text-lg">
+                </div>
+            </div>
+            <div class="approval-table-container">
+                <table class="approval-table">
+                    <thead>
+                        <tr>
+                            <th>작성자</th>
+                            <th>근로자대표</th>
+                            <th>관리감독자</th>
+                            <th>안전관리자</th>
+                            <th>현장소장</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="h-16">
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td><input type="date" value="" class="text-center approval-date"></td>
+                            <td><input type="date" value="" class="text-center approval-date"></td>
+                            <td><input type="date" value="" class="text-center approval-date"></td>
+                            <td><input type="date" value="" class="text-center approval-date"></td>
+                            <td><input type="date" value="" class="text-center approval-date"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h1 class="main-title">
+             <select>
+                <option>최초</option>
+                <option>상시</option>
+                <option>정기</option>
+                <option>수시</option>
+            </select>
+            위험성 평가
+        </h1>
+
+        <div class="overflow-x-auto">
+            <table class="info-table mb-8">
+                <tbody>
+                    <tr>
+                        <th class="w-32">작업명</th>
+                         <!-- [신규] data-label 추가 -->
+                        <td colspan="3" data-label="작업명">
+                             <!-- [수정] oninput 제거 -->
+                            <input type="text" id="main-work-title-input" list="work-titles-list" value="" class="p-1 border-gray-300 rounded-md">
+                        </td>
+                        <th class="w-32">작업기간</th>
+                         <!-- [신규] data-label 추가 -->
+                        <td colspan="2" data-label="작업기간">
+                            <input type="text" value="" id="work-period" class="p-1 border-gray-300 rounded-md">
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>작성일</th>
+                         <!-- [신규] data-label 추가 -->
+                        <td colspan="3" data-label="작성일">
+                            <input type="text" value="" id="creation-date" class="p-1 border-gray-300 rounded-md">
+                        </td>
+                        <th>소속</th>
+                         <!-- [신규] data-label 추가 -->
+                        <td colspan="2" data-label="소속">
+                            <input type="text" value="" id="department" class="p-1 border-gray-300 rounded-md">
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table id="risk-table-1" class="mb-2">
+                <thead>
+                    <tr>
+                        <th class="w-12">NO</th>
+                        <th>위험요인</th>
+                        <th class="w-20">장소</th> <!-- [수정] 너비 축소 -->
+                        <th class="w-12">빈도</th>
+                        <th class="w-12">강도</th>
+                        <th class="w-12">등급</th>
+                        <th>개선대책</th>
+                        <th class="w-24">조치기한</th>
+                        <th class="w-20">담당자</th> <!-- [수정] 너비 축소 -->
+                        <th class="w-24">조치일</th>
+                        <th class="w-16 no-print">삭제</th> 
+                    </tr>
+                </thead>
+                <tbody id="table1-body"></tbody>
+            </table>
+        </div>
+         <!-- [수정] onclick 제거, id 추가 -->
+        <button id="add-row-btn" class="action-button mb-8 no-print">항목 추가</button>
+
+        <h2 class="main-title">
+            위험성 평가 이행 현황
+        </h2>
+
+        <div class="overflow-x-auto">
+            <table id="risk-table-2" class="mb-2">
+                <thead>
+                    <tr>
+                        <th class="w-12">NO</th>
+                        <th>위험요인</th>
+                        <th>조치사항</th>
+                        <th class="w-24">조치일</th> <!-- [수정] 너비 축소 -->
+                        <th class="w-24">조치상태</th> <!-- [수정] 너비 축소 -->
+                        <th class="w-48">조치 전 사진</th>
+                        <th class="w-48">조치 후 사진</th>
+                        <th class="w-16 no-print">삭제</th> 
+                    </tr>
+                </thead>
+                <tbody id="table2-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 미리 정의된 데이터 목록 (datalist) -->
+    <datalist id="work-titles-list"></datalist>
+
+    <datalist id="persons-list">
+        <option value="홍길동"></option>
+        <option value="김철수"></option>
+        <option value="이영희"></option>
+        <option value="박안전"></option>
+    </datalist>
+
+    <datalist id="status-list">
+        <option value="조치 완료"></option>
+        <option value="진행 중"></option>
+        <option value="계획 중"></option>
+        <option value="해당 없음"></option>
+    </datalist>
+    
+    <script>
+        // --------------------------------------------------
+        // [데이터 수정] 여기에서 '작업명' 목록을 수정하세요.
+        // --------------------------------------------------
+        const workData = [
+          {
+            "workName": "가설분전함 설치/자재반입 및 준비작업",
+            "risks": [
+              { "risk": "작업방법 및 내용 미확인으로 인한 안전사고 발생", "measure": "작업계획,내용에 따른 위험성을 평가하고 TBM 실시" },
+              { "risk": "운반트럭 적재함에 근로자 임의로 올라가서 작업중 추락", "measure": "적재함 탑승 및 작업금지" },
+              { "risk": "운반차량 적재함에 승/하강 중 뛰어내리는 등 불안전한 행동", "measure": "적재함 탑승 금지" },
+              { "risk": "지게차 운전원 운전미숙을 작업중 근로자와 충돌", "measure": "사전 지게차 운전원 자격유무 확인, 교육실시" },
+            ]
+          },
+          {
+            "workName": "외부 비계 설치",
+            "risks": [
+              { "risk": "비계 조립 중 추락 위험", "measure": "안전대 착용, 작업발판 설치" },
+              { "risk": "자재 낙하 위험", "measure": "낙하물 방지망 설치, 하부 통제" },
+              { "risk": "강풍 시 비계 전도 위험", "measure": "벽이음쇠(Tie) 설치 확인" }
+            ]
+          },
+          {
+            "workName": "터파기 작업",
+            "risks": [
+              { "risk": "굴착면 붕괴 위험", "measure": "흙막이 지보공 설치, 경사면 확보" }
+            ]
+          }
+        ];
+        // --------------------------------------------------
+
+        // [수정] 모든 스크립트 로직을 DOMContentLoaded로 감싸 안전하게 실행
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- 전역 변수 및 상수 ---
+            const workDataMap = {};
+            const SAVE_KEY = 'riskAssessmentData';
+            
+            // --- DOM 요소 캐싱 ---
+            const tableBody1 = document.getElementById('table1-body');
+            const tableBody2 = document.getElementById('table2-body');
+            const workTitlesDatalist = document.getElementById('work-titles-list');
+            const mainWorkTitleInput = document.getElementById('main-work-title-input');
+            const siteNameInput = document.getElementById('site-name');
+            const workPeriodInput = document.getElementById('work-period');
+            const creationDateInput = document.getElementById('creation-date');
+            const departmentInput = document.getElementById('department');
+            const approvalDateInputs = document.querySelectorAll('.approval-date');
+
+            // --- 함수 정의 ---
+
+            /**
+             * [수정] 행 번호 재정렬 함수
+             * 전역 변수 대신 DOM에서 직접 길이를 읽어 번호를 매김
+             */
+            const renumberRows = () => {
+                const rows1 = tableBody1.querySelectorAll('tr');
+                const rows2 = tableBody2.querySelectorAll('tr');
+                
+                rows1.forEach((row, index) => {
+                    const rowNum = index + 1;
+                    const firstCell = row.querySelector('td:first-child');
+                    if (firstCell) firstCell.textContent = rowNum;
+                });
+
+                rows2.forEach((row, index) => {
+                    const rowNum = index + 1;
+                    const firstCell = row.querySelector('td:first-child');
+                    if (firstCell) firstCell.textContent = rowNum;
+                });
+            }
+            
+            /**
+             * [수정] 행 삭제 함수 (이벤트 위임으로 처리됨)
+             */
+            const deleteRow = (buttonEl) => {
+                if (!window.confirm("이 항목을 정말로 삭제하시겠습니까?")) {
+                    return;
+                }
+                const rowToRemove = buttonEl.closest('tr');
+                if (!rowToRemove) return;
+
+                const currentTbody = rowToRemove.closest('tbody');
+                const otherTbody = (currentTbody.id === 'table1-body') ? tableBody2 : tableBody1;
+                
+                const rowIndex = Array.from(currentTbody.children).indexOf(rowToRemove);
+                const otherRowToRemove = otherTbody.rows[rowIndex];
+
+                if (rowToRemove) rowToRemove.remove();
+                if (otherRowToRemove) otherRowToRemove.remove();
+
+                renumberRows();
+            }
+
+            /**
+             * [수정] 행 추가 함수
+             * document.createElement를 사용하여 더 안정적으로 DOM 생성
+             */
+            const addRow = (risk = '', measure = '') => {
+                const rowNum = tableBody1.rows.length + 1;
+
+                // --- Table 1 행 생성 ---
+                const newRow1 = tableBody1.insertRow();
+                newRow1.innerHTML = `
+                    <td data-label="NO">${rowNum}</td>
+                    <td data-label="위험요인"><textarea class="p-1 border border-gray-300 rounded-md risk-input">${risk}</textarea></td>
+                    <td data-label="장소" class="col-narrow"><input type="text" value="" class="p-1 border border-gray-300 rounded-md"></td>
+                    <td data-label="빈도" class="col-narrow"><input type="number" value="" class="p-1 border border-gray-300 rounded-md text-center"></td>
+                    <td data-label="강도" class="col-narrow"><input type="number" value="" class="p-1 border border-gray-300 rounded-md text-center"></td>
+                    <td data-label="등급" class="col-narrow"><input type="number" value="" class="p-1 border border-gray-300 rounded-md text-center"></td>
+                    <td data-label="개선대책"><textarea class="p-1 border border-gray-300 rounded-md measure-input">${measure}</textarea></td>
+                    <td data-label="조치기한" class="col-narrow"><input type="date" value="" class="p-1 border border-gray-300 rounded-md"></td>
+                    <td data-label="담당자" class="col-narrow"><input type="text" value="" list="persons-list" class="p-1 border border-gray-300 rounded-md"></td>
+                    <td data-label="조치일" class="col-narrow"><input type="date" value="" class="p-1 border border-gray-300 rounded-md"></td>
+                    <td class="delete-cell no-print" data-label="삭제">
+                        <button type="button" class="delete-btn">삭제</button>
+                    </td>
+                `;
+
+                // --- Table 2 행 생성 ---
+                const newRow2 = tableBody2.insertRow();
+                newRow2.innerHTML = `
+                    <td data-label="NO">${rowNum}</td>
+                    <td data-label="위험요인"><textarea class="p-1 border border-gray-300 rounded-md risk-input">${risk}</textarea></td>
+                    <td data-label="조치사항"><textarea class="p-1 border border-gray-300 rounded-md measure-input">${measure}</textarea></td>
+                    <td data-label="조치일" class="col-narrow"><input type="date" value="" class="p-1 border border-gray-300 rounded-md"></td>
+                    <td data-label="조치상태" class="col-narrow"><input type="text" value="" list="status-list" class="p-1 border border-gray-300 rounded-md"></td>
+                    <td class="image-cell" data-label="조치 전 사진">
+                        <div class="image-preview-container">
+                            <img src="" alt="조치 전 사진" class="image-preview" id="preview-before-${rowNum}" style="display:none;">
+                            <div class="image-placeholder" id="placeholder-before-${rowNum}" style="display:flex;">사진 없음</div>
+                            <input type="file" accept="image/*" capture="environment" class="text-xs no-print image-input" data-preview-id="preview-before-${rowNum}" data-placeholder-id="placeholder-before-${rowNum}">
+                        </div>
+                    </td>
+                    <td class="image-cell" data-label="조치 후 사진">
+                        <div class="image-preview-container">
+                            <img src="" alt="조치 후 사진" class="image-preview" id="preview-after-${rowNum}" style="display:none;">
+                            <div class="image-placeholder" id="placeholder-after-${rowNum}" style="display:flex;">사진 없음</div>
+                            <input type="file" accept="image/*" capture="environment" class="text-xs no-print image-input" data-preview-id="preview-after-${rowNum}" data-placeholder-id="placeholder-after-${rowNum}">
+                        </div>
+                    </td>
+                    <td class="delete-cell no-print" data-label="삭제">
+                        <button type="button" class="delete-btn">삭제</button>
+                    </td>
+                `;
+            };
+            
+            /**
+             * [수정] 저장된 데이터를 불러와 행을 생성하는 함수
+             */
+            const loadRow = (rowNum, row1Data, row2Data) => {
+                // --- Table 1 행 복원 ---
+                const newRow1 = tableBody1.insertRow();
+                newRow1.innerHTML = `
+                    <td data-label="NO">${rowNum}</td>
+                    <td data-label="위험요인"><textarea class="p-1 border border-gray-300 rounded-md risk-input">${row1Data.risk}</textarea></td>
+                    <td data-label="장소" class="col-narrow"><input type="text" value="${row1Data.location}" class="p-1 border border-gray-300 rounded-md"></td>
+                    <td data-label="빈도" class="col-narrow"><input type="number" value="${row1Data.freq}" class="p-1 border border-gray-300 rounded-md text-center"></td>
+                    <td data-label="강도" class="col-narrow"><input type="number" value="${row1Data.strength}" class="p-1 border border-gray-300 rounded-md text-center"></td>
+                    <td data-label="등급" class="col-narrow"><input type="number" value="${row1Data.grade}" class="p-1 border border-gray-300 rounded-md text-center"></td>
+                    <td data-label="개선대책"><textarea class="p-1 border border-gray-300 rounded-md measure-input">${row1Data.measure}</textarea></td>
+                    <td data-label="조치기한" class="col-narrow"><input type="date" value="${row1Data.deadline}" class="p-1 border border-gray-300 rounded-md"></td>
+                    <td data-label="담당자" class="col-narrow"><input type="text" value="${row1Data.manager}" list="persons-list" class="p-1 border border-gray-300 rounded-md"></td>
+                    <td data-label="조치일" class="col-narrow"><input type="date" value="${row1Data.actionDate}" class="p-1 border border-gray-300 rounded-md"></td>
+                    <td class="delete-cell no-print" data-label="삭제">
+                        <button type="button" class="delete-btn">삭제</button>
+                    </td>
+                `;
+
+                // --- Table 2 행 복원 ---
+                const newRow2 = tableBody2.insertRow();
+                const imgBeforeSrc = row2Data.imgBefore || "";
+                const imgAfterSrc = row2Data.imgAfter || "";
+                const imgBeforeDisplay = imgBeforeSrc ? 'block' : 'none';
+                const placeholderBeforeDisplay = imgBeforeSrc ? 'none' : 'flex';
+                const imgAfterDisplay = imgAfterSrc ? 'block' : 'none';
+                const placeholderAfterDisplay = imgAfterSrc ? 'none' : 'flex';
+                
+                newRow2.innerHTML = `
+                    <td data-label="NO">${rowNum}</td>
+                    <td data-label="위험요인"><textarea class="p-1 border border-gray-300 rounded-md risk-input">${row2Data.risk}</textarea></td>
+                    <td data-label="조치사항"><textarea class="p-1 border border-gray-300 rounded-md measure-input">${row2Data.measure}</textarea></td>
+                    <td data-label="조치일" class="col-narrow"><input type="date" value="${row2Data.actionDate}" class="p-1 border border-gray-300 rounded-md"></td>
+                    <td data-label="조치상태" class="col-narrow"><input type="text" value="${row2Data.status}" list="status-list" class="p-1 border border-gray-300 rounded-md"></td>
+                    <td class="image-cell" data-label="조치 전 사진">
+                        <div class="image-preview-container">
+                            <img src="${imgBeforeSrc}" alt="조치 전 사진" class="image-preview" id="preview-before-${rowNum}" style="display:${imgBeforeDisplay};">
+                            <div class="image-placeholder" id="placeholder-before-${rowNum}" style="display:${placeholderBeforeDisplay};">사진 없음</div>
+                            <input type="file" accept="image/*" capture="environment" class="text-xs no-print image-input" data-preview-id="preview-before-${rowNum}" data-placeholder-id="placeholder-before-${rowNum}">
+                        </div>
+                    </td>
+                    <td class="image-cell" data-label="조치 후 사진">
+                        <div class="image-preview-container">
+                            <img src="${imgAfterSrc}" alt="조치 후 사진" class="image-preview" id="preview-after-${rowNum}" style="display:${imgAfterDisplay};">
+                            <div class="image-placeholder" id="placeholder-after-${rowNum}" style="display:${placeholderAfterDisplay};">사진 없음</div>
+                            <input type="file" accept="image/*" capture="environment" class="text-xs no-print image-input" data-preview-id="preview-after-${rowNum}" data-placeholder-id="placeholder-after-${rowNum}">
+                        </div>
+                    </td>
+                    <td class="delete-cell no-print" data-label="삭제">
+                        <button type="button" class="delete-btn">삭제</button>
+                    </td>
+                `;
+            };
+
+            /**
+             * 작업명 선택 시 자동 채우기 함수
+             */
+            const populateAllRisksAndMeasures = (selectedWork) => {
+                const risksArray = workDataMap[selectedWork];
+                if (!risksArray) {
+                    const isTableEmpty = tableBody1.rows.length === 0 || 
+                                        (tableBody1.rows.length === 1 && 
+                                        tableBody1.rows[0].querySelector('textarea.risk-input').value === '' &&
+                                        tableBody1.rows[0].querySelector('textarea.measure-input').value === '');
+                    
+                    if (!isTableEmpty && !window.confirm("작업명을 변경하면 현재 작성된 내용이 기본값으로 덮어씌워집니다.\n계속하시겠습니까?")) {
+                         try {
+                            const savedData = localStorage.getItem(SAVE_KEY);
+                            if(savedData) {
+                                mainWorkTitleInput.value = JSON.parse(savedData).mainWorkTitle || '';
+                            } else {
+                                mainWorkTitleInput.value = '';
+                            }
+                        } catch(e) {
+                            mainWorkTitleInput.value = '';
+                        }
+                        return;
+                    }
+
+                    tableBody1.innerHTML = '';
+                    tableBody2.innerHTML = '';
+                    addRow();
+                    return;
+                }
+                
+                const isTableEmpty = tableBody1.rows.length === 0 || 
+                                    (tableBody1.rows.length === 1 && 
+                                    tableBody1.rows[0].querySelector('textarea.risk-input').value === '' &&
+                                    tableBody1.rows[0].querySelector('textarea.measure-input').value === '');
+
+                if (!isTableEmpty && !window.confirm("작업명을 변경하면 현재 작성된 내용이 기본값으로 덮어씌워집니다.\n계속하시겠습니까?")) {
+                    try {
+                        const savedData = localStorage.getItem(SAVE_KEY);
+                        if(savedData) {
+                            mainWorkTitleInput.value = JSON.parse(savedData).mainWorkTitle || '';
+                        } else {
+                            mainWorkTitleInput.value = '';
+                        }
+                    } catch(e) {
+                        mainWorkTitleInput.value = '';
+                    }
+                    return;
+                }
+
+                tableBody1.innerHTML = '';
+                tableBody2.innerHTML = ''; 
+                
+                risksArray.forEach(item => {
+                    addRow(item.risk, item.measure); 
+                });
+
+                if (risksArray.length === 0) {
+                    addRow();
+                }
+            };
+
+            /**
+             * [수정] 이미지 미리보기 함수 (이벤트 위임으로 처리됨)
+             */
+            const previewImage = (event) => {
+                const input = event.target;
+                const previewId = input.dataset.previewId;
+                const placeholderId = input.dataset.placeholderId;
+
+                const reader = new FileReader();
+                reader.onload = function(){
+                    const output = document.getElementById(previewId);
+                    const placeholder = document.getElementById(placeholderId);
+                    output.src = reader.result;
+                    output.style.display = 'block';
+                    if (placeholder) placeholder.style.display = 'none';
+                };
+
+                if (event.target.files && event.target.files[0]) {
+                    reader.readAsDataURL(event.target.files[0]);
+                } else {
+                    const output = document.getElementById(previewId);
+                    const placeholder = document.getElementById(placeholderId);
+                    output.src = "";
+                    output.style.display = 'none';
+                    if (placeholder) placeholder.style.display = 'flex';
+                }
+            };
+
+            /**
+             * 데이터 저장 함수
+             */
+            const saveData = () => {
+                try {
+                    const dataToSave = {
+                        siteName: siteNameInput.value,
+                        approvalDates: [],
+                        mainWorkTitle: mainWorkTitleInput.value,
+                        workPeriod: workPeriodInput.value,
+                        creationDate: creationDateInput.value,
+                        department: departmentInput.value,
+                        table1Rows: [],
+                        table2Rows: []
+                    };
+
+                    approvalDateInputs.forEach(input => {
+                        dataToSave.approvalDates.push(input.value);
+                    });
+
+                    tableBody1.querySelectorAll('tr').forEach(row => {
+                        const inputs = row.querySelectorAll('input, textarea');
+                        dataToSave.table1Rows.push({
+                            risk: inputs[0].value,       // 위험요인
+                            location: inputs[1].value,   // 장소
+                            freq: inputs[2].value,       // 빈도
+                            strength: inputs[3].value,   // 강도
+                            grade: inputs[4].value,      // 등급
+                            measure: inputs[5].value,    // 개선대책
+                            deadline: inputs[6].value,   // 조치기한
+                            manager: inputs[7].value,    // 담당자
+                            actionDate: inputs[8].value, // 조치일
+                        });
+                    });
+
+                    tableBody2.querySelectorAll('tr').forEach(row => {
+                        const inputs = row.querySelectorAll('input, textarea');
+                        const imgBefore = row.querySelector('.image-preview[id^="preview-before-"]').src;
+                        const imgAfter = row.querySelector('.image-preview[id^="preview-after-"]').src;
+                        
+                        dataToSave.table2Rows.push({
+                            risk: inputs[0].value,       // 위험요인
+                            measure: inputs[1].value,    // 조치사항
+                            actionDate: inputs[2].value, // 조치일
+                            status: inputs[3].value,     // 조치상태
+                            imgBefore: imgBefore.startsWith('data:image') ? imgBefore : '',
+                            imgAfter: imgAfter.startsWith('data:image') ? imgAfter : ''
+                        });
+                    });
+
+                    localStorage.setItem(SAVE_KEY, JSON.stringify(dataToSave));
+                    alert('내용이 브라우저에 저장되었습니다.');
+
+                } catch (error) {
+                    console.error("데이터 저장 중 오류 발생:", error);
+                    alert('데이터 저장 중 오류가 발생했습니다. 개발자 콘솔을 확인해주세요.');
+                }
+            };
+
+            /**
+             * 데이터 불러오기 함수
+             */
+            const loadData = () => {
+                const savedData = localStorage.getItem(SAVE_KEY);
+                if (!savedData) {
+                    addRow();
+                    return;
+                }
+                try {
+                    const data = JSON.parse(savedData);
+                    siteNameInput.value = data.siteName || '';
+                    mainWorkTitleInput.value = data.mainWorkTitle || '';
+                    workPeriodInput.value = data.workPeriod || '';
+                    creationDateInput.value = data.creationDate || '';
+                    departmentInput.value = data.department || '';
+
+                    if (data.approvalDates) {
+                        data.approvalDates.forEach((date, index) => {
+                            if (approvalDateInputs[index]) {
+                                approvalDateInputs[index].value = date;
+                            }
+                        });
+                    }
+
+                    tableBody1.innerHTML = '';
+                    tableBody2.innerHTML = '';
+
+                    if (data.table1Rows && data.table2Rows && data.table1Rows.length === data.table2Rows.length && data.table1Rows.length > 0) {
+                        for (let i = 0; i < data.table1Rows.length; i++) {
+                            loadRow(i + 1, data.table1Rows[i], data.table2Rows[i]);
+                        }
+                    } else {
+                        addRow();
+                    }
+                } catch (error) {
+                    console.error("데이터 불러오기 중 오류 발생:", error);
+                    alert('저장된 데이터를 불러오는 중 오류가 발생했습니다.');
+                    localStorage.removeItem(SAVE_KEY);
+                    addRow();
+                }
+            };
+
+            /**
+             * 데이터 초기화 함수
+             */
+            const clearData = () => {
+                if (window.confirm("정말로 모든 내용을 초기화하시겠습니까?\n저장된 데이터가 영구히 삭제됩니다.")) {
+                    localStorage.removeItem(SAVE_KEY);
+                    tableBody1.innerHTML = '';
+                    tableBody2.innerHTML = '';
+                    siteNameInput.value = '';
+                    mainWorkTitleInput.value = '';
+                    workPeriodInput.value = '';
+                    creationDateInput.value = '';
+                    departmentInput.value = '';
+                    approvalDateInputs.forEach(input => input.value = '');
+                    addRow(); // 초기화 후 빈 행 1개 추가
+                }
+            };
+
+            // --- 초기화 및 이벤트 리스너 실행 ---
+
+            // 1. Datalist와 Map 채우기
+            if (workTitlesDatalist) {
+                workTitlesDatalist.innerHTML = '';
+                workData.forEach(item => {
+                    workDataMap[item.workName] = item.risks;
+                    const option = document.createElement('option');
+                    option.value = item.workName;
+                    workTitlesDatalist.appendChild(option);
+                });
+            } else {
+                console.error("'work-titles-list' Datalist를 찾을 수 없습니다.");
+            }
+            
+            // 2. [수정] 정적 버튼들에 이벤트 리스너 추가
+            document.getElementById('add-row-btn').addEventListener('click', () => addRow());
+            document.getElementById('save-btn').addEventListener('click', saveData);
+            document.getElementById('clear-btn').addEventListener('click', clearData);
+            document.getElementById('print-btn').addEventListener('click', () => window.print());
+            
+            // '작업명' 입력란에 이벤트 리스너 추가
+            mainWorkTitleInput.addEventListener('input', (e) => populateAllRisksAndMeasures(e.target.value));
+
+            // 3. [수정] 동적 버튼/입력란에 '이벤트 위임'으로 리스너 추가
+            const container = document.getElementById('assessment-view');
+            container.addEventListener('click', (event) => {
+                // '삭제' 버튼 클릭 시
+                if (event.target && event.target.classList.contains('delete-btn')) {
+                    deleteRow(event.target);
+                }
+            });
+            
+            container.addEventListener('change', (event) => {
+                 // '이미지' 파일 선택 시
+                if (event.target && event.target.classList.contains('image-input')) {
+                    previewImage(event);
+                }
+            });
+
+            // 4. 페이지 로드 시 저장된 데이터 불러오기
+            loadData();
+        });
+    </script>
+</body>
+</html>
+

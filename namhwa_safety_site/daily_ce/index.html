@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>토목공사 일일 안전점검표</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        .check-item-row.is-poor { background-color: #fff1f2; }
+        .check-item-row.is-poor textarea { border-color: #f87171; }
+        .photo-thumbnail { max-width: 80px; max-height: 80px; border-radius: 0.375rem; margin-top: 0.5rem; border: 1px solid #e5e7eb; cursor: pointer; }
+        
+        /* 선택된 점검결과 항목에 대한 스타일 추가 */
+        input[type="radio"] + label {
+            transition: all 0.2s ease-in-out;
+        }
+        input[type="radio"][value="good"]:checked + label {
+            background-color: #22c55e; /* green-500 */
+            color: white;
+            font-weight: 600;
+        }
+        input[type="radio"][value="poor"]:checked + label {
+            background-color: #ef4444; /* red-500 */
+            color: white;
+            font-weight: 600;
+        }
+        input[type="radio"][value="na"]:checked + label {
+            background-color: #6b7280; /* gray-500 */
+            color: white;
+            font-weight: 600;
+        }
+
+        @media print {
+            @page {
+                size: A4 landscape; /* 용지 가로 방향 설정 */
+                margin: 1cm; /* 여백 조정 */
+            }
+            body, .container {
+                background: white;
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                max-width: none !important; /* 최대 너비 제한 해제 */
+            }
+            .no-print { display: none; }
+            .printable-header h1 { font-size: 18pt; }
+            .printable-header div { font-size: 10pt; }
+            table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                font-size: 9pt; /* 폰트 크기 조정 */
+                table-layout: fixed; /* 고정 레이아웃 사용 */
+            }
+            th, td { 
+                border: 1px solid #ccc; 
+                padding: 8px; /* 셀 패딩 조정 */
+                word-break: break-all;
+                vertical-align: middle;
+            }
+            textarea { 
+                border: 1px solid #eee !important; 
+                height: 50px !important; /* 텍스트 영역 높이 조정 */
+                font-size: 9pt;
+            }
+            .photo-thumbnail { max-width: 100%; height: auto; max-height: 100px; }
+            input[type="radio"] { display: none; }
+            input[type="radio"]:checked + label {
+                font-weight: bold;
+                background-color: transparent !important; /* 인쇄 시 배경색 제거 */
+                color: black !important; /* 인쇄 시 글자색 검정으로 */
+                border: 1px solid black; /* 선택 항목 테두리 표시 */
+                padding: 2px 4px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto max-w-5xl p-4">
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+            <!-- Header -->
+            <div class="printable-header">
+                <div class="text-center mb-6 border-b pb-4">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">토목공사 일일 안전점검표</h1>
+                    <p class="text-sm text-gray-500 mt-1">산업안전보건법 기준</p>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6 text-sm">
+                    <div class="flex items-center"><label for="location" class="font-semibold w-16 shrink-0">현장명:</label><input type="text" id="location" class="w-full p-2 border-b-2 focus:outline-none focus:border-blue-500" placeholder="현장명 입력"></div>
+                    <div class="flex items-center"><label for="check-date" class="font-semibold w-16 shrink-0">점검일자:</label><input type="date" id="check-date" class="w-full p-2 border-b-2 focus:outline-none focus:border-blue-500"></div>
+                    <div class="flex items-center"><label for="checker" class="font-semibold w-16 shrink-0">점검자:</label><input type="text" id="checker" class="w-full p-2 border-b-2 focus:outline-none focus:border-blue-500" placeholder="성명 (서명)"></div>
+                    <div class="flex items-center"><label for="weather" class="font-semibold w-16 shrink-0">날씨:</label><input type="text" id="weather" class="w-full p-2 border-b-2 focus:outline-none focus:border-blue-500" placeholder="맑음, 흐림 등"></div>
+                </div>
+            </div>
+
+            <!-- Checklist Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full table-auto border-collapse border border-gray-300 text-sm sm:text-base">
+                    <colgroup>
+                        <col style="width: 15%;">
+                        <col style="width: 30%;">
+                        <col style="width: 17%;">
+                        <col style="width: 23%;">
+                        <col style="width: 15%;">
+                    </colgroup>
+                    <thead class="bg-gray-100 text-center font-semibold">
+                        <tr>
+                            <th class="border border-gray-300 p-2">구분</th>
+                            <th class="border border-gray-300 p-2">점검항목 (산업안전보건기준)</th>
+                            <th class="border border-gray-300 p-2">점검결과</th>
+                            <th class="border border-gray-300 p-2">조치사항</th>
+                            <th class="border border-gray-300 p-2">사진</th>
+                        </tr>
+                    </thead>
+                    <tbody id="checklist-body"></tbody>
+                </table>
+            </div>
+
+            <!-- Footer Buttons -->
+            <div class="mt-8 flex flex-col sm:flex-row justify-end items-center gap-3 no-print">
+                <button onclick="saveData()" class="w-full sm:w-auto bg-blue-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-blue-700 transition">저장하기</button>
+                <button onclick="resetChecklist()" class="w-full sm:w-auto bg-red-500 text-white font-bold py-2 px-5 rounded-lg hover:bg-red-600 transition">초기화</button>
+                <button onclick="window.print()" class="w-full sm:w-auto bg-gray-700 text-white font-bold py-2 px-5 rounded-lg hover:bg-gray-800 transition">인쇄/보고서 생성</button>
+            </div>
+        </div>
+    </div>
+    
+    <input type="file" id="photo-input" accept="image/*" capture="camera" class="hidden">
+    
+    <script>
+        const checklistItems = [
+            { category: '토공사/굴착', items: ['굴착 전 지반조사 및 작업계획서 작성, 근로자 교육 여부 (규칙 제38조)', '매설물, 장애물 등 확인 및 이설, 보호 조치 여부 (규칙 제38조)', '굴착면 기울기 기준 준수 및 흙막이 지보공 설치 상태 (규칙 제338조, 제340조)', '강우 시 또는 강우 후 지반상태 점검 및 안전조치 여부'] },
+            { category: '붕괴/낙하', items: ['인양물 하부 근로자 출입통제 및 유도로프 사용 여부 (규칙 제39조)', '흙막이 지보공 계측관리 및 부재의 변형, 손상 유무 점검 (규칙 제347조)', '터널 지보공 및 록볼트 설치 상태, 부석 제거 여부 (규칙 제357조)', '교량 설치/해체 작업 시 작업계획서 준수 및 관리감독자 배치 여부 (규칙 제402조)'] },
+            { category: '건설기계/장비', items: ['차량계 건설기계(굴착, 하역 등) 작업계획서 작성 및 준수 (규칙 제199조)', '유도자 배치 및 일정한 신호방법 준수 여부 (규칙 제201조)', '장비의 주용도 외 사용(인양 등) 금지 및 안전조치 이행 여부 (규칙 제204조)', '항타기/항발기 조립/해체 시 작업계획서 및 안전기준 준수 여부 (규칙 제219조)'] },
+            { category: '구조물 공사', items: ['교량 상부 작업 시 추락방지 조치 (안전난간, 추락방호망) (규칙 제43조, 제45조)', '콘크리트 타설 시 작업계획서 수립 및 타설 순서 준수 여부 (규칙 제333조)', '터널 내 조명(통로 75럭스 이상) 및 환기시설 확보 여부 (규칙 제375조, 제376조)'] },
+            { category: '감전 재해예방', items: ['이동식 전기기계·기구 사용 시 감전방지용 누전차단기 연결 (규칙 제304조)', '고압선 인근 작업 시 이격거리 확보 및 절연용 방호구 설치 (규칙 제322조)', '수중펌프 등 격벽 충전부 노출 여부 및 외함 접지 상태'] },
+            { category: '교통/기타', items: ['공사장 내 차량운행 통로 확보 및 속도제한 표지 설치 (규칙 제25조)', '밀폐공간 출입 전 산소 및 유해가스 농도 측정 실시 여부 (규칙 제619조)', '도로 굴착 등 작업 시 교통통제 설비(안내표지, 라바콘 등) 설치 여부'] },
+            { category: '보호구/보건', items: ['작업 종류에 적합한 안전모, 안전화 등 개인보호구 지급 및 착용 상태 (법 제63조)', '근로자 휴게시설, 식당, 화장실 등 설치 및 청결 유지 (규칙 제79조, 제80조)', '소음, 분진 발생 작업 시 방음, 방진 보호구 착용 여부'] }
+        ];
+
+        let currentPhotoIndex = null;
+        const photoInput = document.getElementById('photo-input');
+
+        window.addEventListener('load', () => {
+            document.getElementById('check-date').value = new Date().toISOString().substring(0, 10);
+            generateChecklist();
+            loadData();
+        });
+
+        function generateChecklist() {
+            const tbody = document.getElementById('checklist-body');
+            let html = '';
+            let itemIndex = 0;
+            checklistItems.forEach(group => {
+                group.items.forEach((item, i) => {
+                    html += `
+                        <tr class="check-item-row" data-index="${itemIndex}">
+                            ${i === 0 ? `<td rowspan="${group.items.length}" class="border border-gray-300 p-2 align-middle text-center font-semibold">${group.category}</td>` : ''}
+                            <td class="checklist-item-text border border-gray-300 p-2 align-middle text-xs sm:text-sm hover:bg-gray-50 focus:bg-blue-50 focus:outline-none cursor-text" contenteditable="true">${item}</td>
+                            <td class="border border-gray-300 p-2 align-middle text-center">
+                                <div class="flex flex-col sm:flex-row justify-around items-center space-y-1 sm:space-y-0">
+                                    <input type="radio" id="good-${itemIndex}" name="status-${itemIndex}" value="good" class="hidden" onchange="toggleRowHighlight(${itemIndex})">
+                                    <label for="good-${itemIndex}" class="cursor-pointer px-2 py-1 rounded-md text-sm">양호</label>
+                                    <input type="radio" id="poor-${itemIndex}" name="status-${itemIndex}" value="poor" class="hidden" onchange="toggleRowHighlight(${itemIndex})">
+                                    <label for="poor-${itemIndex}" class="cursor-pointer px-2 py-1 rounded-md text-sm">불량</label>
+                                    <input type="radio" id="na-${itemIndex}" name="status-${itemIndex}" value="na" class="hidden" checked onchange="toggleRowHighlight(${itemIndex})">
+                                    <label for="na-${itemIndex}" class="cursor-pointer px-2 py-1 rounded-md text-sm leading-tight text-center">해당<br>없음</label>
+                                </div>
+                            </td>
+                            <td class="border border-gray-300 p-2 align-middle">
+                                <textarea class="w-full p-2 border rounded-md focus:ring-1 focus:ring-blue-500 outline-none text-sm" rows="3" placeholder="조치 및 특이사항..."></textarea>
+                            </td>
+                            <td class="border border-gray-300 p-2 align-middle text-center">
+                                <button onclick="addPhoto(${itemIndex})" class="bg-gray-200 text-gray-700 text-xs py-1 px-2 rounded hover:bg-gray-300 no-print">추가</button>
+                                <div id="photo-container-${itemIndex}" class="mt-1"></div>
+                            </td>
+                        </tr>
+                    `;
+                    itemIndex++;
+                });
+            });
+            tbody.innerHTML = html;
+        }
+        
+        function toggleRowHighlight(index) {
+            const row = document.querySelector(`tr[data-index="${index}"]`);
+            const isPoor = document.getElementById(`poor-${index}`).checked;
+            row.classList.toggle('is-poor', isPoor);
+        }
+        
+        function addPhoto(index) {
+            currentPhotoIndex = index;
+            photoInput.click();
+        }
+
+        photoInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file || currentPhotoIndex === null) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const MAX_WIDTH = 600;
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                    canvas.width = width; canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                    displayPhoto(currentPhotoIndex, dataUrl);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            photoInput.value = '';
+        });
+        
+        function displayPhoto(index, dataUrl) {
+            const container = document.getElementById(`photo-container-${index}`);
+            container.innerHTML = `<img src="${dataUrl}" class="photo-thumbnail" onclick="viewPhoto('${dataUrl}')">`;
+        }
+        
+        function viewPhoto(dataUrl) {
+            const image = new Image(); image.src = dataUrl;
+            const w = window.open(""); w.document.write(image.outerHTML);
+        }
+
+        function saveData() {
+            const data = {
+                header: { date: document.getElementById('check-date').value, checker: document.getElementById('checker').value, location: document.getElementById('location').value, weather: document.getElementById('weather').value },
+                items: []
+            };
+            document.querySelectorAll('.check-item-row').forEach((row) => {
+                data.items.push({
+                    itemText: row.querySelector('.checklist-item-text').innerText,
+                    status: row.querySelector('input[type="radio"]:checked').value,
+                    action: row.querySelector('textarea').value,
+                    photoSrc: row.querySelector('.photo-thumbnail')?.src || null
+                });
+            });
+            localStorage.setItem('civilEngineeringSafetyChecklist', JSON.stringify(data));
+            alert('점검 내용이 저장되었습니다.');
+        }
+
+        function loadData() {
+            const savedData = localStorage.getItem('civilEngineeringSafetyChecklist');
+            if (!savedData) return;
+            const data = JSON.parse(savedData);
+            document.getElementById('check-date').value = data.header.date || new Date().toISOString().substring(0, 10);
+            document.getElementById('checker').value = data.header.checker || '';
+            document.getElementById('location').value = data.header.location || '';
+            document.getElementById('weather').value = data.header.weather || '';
+            document.querySelectorAll('.check-item-row').forEach((row, index) => {
+                if(data.items[index]) {
+                    const itemData = data.items[index];
+                    if (itemData.itemText) {
+                        row.querySelector('.checklist-item-text').innerText = itemData.itemText;
+                    }
+                    row.querySelector(`input[value="${itemData.status}"]`).checked = true;
+                    row.querySelector('textarea').value = itemData.action;
+                    if(itemData.photoSrc) displayPhoto(index, itemData.photoSrc);
+                    toggleRowHighlight(index);
+                }
+            });
+        }
+
+        function resetChecklist() {
+            if (confirm('모든 내용을 초기화하시겠습니까?')) {
+                localStorage.removeItem('civilEngineeringSafetyChecklist');
+                document.getElementById('checker').value = '';
+                document.getElementById('location').value = '';
+                document.getElementById('weather').value = '';
+                generateChecklist();
+            }
+        }
+    </script>
+</body>
+</html>
+
