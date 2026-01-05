@@ -5,45 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Safety ON - 스마트 안전보건 플랫폼</title>
     
+    <!-- React 및 라이브러리 로드 -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-        
         @font-face {
             font-family: 'SeoulHangang';
             src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/SeoulHangangM.woff') format('woff');
-            font-weight: normal;
-            font-style: normal;
+            font-weight: normal; font-style: normal;
         }
-
         body { font-family: Pretendard, sans-serif; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
-
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
         @media print {
             @page { size: A4; margin: 10mm; }
-            body { background-color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 10pt; }
+            body { background-color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .no-print { display: none !important; }
             .print-only { display: block !important; }
-            .page-break { page-break-before: always; }
-            .avoid-break { page-break-inside: avoid; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-            th, td { border: 1px solid #000; padding: 4px 8px; font-size: 9pt; }
-            th { background-color: #f3f4f6 !important; text-align: center; font-weight: bold; }
         }
         .print-only { display: none; }
     </style>
@@ -63,21 +54,15 @@
             appId: "1:152864778612:web:ecc482adce93a1534a2421"
         };
 
-        // Firebase 초기화
         let db = null;
         let storage = null;
         try {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
             storage = firebase.storage();
-            console.log("🔥 Firebase 및 Storage 초기화 완료");
-        } catch (error) {
-            console.error("Firebase 초기화 오류:", error);
-        }
+        } catch (error) { console.error("Firebase Init Error:", error); }
 
-        // --- 아이콘 컴포넌트 ---
+        // --- 아이콘 컴포넌트 생략 (기존과 동일) ---
         const Icon = ({ children, color = "currentColor", size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
         );
@@ -105,11 +90,6 @@
         const ClipboardCheck = (props) => <Icon {...props}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></Icon>;
         const ArrowRight = (props) => <Icon {...props}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></Icon>;
 
-        // 초기 데이터
-        const DEFAULT_SEED_DATA = {
-            riskWorks: [], notices: [], issueList: [], inspectionLog: [], workerDetails: []
-        };
-
         // 인쇄용 컴포넌트
         const PrintReport = ({ data, siteName, currentDate, accidentFreeDays, targetDays }) => {
             return (
@@ -133,9 +113,10 @@
             const queryParams = new URLSearchParams(window.location.search);
             const siteId = queryParams.get('siteId') || 'siteB'; 
             
+            // [수정됨] 공정표 연결 링크를 statusA, statusB 폴더 경로로 변경
             const siteConfig = {
-                'siteA': { name: '대광새마을금고 신축공사', link: './status_a/index.html', theme: 'blue', gradient: 'from-blue-700 to-blue-500', text: 'text-blue-900', bg: 'bg-blue-600' },
-                'siteB': { name: '수원 노유자시설 신축공사', link: './status_b/suwon.html', theme: 'purple', gradient: 'from-purple-700 to-purple-500', text: 'text-purple-900', bg: 'bg-purple-600' }
+                'siteA': { name: '대광새마을금고 신축공사', link: './statusA/index.html', theme: 'blue', gradient: 'from-blue-700 to-blue-500', text: 'text-blue-900', bg: 'bg-blue-600' },
+                'siteB': { name: '수원 노유자시설 신축공사', link: './statusB/suwon.html', theme: 'purple', gradient: 'from-purple-700 to-purple-500', text: 'text-purple-900', bg: 'bg-purple-600' }
             };
             const currentSiteInfo = siteConfig[siteId] || siteConfig['siteB'];
 
@@ -234,29 +215,18 @@
                 if(db) db.collection('sites').doc(siteId).collection('issues').add(newIssue);
             };
 
-            // [수정됨] 부적합 조치 사진 업로드 핸들러 (폴더 자동 생성 & 파일명 정리)
             const handleIssueImageUpload = (id, type, e) => {
                 const file = e.target.files[0];
                 if (!file || !storage) return;
-
-                // 1. 현재 선택된 이슈 정보 찾기 (파일명에 장소 넣기 위함)
                 const targetIssue = issueList.find(i => i.id === id);
-                // 장소가 비어있으면 '장소미상', 공백은 제거
                 const safeLoc = targetIssue && targetIssue.loc ? targetIssue.loc.replace(/\s+/g, '') : '장소미상';
-                const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+                const today = new Date().toISOString().slice(0, 10); 
                 const typeName = type === 'beforeImg' ? '조치전' : '조치후';
-
-                // 2. 저장 경로: 현장명 / 안전부적합 / 날짜 / 장소_타입_시간.jpg
-                // 예: 수원노유자시설/안전부적합/2026-01-05/105동3층_조치전_12345.jpg
                 const fileName = `${safeLoc}_${typeName}_${Date.now()}.jpg`;
                 const fullPath = `sites/${currentSiteInfo.name}/안전부적합/${today}/${fileName}`;
-                
                 const storageRef = storage.ref(fullPath);
-                const uploadTask = storageRef.put(file);
-
-                uploadTask.then(snapshot => snapshot.ref.getDownloadURL())
+                storageRef.put(file).then(snapshot => snapshot.ref.getDownloadURL())
                     .then(downloadURL => {
-                        console.log("업로드 완료:", downloadURL);
                         setIssueList(prev => prev.map(issue => issue.id === id ? { ...issue, [type]: downloadURL } : issue));
                         if(db) db.collection('sites').doc(siteId).collection('issues').doc(id).update({ [type]: downloadURL });
                     })
@@ -289,20 +259,15 @@
 
             const openInspectionModal = (type) => { setInspectionType(type); setInspectionImages([]); setShowInspectionModal(true); };
 
-            // [수정됨] 점검 이미지 업로드 핸들러 (폴더 자동 생성 & 파일명 정리)
             const handleInspectionImageUpload = async (e) => {
                 const files = Array.from(e.target.files);
                 if (files.length === 0 || !storage) return;
-
                 try {
                     const today = new Date().toISOString().slice(0, 10);
                     const uploadPromises = files.map(file => {
-                        // 저장 경로: 현장명 / 반입점검 / 점검타입 / 날짜 / 파일명
                         const fullPath = `sites/${currentSiteInfo.name}/반입점검/${inspectionType}/${today}/${Date.now()}_${file.name}`;
-                        const storageRef = storage.ref(fullPath);
-                        return storageRef.put(file).then(snapshot => snapshot.ref.getDownloadURL());
+                        return storage.ref(fullPath).put(file).then(snapshot => snapshot.ref.getDownloadURL());
                     });
-
                     const newImageUrls = await Promise.all(uploadPromises);
                     setInspectionImages(prev => [...prev, ...newImageUrls]);
                 } catch (error) { console.error("점검 사진 업로드 실패:", error); alert("사진 업로드 실패!"); }
@@ -503,7 +468,7 @@
                                     <div className="p-4 flex justify-between items-center bg-gray-800 text-white rounded-t-xl"><h3 className="font-bold">무재해 목표 설정</h3><button onClick={() => setShowSettingsModal(false)}><X size={24} /></button></div>
                                     <form onSubmit={handleSaveSettings} className="p-6 space-y-4">
                                         <div><label className="block text-sm font-bold text-gray-700 mb-1">실착공일</label><input name="startDate" type="date" defaultValue={startDate} className="w-full border rounded-lg p-2" required /></div>
-                                        <div><label className="block text-sm font-bold text-gray-700 mb-1">목표일수</label><input name="targetDays" type="number" defaultValue={targetDays} className="w-full border rounded-lg p-2" required /></div>
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">목표일수</label><input name="targetDays" type="number" defaultValue={targetDays} className="w-full border rounded-lg p-2" required /></div>
                                         <button type="submit" className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-bold hover:bg-blue-700">설정 저장</button>
                                     </form>
                                 </div>
