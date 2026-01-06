@@ -62,7 +62,7 @@
             storage = firebase.storage();
         } catch (error) { console.error("Firebase Init Error:", error); }
 
-        // --- 아이콘 컴포넌트 생략 (기존과 동일) ---
+        // --- 아이콘 컴포넌트 ---
         const Icon = ({ children, color = "currentColor", size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
         );
@@ -102,7 +102,31 @@
                             <span>무재해: {accidentFreeDays}일 (목표: {targetDays}일)</span>
                         </div>
                     </div>
-                    {/* (인쇄 내용 생략 - 기존과 동일) */}
+                    {/* 인쇄 내용 생략 - 기존과 동일 */}
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div className="border p-2">
+                            <h3 className="font-bold border-b pb-1 mb-2">1. 금일 작업 및 위험성평가</h3>
+                            <ul className="text-sm list-disc pl-4 space-y-1">
+                                {data.riskWorks.map(w => <li key={w.id}>{w.task} (위험도: {w.risk}) - {w.manager}</li>)}
+                            </ul>
+                        </div>
+                        <div className="border p-2">
+                            <h3 className="font-bold border-b pb-1 mb-2">2. 출력 인원 현황</h3>
+                            <ul className="text-sm list-disc pl-4 space-y-1">
+                                {data.workerList.map(w => <li key={w.id}>{w.trade}: {w.count}명</li>)}
+                            </ul>
+                        </div>
+                    </div>
+                    <div className="border p-2 mb-6">
+                        <h3 className="font-bold border-b pb-1 mb-2">3. 안전 부적합 조치사항</h3>
+                        <div className="grid grid-cols-2 gap-2">
+                            {data.issueList.filter(i => i.status !== 'done').slice(0, 4).map(i => (
+                                <div key={i.id} className="text-xs border p-1">
+                                    <span className="font-bold">[{i.loc}]</span> {i.desc}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                     <div className="text-center text-xs text-gray-400 mt-8 border-t pt-4">남화토건(주) 스마트 안전보건 플랫폼 - Safety ON Output System</div>
                 </div>
             );
@@ -113,10 +137,26 @@
             const queryParams = new URLSearchParams(window.location.search);
             const siteId = queryParams.get('siteId') || 'siteB'; 
             
-            // [수정됨] 공정표 연결 링크를 statusA, statusB 폴더 경로로 변경
+            // [수정됨] 공정표 폴더 및 경로 매핑 수정
+            // siteA(대광): status_a 폴더
+            // siteB(수원): status_b 폴더
             const siteConfig = {
-                'siteA': { name: '대광새마을금고 신축공사', link: './statusA/index.html', theme: 'blue', gradient: 'from-blue-700 to-blue-500', text: 'text-blue-900', bg: 'bg-blue-600' },
-                'siteB': { name: '수원 노유자시설 신축공사', link: './statusB/index.html', theme: 'purple', gradient: 'from-purple-700 to-purple-500', text: 'text-purple-900', bg: 'bg-purple-600' }
+                'siteA': { 
+                    name: '대광새마을금고 신축공사', 
+                    link: './status_a/index.html', // 대광 현장 -> status_a 폴더
+                    theme: 'blue', 
+                    gradient: 'from-blue-700 to-blue-500', 
+                    text: 'text-blue-900', 
+                    bg: 'bg-blue-600' 
+                },
+                'siteB': { 
+                    name: '수원 노유자시설 신축공사', 
+                    link: './status_b/suwon.html', // 수원 현장 -> status_b 폴더
+                    theme: 'purple', 
+                    gradient: 'from-purple-700 to-purple-500', 
+                    text: 'text-purple-900', 
+                    bg: 'bg-purple-600' 
+                }
             };
             const currentSiteInfo = siteConfig[siteId] || siteConfig['siteB'];
 
@@ -457,7 +497,7 @@
                             <p className="text-gray-400 text-sm font-medium">남화토건(주) 안전보건팀</p>
                             <div className="absolute right-4 flex space-x-2">
                                 <button onClick={handlePrint} className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-blue-700 transition shadow-sm whitespace-nowrap"><Printer size={16} className="mr-2" /> PDF 보고서 출력</button>
-                                <a href={currentSiteInfo.link} target="_blank" className="flex items-center bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-purple-700 transition shadow-sm whitespace-nowrap"><LinkIcon size={16} className="mr-2" /> 예정공정표</a>
+                                <a href={currentSiteInfo.link} className="flex items-center bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-purple-700 transition shadow-sm whitespace-nowrap"><LinkIcon size={16} className="mr-2" /> 예정공정표</a>
                                 <a href="index.html" className="flex items-center bg-gray-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-700 transition shadow-sm whitespace-nowrap">나가기</a>
                             </div>
                         </footer>
@@ -537,36 +577,6 @@
                                             <div className="text-center text-gray-400 py-20 flex flex-col items-center"><div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-300"><AlertTriangle size={32} /></div><p>{selectedIssueType === 'new' ? '신규 발견된 항목이 없습니다.' : selectedIssueType === 'processing' ? '조치 중인 항목이 없습니다.' : '완료된 항목이 없습니다.'}</p></div>
                                         )}
                                     </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {showInspectionModal && (
-                            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={closeModal(setShowInspectionModal)}>
-                                <div className="bg-white rounded-xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-                                    <div className="p-4 flex justify-between items-center bg-blue-600 text-white rounded-t-xl"><h3 className="font-bold">{inspectionType} 점검 등록</h3><button onClick={() => setShowInspectionModal(false)}><X size={24} /></button></div>
-                                    <form onSubmit={handleSaveInspection} className="p-6 space-y-4">
-                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">품목명 / 장비명</label><input name="item" type="text" className="w-full border rounded-lg p-2" required placeholder="예: 이동식 크레인, 에폭시 등" /></div>
-                                        <div><label className="block text-sm font-medium text-gray-700 mb-2">점검 결과</label><div className="flex gap-4"><label className="flex items-center cursor-pointer"><input type="radio" name="result" value="합격" className="mr-2" defaultChecked /><span className="text-sm font-bold text-green-600">합격</span></label><label className="flex items-center cursor-pointer"><input type="radio" name="result" value="불합격" className="mr-2" /><span className="text-sm font-bold text-red-600">불합격</span></label></div></div>
-                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">세부 점검 내용</label><textarea className="w-full border rounded-lg p-2 h-20" placeholder="특이사항 및 점검 결과를 입력하세요"></textarea></div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">점검 사진 / 서류 첨부</label>
-                                            <div className="flex flex-wrap gap-2 mb-2">
-                                                {inspectionImages.map((img, idx) => (
-                                                    <div key={idx} className="relative w-20 h-20 border rounded-lg overflow-hidden group">
-                                                        <img src={img} className="w-full h-full object-cover" />
-                                                        <button type="button" onClick={() => handleRemoveInspectionImage(idx)} className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-bl-lg opacity-0 group-hover:opacity-100 transition-opacity"><X size={12}/></button>
-                                                    </div>
-                                                ))}
-                                                <label className="flex flex-col items-center justify-center w-20 h-20 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                                                    <Plus className="w-6 h-6 text-gray-400" />
-                                                    <input type="file" multiple className="hidden" accept="image/*" onChange={handleInspectionImageUpload} />
-                                                </label>
-                                            </div>
-                                            <p className="text-xs text-gray-400">* 사진을 여러 장 선택하거나 추가할 수 있습니다.</p>
-                                        </div>
-                                        <button type="submit" className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-bold hover:bg-blue-700">저장 하기</button>
-                                    </form>
                                 </div>
                             </div>
                         )}

@@ -140,7 +140,7 @@
         .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* [NEW] Footer 스타일 추가 */
+        /* [NEW] Footer 추가 */
         .footer {
             max-width: 1600px; 
             margin: 30px auto 0; 
@@ -237,10 +237,11 @@
         
         <!-- 우측 정렬 버튼 -->
         <div class="footer-btn-group">
-            <a href="safety_dashboard.html?siteId=suwon_senior_center" class="btn btn-navy btn-link">
+            <!-- [수정됨] 대시보드 연결 (상위 폴더 이동 + siteId=siteB) -->
+            <a href="../safetydashboard.html?siteId=siteB" class="btn btn-navy btn-link">
                 🛡️ 안전 대시보드 바로가기
             </a>
-            <a href="index.html" class="btn btn-gray btn-link">
+            <a href="javascript:history.back()" class="btn btn-gray btn-link">
                 나가기
             </a>
         </div>
@@ -302,28 +303,28 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-        // ★ [추가] 스토리지 함수
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
         // ============================================
-        // [파이어베이스 설정]
+        // [파이어베이스 설정 수정]
+        // 대시보드와 동일한 'namhwa-safety-dashboard' 프로젝트 사용
         // ============================================
         const firebaseConfig = {
-            apiKey: "AIzaSyDmc99sQdztu_-BXObXtB_dnWeQYj6p_SI",
-            authDomain: "namhwa-safety-6bb36.firebaseapp.com",
-            projectId: "namhwa-safety-6bb36",
-            storageBucket: "namhwa-safety-6bb36.firebasestorage.app",
-            messagingSenderId: "841961578562",
-            appId: "1:841961578562:web:85c500cea7727d9e0fcddb"
+            apiKey: "AIzaSyDbVG3iL3FBJe6alPLZnhFW_QAGpzeqFoY",
+            authDomain: "namhwa-safety-dashboard.firebaseapp.com",
+            projectId: "namhwa-safety-dashboard",
+            storageBucket: "namhwa-safety-dashboard.firebasestorage.app",
+            messagingSenderId: "152864778612",
+            appId: "1:152864778612:web:ecc482adce93a1534a2421"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const storage = getStorage(app); // ★ 스토리지 초기화
+        const storage = getStorage(app); 
         
-        // ★ [중요] 수원 현장용 DB 문서 ID ★
-        const SITE_ID = "suwon_senior_center"; 
-        const docRef = doc(db, "projects", SITE_ID);
+        // ★ [수정됨] 수원 현장 데이터 경로를 대시보드와 통합 (projects -> sites/siteB)
+        const SITE_ID = "siteB"; 
+        const docRef = doc(db, "sites", SITE_ID);
 
         // 기본 데이터 구조
         let globalData = {
@@ -384,7 +385,6 @@
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                // 필요한 필드만 업데이트 (taskDetails, activityLog는 하위 컬렉션에서 별도 로드)
                 if(data.headerInfo) globalData.headerInfo = data.headerInfo;
                 if(data.prepConst) globalData.prepConst = data.prepConst;
                 if(data.prepSafety) globalData.prepSafety = data.prepSafety;
@@ -402,21 +402,25 @@
             renderGrid();
             renderKpiTable();
             document.getElementById('loading').style.display = 'none';
+        }, (error) => {
+            console.error("Firestore Error:", error);
+            document.getElementById('loading').innerHTML = `<div style="color:red; text-align:center;">데이터 불러오기 실패<br>${error.message}<br><br>※ 관리자에게 'Firestore 규칙' 확인을 요청하세요.</div>`;
         });
 
         // (2) 공정별 상세 활동 (taskDetails) - 하위 컬렉션
-        const detailsRef = collection(db, "projects", SITE_ID, "taskDetails");
+        // [수정됨] 경로 수정: sites/siteB/taskDetails
+        const detailsRef = collection(db, "sites", SITE_ID, "taskDetails");
         onSnapshot(detailsRef, (snapshot) => {
             globalData.taskDetails = {};
             snapshot.forEach((doc) => {
                 globalData.taskDetails[doc.id] = doc.data();
             });
-            // 모달이 열려있다면 새로고침 (선택사항)
         });
 
         // (3) 실시간 활동 로그 (activityLogs) - 하위 컬렉션 (최신순 정렬)
-        const logsRef = collection(db, "projects", SITE_ID, "activityLogs");
-        const logsQuery = query(logsRef, orderBy("lastUpdated", "desc"), limit(50)); // 최신 50개만 로드
+        // [수정됨] 경로 수정: sites/siteB/activityLogs
+        const logsRef = collection(db, "sites", SITE_ID, "activityLogs");
+        const logsQuery = query(logsRef, orderBy("lastUpdated", "desc"), limit(50)); 
         
         onSnapshot(logsQuery, (snapshot) => {
             globalData.activityLog = [];
@@ -542,8 +546,6 @@
             
             if (currentFileUrl) {
                 previewBox.style.display = "block";
-                // URL에 .pdf가 포함되어 있거나 이미지가 로드되지 않으면 PDF로 간주하는 로직
-                // 여기서는 간단히 항상 이미지로 시도하고 에러나면 PDF로 전환
                 previewImg.style.display = "block";
                 previewPdf.style.display = "none";
                 previewImg.src = currentFileUrl;
@@ -673,16 +675,17 @@
                 };
 
                 // 2. 공정별 상세 정보 저장 (덮어쓰기) -> taskDetails 컬렉션
-                // 문서 ID를 공정 인덱스로 사용하여 중복 방지 및 최신 상태 유지
-                const taskDocRef = doc(db, "projects", SITE_ID, "taskDetails", String(currentTaskIndex));
+                // [수정됨] 경로 수정: sites/siteB/taskDetails
+                const taskDocRef = doc(db, "sites", SITE_ID, "taskDetails", String(currentTaskIndex));
                 await setDoc(taskDocRef, taskData);
 
                 // 3. 활동 로그 저장 (누적) -> activityLogs 컬렉션
+                // [수정됨] 경로 수정: sites/siteB/activityLogs
                 const logData = {
                     ...taskData,
                     taskIndex: currentTaskIndex
                 };
-                const logsCollectionRef = collection(db, "projects", SITE_ID, "activityLogs");
+                const logsCollectionRef = collection(db, "sites", SITE_ID, "activityLogs");
                 await addDoc(logsCollectionRef, logData);
                 
                 alert("✅ [저장 완료]\n\n안전보건 활동 내역이 서버에 안전하게 저장되었습니다.");
@@ -788,13 +791,13 @@
             closeSafetyModal();
         };
 
-        // ★ [수정됨] 삭제 로직: 하위 컬렉션 문서 삭제
+        // ★ [수정됨] 삭제 로직: 하위 컬렉션 문서 삭제 (경로 수정됨)
         window.deleteLogItem = async function(logId) {
             if(confirm("이 이력 항목을 삭제하시겠습니까? (복구 불가)")) {
                 const pwd = prompt("관리자 비밀번호를 입력하세요:");
                 if(pwd === "1234") {
                     try {
-                        const logDocRef = doc(db, "projects", SITE_ID, "activityLogs", logId);
+                        const logDocRef = doc(db, "sites", SITE_ID, "activityLogs", logId);
                         await deleteDoc(logDocRef);
                         alert("삭제되었습니다.");
                     } catch(e) {
